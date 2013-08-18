@@ -1,4 +1,4 @@
-ScORtCH
-=======
+ScORCH
+======
 
 DevOps Software Orchestration
