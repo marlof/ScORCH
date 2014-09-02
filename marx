@@ -1,0 +1,443 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+#
+#                            ORCHESTRATION FRAMEWORK
+#
+#-------------------------------------------------------------------------------
+#
+# COMPONENT     bin/marx
+#
+# USAGE         marx  <options> <arguments>...
+#
+# DESCRIPTION   Deployment Manager -
+#
+#-------------------------------------------------------------------------------
+#
+# REVISION HISTORY
+#
+# Date       Author                  Summary
+# 20140505   Marc Loftus             Created
+#
+#-------------------------------------------------------------------------------
+set -u
+
+# DEBUG LIBRARY FUNCTIONS SETTINGS
+# ================================
+typeset PROGNAME=$(basename ${BASH_SOURCE})
+typeset BASEDIR=$(dirname $(dirname ${BASH_SOURCE}))
+typeset RUNDIR=$(dirname ${BASH_SOURCE})
+typeset LOG_FILE=$BASEDIR/var/log/${PROGNAME}.log
+
+# Source the common envs file
+# ===========================
+#typeset ENVS=${RUNDIR}/../etc/wpenvs
+#. ${ENVS}
+# Common envs include DEPHOME BINDIR ETCDIR VARDIR LOGDIR SPACEDIR FUNCDIR TMPDIR JOBIDFILE RELMGR_<envs>
+
+
+# Global variables that require setup before the script runs correctly
+# ====================================================================
+typeset LOGGING=file # Log level: file | none | interactive (Used with WPMessage)
+typeset DEBUG=off    # Debug Level: on | off | full (Used with WPCheckRC)
+typeset VERSION=0.0
+typeset DATEFORMAT="+%y%m%d-%H%M%S"
+typeset STARTTIME="$(date +%s)"
+typeset NONINTERACTIVE=""
+typeset NEW_ARGS=""
+typeset FUNCTIONNAME=""
+typeset MAINTENANCE_FILE="${BASEDIR}/etc/maintenance"
+typeset JOBIDFILE=${BASEDIR}/var/jobnum
+typeset WARNINGCOUNT=0
+
+
+# JOB HANDLING VARS
+# =================
+typeset JOBDIR=${BASEDIR}/jobs
+typeset NEW_JOBDIR=${JOBDIR}/new
+typeset DELETED_JOBDIR=${JOBDIR}/deleted
+typeset FAILED_JOBDIR=${JOBDIR}/failed
+typeset RUNNING_JOBDIR=${JOBDIR}/running
+typeset STARTING_JOBDIR=${JOBDIR}/starting
+typeset QUEUED_JOBDIR=${JOBDIR}/queued
+typeset ARCHIVED_JOBDIR=${JOBDIR}/archived
+typeset SUPERCEEDED_JOBDIR=${JOBDIR}/superceeded
+typeset HEADERFILE=${BASEDIR}/etc/JobHeader
+typeset FOOTERFILE=${BASEDIR}/etc/JobFooter
+
+
+
+# ARGUMENTS LIST FIRST CHECK ARGUMENTS TO THE FRAMEWORK
+# =====================================================
+typeset PROGARGUMENTS=""
+if [ $# -ne 0 ] ; then
+  while [ $# -gt 0 ] ; do
+    _ARG="$1"
+    case ${_ARG} in
+      -l ) LISTTAGS="TRUE" ;;
+      -h ) Help ; exit 0;;
+      -d ) DEBUG=full ; set +u ;;
+      -n ) NONINTERACTIVE=1 ;;
+      -envs ) shift; WPENVS=${_ARG} ;;
+      -v ) echo "VERSION[$PROGNAME] $VERSION" ; exit 0 ;;
+    esac
+    PROGARGUMENTS="${PROGARGUMENTS} ${_ARG}"
+    shift
+  done
+fi
+
+# Now check arguments to the FUNCTIONNAME
+# =======================================
+typeset ARGUMENTS=""
+if [ $# -ne 0 ] ; then
+  while [ $# -gt 0 ] ; do
+    _ARG="$1"
+    ARGUMENTS="${ARGUMENTS} ${_ARG}"
+    shift
+  done
+fi
+
+Help()
+{
+  # Help should always be available in any script
+  # =============================================
+
+  Usage
+  echo " "
+  echo "${PROGNAME} [-l] | FUNCTION_TAG [options]"
+  echo "    -h     Help"
+  echo "    -l     Lists the available tags"
+  echo "    -v     Version"
+  echo " "
+  echo "    Examples:"
+  echo " "
+}
+
+
+Usage()
+{
+  echo "${PROGNAME} [options] | -h | -v "
+}
+
+CheckSetUp()
+{
+  typeset CHECKS
+  printf "Checking Setup\n\n"
+
+  # Check the list of directories that should exist with deployment team access
+  # ===========================================================================
+  typeset local DIRLIST="NEW_JOBDIR FAILED_JOBDIR RUNNING_JOBDIR STARTING_JOBDIR QUEUED_JOBDIR ARCHIVED_JOBDIR SUPERCEEDED_JOBDIR "
+  for _EACH_DIR in ${DIRLIST} ; do
+    #echo chechking ${_EACH_DIR}
+    #echo ${!_EACH_DIR}
+    [[ ! -d ${!_EACH_DIR} ]] && echo mkdir -p -m 770 ${!_EACH_DIR} && CHECKS=1
+  done
+
+  # Check files that need to exist
+  # ==============================
+
+  if [[ ${CHECKS} ]] ; then
+    printf "\n\n Please create the above directories to complete setup.\n"
+    PressEnter
+  fi
+}
+
+ShowLine()
+{
+  # Simple function to display a full screen of characters as a seperator
+  # The first Variable passed is the symbol(s) that will make up the line (equal sign "=" being the default)
+  # The second Variable passed can be used to TITLE the line.
+  # eg ShowLine x Hello
+  #     xxxHelloxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  typeset local SCREEN_WIDTH=$(tput cols)
+  typeset local _TEXT=${1:-"="}
+  typeset local _TITLE=${2:-""}
+  typeset local _TEXT_WIDTH=$(echo ${_TEXT} | wc -c)
+  typeset local _TITLE_WIDTH=$(echo $_TITLE | wc -c)
+  (( _DISPLAY_WIDTH=${SCREEN_WIDTH}/(${_TEXT_WIDTH}-1)-${_TITLE_WIDTH}-3 ))
+  printf " ${_TEXT}${_TEXT}${_TITLE}%${_DISPLAY_WIDTH}s\n" | sed "s/ /${_TEXT}/g"
+}
+
+ShowJobs()
+{
+  # This function takes a list of directory names as a parameter and displays the jobs
+  # in each of those directories. The jobs location is the jobs STATE. The job itself is
+  # responsible for changing STATE once running to completed or failed
+  #
+  for _EACH_STATE in $@ ; do
+    typeset local _DIRECTORY=${_EACH_STATE}
+    typeset local _L_DIRECTORY=$(echo ${_DIRECTORY} | tr [:upper:] [:lower:])
+    typeset local _U_DIRECTORY=$(echo ${_DIRECTORY} | tr [:lower:] [:upper:])
+    JOB_ARRAY=""
+    _JOBS=$(ls -1rt ${BASEDIR}/jobs/${_L_DIRECTORY})
+    if [ "${_JOBS}" ] ; then
+      ShowLine - ${_U_DIRECTORY}
+      for _EACH_JOB in ${_JOBS} ; do
+        printf "%2s %s" "${COUNT}" "${_EACH_JOB}"
+        printf "\n"
+
+        # Load the JOB Array and JOB Location
+        JOB_ARRAY[${COUNT}]=${_EACH_JOB}
+        JOB_LOCAL[${COUNT}]=${_L_DIRECTORY}
+
+        (( COUNT+=1 ))
+      done
+    fi
+  done
+}
+
+ShowOptions()
+{
+  # This function creates context based menu option.
+  # It may be used in several places so has been seperated from the Manager function
+  # Is looks through the job STATES and displays actions that can be run against those STATES
+  echo " "
+  echo -e " (A)dd\c"
+  QUEUED=0
+  FAILED=0
+  NEW=0
+  RUNNING=0
+
+  # If there are QUEUED jobs, they may be UNQUEUED to a NEW state or IMPORTANCE increased to run NEXT
+  [[ "$(ls ${QUEUED_JOBDIR}/* 2>/dev/null)" ]] && printf " | (U)nqueue | (C)hange Order" && QUEUED=1
+
+  # If there are RUNNING jobs, they may be PAUSED to a NEW state
+  [[ "$(ls ${RUNNING_JOBDIR}/*  2>/dev/null)" ]] && printf " | (P)ause" && RUNNING=1
+
+  # If there are NEW or FAILED, they may be STARTED to QUEUED or DELETED
+  ( [[ "$(ls ${NEW_JOBDIR}/* 2>/dev/null)" ]] || [[ "$(ls ${FAILED_JOBDIR}/* 2>/dev/null)" ]] ) && printf " | (S)tart | (D)elete"  && NEW=1
+
+  # If there is a FAILED job it may be (R)esumed
+  [[ "$(ls ${FAILED_JOBDIR}/* 2>/dev/null)" ]] &&  printf " | (R)esume"
+
+
+  # Everything else
+  printf " | (V)iew Log | e(X)it"
+  printf "\n\n Enter option: "
+
+  typeset local JOBLIST="NEW_JOBDIR FAILED_JOBDIR RUNNING_JOBDIR STARTING_JOBDIR QUEUED_JOBDIR ARCHIVED_JOBDIR"
+}
+
+ShowTop()
+{
+   # Displays the top of the screen
+   clear
+   printf "${PROGNAME}[${VERSION}]\t"
+   date
+   #ShowLine
+   COUNT=1
+}
+
+ShowLog()
+{
+  LOGDIR=${BASEDIR}/../var/log/
+  typeset local _FILES=$(find $LOGDIR -name "*.log" -ctime -4)
+  for x in ${_FILES} ; do
+     printf "%-50s" "$(basename ${x}) "
+     grep -v " ---" $x | tail -1
+  done
+  PressEnter
+}
+
+
+ShowTasks()
+{
+  ShowTop
+  ShowLine
+
+  printf "\n Select a job to shows tasks\n\n"
+  ShowJobs failed running queued new completed
+  ShowLine
+  GetAnswer range
+
+  if [ "${ANSWER}" != "x" ] ; then
+    typeset _ALLANSWERS=$(range "${ANSWER}")
+    for _EACH_ANSWER in ${_ALLANSWERS} ; do
+      cat ${JOBDIR}/${JOB_LOCAL[${_EACH_ANSWER}]}/${JOB_ARRAY[${_EACH_ANSWER}]}
+      PressEnter
+    done
+  fi
+
+}
+
+ProcessJob()
+{
+  typeset ACTION=$1
+  typeset TARGET
+
+  ShowTop
+  ShowLine
+
+  printf "\n Select a job to ${ACTION}\n\n"
+  case ${ACTION} in
+    unqueue ) ShowJobs queued     ; TARGET=${NEW_JOBDIR}     ;;
+    start   ) ShowJobs failed new ; TARGET=${QUEUED_JOBDIR}  ;;
+    delete  ) ShowJobs failed new ; TARGET=${DELETED_JOBDIR} ;;
+    resume  ) ShowJobs failed     ; TARGET=${NEW_JOBDIR}     ;;
+  esac
+
+  ShowLine
+  GetAnswer range
+
+  if [ "${ANSWER}" != "x" ] ; then
+    typeset _ALLANSWERS=$(range "${ANSWER}")
+    for _EACH_ANSWER in ${_ALLANSWERS} ; do
+      mv ${JOBDIR}/${JOB_LOCAL[${_EACH_ANSWER}]}/${JOB_ARRAY[${_EACH_ANSWER}]} ${TARGET}
+      touch ${TARGET}/${JOB_ARRAY[${_EACH_ANSWER}]}
+    done
+  fi
+  #sleep 1
+}
+
+ChangeOrder()
+{
+  # This function will change the order of a directories files. It can be used to change all files
+  # or used to promote a subset of files leaving the outer set in the original order.
+  ShowTop
+  ShowLine
+
+  ShowJobs queued
+  printf "\n Select a job to promote\n\n"
+
+  ShowLine
+  GetAnswer
+  ((COUNT-=1))
+  typeset ORIG_ORDER=$(range 1-$COUNT)
+  typeset NEW_ORIG=""
+  if [ "${ANSWER}" != "x" ] ; then
+    typeset _ALLANSWERS=$(range "${ANSWER}")
+    for _EACH_ANSWER in $(echo ${_ALLANSWERS} | rev) ; do
+      for _EACH_ORIG in $ORIG_ORDER; do
+        if [[ ${_EACH_ORIG} != ${_EACH_ANSWER} ]] ; then
+          NEW_ORIG="${NEW_ORIG} ${_EACH_ORIG}"
+        fi
+      done
+      ORIG_ORDER="${NEW_ORIG}"
+      NEW_ORIG=""
+    done
+
+    NEW_ORDER="${_ALLANSWERS} ${ORIG_ORDER}"
+    for _TOUCH in ${NEW_ORDER} ; do
+      touch ${JOBDIR}/${JOB_LOCAL[${_TOUCH}]}/${JOB_ARRAY[${_TOUCH}]}
+      printf "."
+    done
+  fi
+}
+
+
+GetJobID()
+{
+  # DESCRIPTION :  creates a job id for tracking runs and increments by one if required
+
+  REFER_MODULE=$(pop "${MODULE}")
+  MODULE=$(push "$MODULE" "GetJobID")
+  SCENE="Entering GetJobID"
+
+  WPCheckRC 0 "Entering GetJobID"
+
+  # Check JOBIDFIEL variable is set
+  if [ -z "${JOBIDFILE}" ] ; then
+        WPError "JOBIDFILE Variable has not been set ... cannot continue"
+  fi
+
+  # Get the JOBID number if the file might contain it
+  if [ -e "${JOBIDFILE}" ] && [ -r "${JOBIDFILE}" ]  ; then
+    _JOBID=$(cat ${JOBIDFILE})
+  else
+    _JOBID=0
+  fi
+
+  touch "${JOBIDFILE}" > /dev/null 2>&1
+  chmod 755 "${JOBIDFILE}" > /dev/null 2>&1
+
+  # Set the new number
+  if [ -w "${JOBIDFILE}" ] ; then
+    (( _JOBID+=1 ))
+        echo ${_JOBID} > ${JOBIDFILE}
+  else
+    Error "Cannot increment the JOBIDFILE <${JOBIDFILE}>"
+  fi
+}
+
+AddTask()
+{
+  printf "Task_${TASKNUMBER}()\n{\n  $1 \n}\n" >> $JOB_FILE
+  ((TASKNUMBER+=1))
+}
+
+AddJob()
+{
+  cat ~/test.request
+  printf "\n\n Enter request follow by a fullstop \".\":\n"
+  _TASKS=$(parserequest)
+  printf "Processing...."
+  GetJobID
+
+  # Create a file with the JobHeader in the new directory
+  #echo ${_TASKS}
+
+  #PressEnter
+  while IFS= read -ers  _LINE ; do
+    if [[ $(echo ${_LINE} | grep "^-* BEGIN") ]] ; then
+      _PLUGIN_NAME="$(echo ${_LINE} | cut -d" " -f3 | cut -d"_" -f2)"
+      JOB_FILE=${NEW_JOBDIR}/${_PLUGIN_NAME}_${_JOBID}
+      cat ${HEADERFILE} > ${JOB_FILE}
+      echo JobHeader
+      TASKNUMBER=1
+    elif [[ $(echo ${_LINE} | grep "^-* END") ]] ; then
+      echo "JobFooter"
+      cat ${FOOTERFILE} >> ${JOB_FILE}
+    elif [[ $(echo ${_LINE} | grep " *ERROR") ]] ; then
+      echo "ERROR"
+      AddTask "# ${_LINE}"
+    else
+      #echo "..${_LINE}"
+      AddTask "${_LINE}"
+    fi
+  done <<< "$(parserequest ~/test.request)"
+
+  PressEnter
+}
+
+Manager()
+{
+ typeset CHOICE=""
+ while : ; do
+   if [[ -f ${MAINTENANCE_FILE}  ]] ; then
+     echo "${PROGNAME} is down for maintenance."
+     echo "To reset ${PROGNAME} : rm ${MAINTENANCE_FILE}"
+     exit 1
+   fi
+
+   ShowTop
+   ShowJobs failed running queued new completed
+   ShowLine
+
+   ShowOptions
+
+   read -t 10 CHOICE
+   case ${CHOICE} in
+    a | A ) AddJob ;;
+    u | U ) ProcessJob unqueue  ;;
+    s | S ) ProcessJob start    ;;
+    d | D ) ProcessJob delete   ;;
+    r | R ) ProcessJob resume   ;;
+    t | T ) ShowTasks           ;;
+    c | C ) ChangeOrder         ;;
+    v | V ) ShowLog             ;;
+    maint ) create_file ${MAINTENANCE_FILE} blank ;;
+    x | X | q | Q ) break ;;
+   esac
+   #sleep 5
+   CHOICE=""
+
+ done
+}
+
+# Load in template functions
+
+MODULE="main"
+
+CheckSetUp
+Manager
+
+exit
