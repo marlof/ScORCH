@@ -21,10 +21,19 @@
 # ----       ------            ----      -------
 # 20140515   Marc Loftus       n/a       Created
 #
-# 20140918   Marc Loftus       n/a       V1.0 First Release (No Queue Manager)
-# 20140923   loftusm396        n/a       Added housekeeping
-# 20141016   loftusm396        n/a       Queue Manager and enhancements
-# 20141024   loftusm396        n/a       Deployment decoupling
+# 20140918   Marc Loftus       EM-373    V1.0 First Release (No Queue Manager)
+# 20140923   loftusm396        EM-495    Added housekeeping
+# 20141016   loftusm396        EM-374    Queue Manager and enhancements
+# 20141024   loftusm396        PDB-232   Deployment decoupling
+#               1) fix _DF colours (or change/remove deployment disk usage as not relevant outside of deployment team)
+#               2) add deleted completed plugins etc var/log checks
+#               3) Allow failed plugins to complete but mv jobs striahgt to failed state
+#               4) fix relative path / absolute path issue when called as ./<progname>
+#               5) Remove requirement of deployment team specific wpenvs file (i.e jira-test-id)
+#               6) Add path to the call for the daemon version
+#               7) Allow daemon to die if there are no queued jobs
+# 20141027  1.2 - 1-6 added
+#                 CHECKS variable bound to 0
 # 20141104  loftusm396          1.3       Relative paths reviewed (No 4 of PDB-232)
 # 20141104  loftusm396          1.4       Allow daemon to die if no queued jobs (No 7 of PDM-232)
 #                                         Fixed exit issue when using DoWhat function
@@ -64,9 +73,21 @@
 #                                         Job ownership added when starting a job you dont own
 #                               1.11a     Auditing PID added to AddTask
 # 20141119  loftusm396          1.12      Auto started file jobs will now run as depagent
+# 20141120  loftusm396          1.13      KeyPair function now available for use from plugins
+#                                         Interactive GetRequest now spawns a new dman call
+# 20141124  loftusm396          1.14      Fixing and Skip option only available when single job selected
+#                                         Check if user has jobs still in a QUEUE or START state when exiting
+#                                         Run a background version of dman to process users queue on exit
+# 20141126  loftusm396          1.15      Fix to pass plugindir to subshell dman when passed as parameter
+# 20141126  loftusm396          1.16      Allow underscores in Action names by sedding ACTION JOB_FILE JOB_LOG
+#                                         Enhanced GetJobID to handle multiple requests - atomic action EM-580
+#                                         Additional work on authorisations
+# 20141205  loftusm396          1.17      Setting up notification stubs for jira or/and email
+# 20141210  loftusm396          1.18      EM-730 Start message and change owner audit to job_file
+# 20141217  loftusm396          1.19      Add error messages from plugins to screen
 #-------------------------------------------------------------------------------
 
-typeset VERSION=1.12
+typeset VERSION=1.19
 
 set -u
 
@@ -102,7 +123,6 @@ fi
 typeset ETCDIR=${BASEDIR}/etc
 typeset MOTD_FILE=${ETCDIR}/motd
 typeset LOGDIR=$BASEDIR/var/log/
-typeset PLUGINDIR=${PLUGINDIR:-${BASEDIR}/plugins}
 typeset LOG_FILE=${LOGDIR}/${PROGNAME}.log
 
 # Common envs include DEPHOME BINDIR ETCDIR VARDIR LOGDIR SPACEDIR FUNCDIR TMPDIR JOBIDFILE RELMGR_<envs>
@@ -115,7 +135,7 @@ typeset DEBUG=off    # Debug Level: on | off | full (Used with WPCheckRC)
 typeset DATEFORMAT="+%y%m%d-%H%M%S"
 typeset START_TIME="$(date +%s)"
 typeset NONINTERACTIVE=""
-typeset DEPLOYMENTTEAM="dldeploymentteam@domain.com"
+typeset DEPLOYMENTTEAM=""
 typeset MAINTENANCE_FILE="${BASEDIR}/etc/maintenance"
 typeset JOBIDFILE=${BASEDIR}/var/jobnum
 typeset WARNINGCOUNT=0
@@ -127,11 +147,13 @@ typeset WHOAMI=$(whoami)
 # For future enhancements based on project type or plugin sub-dir i.e PSC. Or just for viewing
 typeset RESTRICTED=TRUE
 typeset ACCESS_LEVEL=none
+typeset ACCESS_ROLE=none
 
 # JOB HANDLING VARS
 # =================
 typeset JOBDIR=${BASEDIR}/jobs
 typeset NEW_JOBDIR=${JOBDIR}/new
+typeset PENDING_JOBDIR=${JOBDIR}/pending
 typeset DELETED_JOBDIR=${JOBDIR}/deleted
 typeset FAILED_JOBDIR=${JOBDIR}/failed
 typeset RUNNING_JOBDIR=${JOBDIR}/running
@@ -148,18 +170,30 @@ typeset TASKNUMBER=0
 typeset OWNER=""
 typeset SELF_SERVICE_USER="depagent"
 typeset ALLOW_START=
+typeset ADDJOB=
+typeset AUTOMANAGE=
 
 
 # PLUGIN DEFAULTS
 # ===============
-typeset JIRADIR="http://jira.domain.local/browse/"
-typeset JIRA_TEST_ID="DEP-TST"
-typeset JIRAID="DEP-TST"
+typeset PASS_PLUGINDIR=
+typeset PLUGINDIR=${PLUGINDIR:-${BASEDIR}/plugins}
+typeset JIRADIR="http://jira.worldpaytd.local/browse/"
+typeset JIRA_TEST_ID=
+typeset JIRAID=
 typeset WPDEPLOY="wpdeploy"
-typeset ENVIRONMENT="DEV00"
-typeset RELEASE="NONE"
-typeset ACTION="ACTION"
+typeset ENVIRONMENT=
+typeset RELEASE=
+typeset ACTION=
 typeset FILE=
+
+
+# NOTIFICATION OPTIONS
+# ====================
+typeset       NOTIFICATION_API="echo REST-JIRA or EMAIL"
+typeset     START_NOTIFICATION="${NOTIFICATION_API} STARTING"
+typeset COMPLETED_NOTIFICATION="${NOTIFICATION_API} COMPLETED"
+typeset    FAILED_NOTIFICATION="${NOTIFICATION_API} FAILED"
 
 
 # LAYOUT VARS used in ShowJobs and ShowTop
@@ -173,6 +207,7 @@ typeset ID_WDTH=6
 typeset ENV_WDTH=8
 typeset ACT_WDTH=15
 typeset VER_WDTH=10
+typeset JOB_FIELDS=5
 
 
 # DISPATCHER VARS
@@ -215,6 +250,11 @@ Help()
   echo "    -p     <alternative plugin dir>"
   echo "    -file  <file template> [-s]"
   echo "           -s     Means that jobs added with -file can start now"
+  echo "    -man   Run the manager only (do not start the dispatcher)"
+  echo " "
+  echo "    Internal node"
+  echo "    -a     New session of $PROGNAME to add a job only"
+  echo "    -auto  Background version of $PROGNAME to complete jobs"
   echo " "
   echo "    Examples:"
   echo " "
@@ -234,10 +274,12 @@ if [ $# -ne 0 ] ; then
     case ${_ARG} in
       -h ) Help ; exit 0;;
       -daemon ) DAEMON=1           ;;
+      -a    ) ADDJOB=TRUE          ;;
+      -auto ) AUTOMANAGE=1         ;;
       -man  ) DAEMON=0             ;;
       -d    ) DEBUG=full ; set +u  ;;
       -n    ) NONINTERACTIVE=1     ;;
-      -p    ) shift ; PLUGINDIR=$1 ;;
+      -p    ) shift ; PLUGINDIR=$1 ; PASS_PLUGINDIR="-p $1" ;;
       -file ) shift ; FILE=$1      ;;
       -s    ) ALLOW_START=TRUE     ;;
       -v    ) echo "VERSION[$PROGNAME] $VERSION" ; exit 0 ;;
@@ -250,6 +292,7 @@ fi
 
 HouseKeeping()
 {
+  # EM-495
   # The function will be run after the script finishes.
   WPMessage "House Keeping..."
 
@@ -261,6 +304,7 @@ HouseKeeping()
 
   # Search the DELETED_JOBDIR and tar append them to an archive file then rm jobs older than 20 days
   find ${DELETED_JOBDIR}/*_* -mtime +${HOUSEKEEP_DELETED} -exec tar uf ${DELETED_JOBDIR}/archive.tar "{}" + 2>/dev/null && find ${DELETED_JOBDIR}/*_* -mtime +${HOUSEKEEP_DELETED} -exec rm -f {} \; 2>/dev/null
+
 }
 
 
@@ -275,7 +319,7 @@ CheckSetUp()
 
   # Check the list of directories that should exist with deployment team access
   # ===========================================================================
-  typeset local DIRLIST="NEW_JOBDIR FAILED_JOBDIR RUNNING_JOBDIR STARTING_JOBDIR DELETED_JOBDIR COMPLETED_JOBDIR QUEUED_JOBDIR SUPERSEDED_JOBDIR ARCHIVED_JOBDIR TMPDIR LOCKDIR LOGDIR ETCDIR PLUGINDIR"
+  typeset local DIRLIST="PENDING_JOBDIR NEW_JOBDIR FAILED_JOBDIR RUNNING_JOBDIR STARTING_JOBDIR DELETED_JOBDIR COMPLETED_JOBDIR QUEUED_JOBDIR SUPERSEDED_JOBDIR ARCHIVED_JOBDIR TMPDIR LOCKDIR LOGDIR ETCDIR PLUGINDIR"
   for _EACH_DIR in ${DIRLIST} ; do
     #echo chechking ${_EACH_DIR}
     #echo ${!_EACH_DIR}
@@ -299,15 +343,23 @@ CheckAuthorisation()
 {
   # Currently stubbed for future enhancements
 
+  ## Example users file to be placed in ${ETCDIR}/user
+  # Username : [ FULL | RESTRICTED ] : [ ALL | <SPACE1>,<SPACE2> ]
+  # loftusm396 : FULL       : ALL
+  # howardl760 : FULL       : ALL
+  # coelhoa603 : FULL       : ALL
+  # burtona756 : RESTRICTED : PSC,OES
+
+
   MODULE=$(push "$MODULE" "${FUNCNAME}")
   SCENE="Entering ${FUNCNAME}"
   WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Check what areas the user has access to
-  echo ${WHOAMI}
   if [ -r ${ETCDIR}/users ] ; then
-    echo "Checking authority"
-    ACCESS_LEVEL=$(grep ${WHOAMI} ${ETCDIR}/users | cut -d: -f2)
+    echo "Checking authority for ${WHOAMI}"
+    ACCESS_LEVEL=$(grep "^ *${WHOAMI}" ${ETCDIR}/users | cut -d: -f2 2>/dev/null)
+echo ${ACCESS_LEVEL}
     [[ $(echo ${ACCESS_LEVEL} | grep FULL) ]] && RESTRICTED=""
 
     if [[ ! "${ACCESS_LEVEL}" ]]  ; then
@@ -316,6 +368,8 @@ CheckAuthorisation()
     else
       # Develop further
       echo restricted role grep
+      ACCESS_ROLE=$(grep "^ *${WHOAMI}" ${ETCDIR}/users | cut -d: -f3 2>/dev/null)
+      #exit 1
     fi
   else
     echo "There is no valid or readable users files: ${ETCDIR}/users."
@@ -363,9 +417,9 @@ InitPlugins()
 
 ShowLine()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Simple function to display a full screen of characters as a seperator
   # The first Variable passed is the symbol(s) that will make up the line (equal sign "=" being the default)
@@ -383,15 +437,15 @@ ShowLine()
   # There is an extra space due to "-" minus being interpretted as an argument to printf
   printf " ${_TEXT}${_TEXT}${_TITLE}%${_DISPLAY_WIDTH}s\n" | sed "s/ /${_TEXT}/g"
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ShowJobs()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # This function takes a list of directory names as a parameter and displays the jobs
   # in each of those directories. The jobs location is the jobs STATE. The job itself is
@@ -430,11 +484,13 @@ ShowJobs()
         #printf "%s %${NO_WDTH}s%1s %${DEP_WDTH}s %${JIRA_WDTH}s %${ENV_WDTH}s %${ACT_WDTH}s %${VER_WDTH}s %s" \
         printf "%s %${NO_WDTH}s%1s %${JIRA_WDTH}s %${ID_WDTH}s %${ENV_WDTH}s %${ACT_WDTH}s %${VER_WDTH}s %s" \
                "${RED}" "${COUNT}" "${OWNER}" $(echo ${_EACH_JOB} | sed 's/_/\| /g')  "| "
-        (( _DISPLAY_WIDTH=$SCREEN_WIDTH - ${NO_WDTH} - ${JIRA_WDTH} - ${ID_WDTH} - ${ENV_WDTH} - ${ACT_WDTH} - ${VER_WDTH} - 13 ))
+        (( _DISPLAY_WIDTH=$SCREEN_WIDTH - ${NO_WDTH} - ${JIRA_WDTH} - ${ID_WDTH} - ${ENV_WDTH} - ${ACT_WDTH} - ${VER_WDTH} - ((${JOB_FIELDS} * 3)) ))
         if [[ ${_DISPLAY_WIDTH} -lt 1 ]]  ; then
           echo "Screen to small${reset}"
         else
-          [[ -r ${LOG_JOBDIR}/${_EACH_JOB}.log ]] && printf "%s\n" "$(tail -10 ${LOG_JOBDIR}/${_EACH_JOB}.log  | grep -v "] .*----------------" | tail -1 | cut -c1-${_DISPLAY_WIDTH})${reset}" || echo "Check permissions"
+          [[ -r ${LOG_JOBDIR}/${_EACH_JOB}.log ]] && printf "%s\n" "$(tail -10 ${LOG_JOBDIR}/${_EACH_JOB}.log  | \
+                    grep -v "] .*----------------" | \
+                    grep -v "^[         ]*$" | tail -1 | cut -c1-${_DISPLAY_WIDTH})${reset}" || echo "Check permissions"
         fi
 
         # Load the JOB Array and JOB Location
@@ -447,88 +503,23 @@ ShowJobs()
     fi
   done
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
-
-ShowOwnJobs()
-{
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
-
-  # This function takes a list of directory names as a parameter and displays the jobs
-  # in each of those directories. The jobs location is the jobs STATE. The job itself is
-  # responsible for changing STATE once running to completed or failed
-  #
-  for _EACH_STATE in $@ ; do
-    typeset local _DIRECTORY=${_EACH_STATE}
-    typeset local _L_DIRECTORY=$(echo ${_DIRECTORY} | tr [:upper:] [:lower:])
-    typeset local _U_DIRECTORY=$(echo ${_DIRECTORY} | tr [:lower:] [:upper:])
-    JOB_ARRAY=""
-
-
-    # Get a list or jobs in the passed directory (For completed jobs put that order in time order so most recently completed jobs show first)
-    _JOBS=$(grep -wl "OWNER=${WHOAMI}" ${JOBDIR}/${_L_DIRECTORY}/* 2>/dev/null)
-
-    # If there are any _JOBS in the directory display each of the jobs
-    if [ "${_JOBS}" ] ; then
-
-      #[[ ${_U_DIRECTORY} = "FAILED" ]] && ShowLine - ${redb}${_U_DIRECTORY}${reset} || ShowLine - ${_U_DIRECTORY}
-      ShowLine - ${_U_DIRECTORY}
-      typeset local SCREEN_WIDTH=$(tput cols)
-      for _EACH_JOB in ${_JOBS} ; do
-        _EACH_JOB=$(basename ${_EACH_JOB})
-        [[ ${_U_DIRECTORY} = "FAILED" ]] && RED="${redb}"  || RED="${reset}"
-        [[ ${_U_DIRECTORY} = "FAILED" ]] && [ "$(tail -1 ${TMPDIR}/${_EACH_JOB}.log | grep -w FIP)" != "" ] && RED="${reset}"
-
-
-        # Highlight jobs that we are the current owner of
-        if [[ -r  ${JOBDIR}/${_L_DIRECTORY}/${_EACH_JOB} ]] ; then
-           [[ "$(grep "OWNER=" ${JOBDIR}/${_L_DIRECTORY}/${_EACH_JOB} | tail -1 | cut -d= -f2 2>/dev/null )" == "${WHOAMI}" ]] && OWNER="*" || OWNER=" "
-        else
-           # or show a "#" if there is an error
-           OWNER="#"
-        fi
-
-        #     linenum owner | Jiraid | jobnum | env | plugin | release
-        #printf "%s %${NO_WDTH}s%1s %${DEP_WDTH}s %${JIRA_WDTH}s %${ENV_WDTH}s %${ACT_WDTH}s %${VER_WDTH}s %s" \
-        printf "%s %${NO_WDTH}s%1s %${JIRA_WDTH}s %${ID_WDTH}s %${ENV_WDTH}s %${ACT_WDTH}s %${VER_WDTH}s %s" \
-               "${RED}" "${COUNT}" "${OWNER}" $(echo ${_EACH_JOB} | sed 's/_/\| /g')  "| "
-        (( _DISPLAY_WIDTH=$SCREEN_WIDTH - ${NO_WDTH} - ${JIRA_WDTH} - ${ID_WDTH} - ${ENV_WDTH} - ${ACT_WDTH} - ${VER_WDTH} - 13 ))
-        if [[ ${_DISPLAY_WIDTH} -lt 1 ]]  ; then
-          echo "Screen to small${reset}"
-        else
-          [[ -r ${LOG_JOBDIR}/${_EACH_JOB}.log ]] && printf "%s\n" "$(tail -10 ${LOG_JOBDIR}/${_EACH_JOB}.log  | grep -v "] .*----------------" | tail -1 | cut -c1-${_DISPLAY_WIDTH})${reset}" || echo "Check permissions"
-        fi
-
-        # Load the JOB Array and JOB Location
-        JOB_ARRAY[${COUNT}]=${_EACH_JOB}
-        JOB_STATE[${COUNT}]=${_L_DIRECTORY}
-        JOB_OWNER[${COUNT}]="TRUE"
-
-        (( COUNT+=1 ))
-      done
-    fi
-  done
-
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
-}
-
 
 
 ShowOptions()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # This function creates context based menu option.
   # It may be used in several places so has been seperated from the Manager function
   # Is looks through the job STATES and displays actions that can be run against those STATES
   # If a STATE variable is passed then only show valid values for that variable
   typeset local LOCAL=${1:-}
+  echo "${reset}"
 
   QUEUED=
   FAILED=
@@ -537,7 +528,7 @@ ShowOptions()
   DELETE=
 
   if [[ "$LOCAL" ]]  ; then
-    printf "\n (E)dit Job |"
+    printf " (E)dit Job |"
     case $LOCAL in
       qu* ) QUEUED=1  ;;
       fa* ) FAILED=1  ;;
@@ -545,7 +536,7 @@ ShowOptions()
       ru* ) RUNNING=1 ;;
     esac
   else
-    printf "\n (A)dd |"
+    [ "${RESTRICTED}" ] || printf " (A)dd |"
 
     # If there are QUEUED jobs, they may be UNQUEUED to a NEW state or IMPORTANCE increased to run NEXT
     [[ "$(ls ${QUEUED_JOBDIR}/* 2>/dev/null)" ]] && QUEUED=1
@@ -562,45 +553,51 @@ ShowOptions()
   fi
 
   # Show available options depending on the STATE of jobs
-  [ $QUEUED ] && printf " (U)nqueue | (C)hange order |"
-  [ $RUNNING ] && printf " (P)ause |"
-  ( [ $NEW  ] || [[ $FAILED ]] ) && printf " (S)tart |"
-  [ $FAILED ] && printf " (R)esume | (F)ixing | s(K)ip |"
-  [ $DELETE ] && printf " (D)elete |"
+  [ "${RESTRICTED}" ] || ( [ $QUEUED ] && printf " (U)nqueue | (C)hange order |" )
+  [ "${RESTRICTED}" ] || ( [ $RUNNING ] && printf " (P)ause |" )
+  [ "${RESTRICTED}" ] || ( ( [ $NEW  ] || [[ $FAILED ]] ) && printf " (S)tart |" )
+  [ "${RESTRICTED}" ] || ( [ $FAILED ] && printf " (R)esume |" )
+  [ "${RESTRICTED}" ] || ( [ $FAILED ] && [ $LOCAL ] && printf " (F)ixing | s(K)ip |" )
+  [ "${RESTRICTED}" ] || ( [ $DELETE ] && printf " (D)elete |" )
 
   printf " (L)og | (T)asks |"
   if [[ ! "${LOCAL}" ]] ; then
-    printf " (M)otd |"
+    [ "${RESTRICTED}" ] || printf " (M)otd |"
   fi
   printf " e(X)it"
   printf "\n\n Enter option: "
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
-RunOwnJobs()
-{
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
-
-  typeset local _STARTJOBS=$(grep OWNER=${WHOAMI} ${STARTING_JOBDIR}/* 2>/dev/null )
-  echo "Checking own jobs....."
-  echo ${_STARTJOBS}
-
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
-}
+#RunOwnJobs()
+#{
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
+#
+#  typeset local _STARTJOBS=$(grep OWNER=${WHOAMI} ${STARTING_JOBDIR}/* 2>/dev/null )
+#  echo "Checking own jobs....."
+#  echo ${_STARTJOBS}
+#
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
+#}
 
 Ck_Dispatcher()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Function to monitor and start the dispatcher
+
+
+  # A limitation with the dispatcher is that it only works for the directory structure it was started for
+  # to get round this you can create a different name for dman for multiple instances on one server
+  # what might be better is if the /proc/${LOCK_PID} info was integrated to find which QUEUE is being watched
 
 
   # Check the existance of a current dispatch file
@@ -619,7 +616,7 @@ Ck_Dispatcher()
     if [ "$( ps -ef | grep ${PROGNAME} | grep daemon)" ] ; then
       # If there's a previous daemon running - reset the lock file
       WPMessage "Repairing lock file ${LINK_DETAILS} ${DISPATCH_LOCK}"
-      LINK_DETAILS=${WHOAMI}_${PROGNAME}_$( ps -ef | grep ${PROGNAME} | grep daemon | tail -1 | awk -F" " '{print $2}')
+      LINK_DETAILS=${WHOAMI}_${RUNDIR}/${PROGNAME}_$( ps -ef | grep ${PROGNAME} | grep daemon | tail -1 | awk -F" " '{print $2}')
       ln -s  ${LINK_DETAILS} ${DISPATCH_LOCK}
     else
       #WPMessage "Initialting dispatcher"
@@ -627,9 +624,79 @@ Ck_Dispatcher()
     fi
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
+
+Ck_Own_Jobs()
+{
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
+
+  # This function is to make sure that a user knows that they still have jobs waiting to be run
+  typeset local AUTO_MANAGE=
+
+  # Check the QUEUED directory for jobs with user OWNER
+  if [ "$(grep -l ^OWNER=${WHOAMI} ${QUEUED_JOBDIR}/* 2>/dev/null)" ] ; then
+    echo "${redb}${whitef}There are jobs in your queue${reset}"
+    AUTO_MANAGE=1
+  fi
+
+  # Check the STARTING directory for jobs with user OWNER
+  if [ "$(grep -l ^OWNER=${WHOAMI} ${STARTING_JOBDIR}/* 2>/dev/null)" ] ; then
+    echo "${redb}${whitef}There are jobs waiting to start in your queue${reset}"
+    AUTO_MANAGE=1
+  fi
+
+  # If there are any outstanding jobs run them in a background version of dman
+  if [[ "${AUTO_MANAGE}" ]] ; then
+    printf "\n\n Do you want to run a background version of ${PROGNAME}? [y/n] :"
+    read ANS
+    if [ "$ANS" = "y" ] ; then
+      echo " Starting ${PROGNAME} -auto"
+      nohup ${RUNDIR}/${PROGNAME} -auto < /dev/null >> /dev/null &
+    fi
+  fi
+
+
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
+}
+
+
+AutoManage()
+{
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
+
+  typeset local AUTO_MANAGE=1
+
+  while [ "$AUTO_MANAGE" ] ; do
+
+    AUTO_MANAGE=
+
+    # Check the QUEUED directory for jobs with user OWNER
+    if [ "$(grep -l ^OWNER=${WHOAMI} ${QUEUED_JOBDIR}/* 2>/dev/null)" ] ; then
+      AUTO_MANAGE=1
+    fi
+
+    # Check the STARTING directory for jobs with user OWNER
+    if [ "$(grep -l ^OWNER=${WHOAMI} ${STARTING_JOBDIR}/* 2>/dev/null)" ] ; then
+      AUTO_MANAGE=1
+    fi
+
+    StartJobs ${WHOAMI}
+    sleep 60
+  done
+  echo "Running in background"
+  exit 0
+
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
+}
+
 
 Dispatcher_Daemon()
 {
@@ -639,11 +706,11 @@ Dispatcher_Daemon()
   # There is some logic in place to only allow one running version of the deamon to
   # be running at any one time as well as checking to make sure the deamon lock file
   # is in place and correct
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
-  typeset local LINK_DETAILS=${WHOAMI}_${PROGNAME}_${PID}
+  typeset local LINK_DETAILS=${WHOAMI}_${RUNDIR}/${PROGNAME}_${PID}
   typeset local QUEUE_CHECK_COUNT=1
   typeset local QUEUE_CHECK_MAX=20
 
@@ -654,7 +721,7 @@ Dispatcher_Daemon()
   [[ ! -L ${DISPATCH_LOCK} ]] && [[ ${CURRENT_PID} = "" ]]  && WPMessage "Dispatcher: Set lock file : ${LINK_DETAILS}" && ln -s  ${LINK_DETAILS} ${DISPATCH_LOCK}
   [[   -L ${DISPATCH_LOCK} ]] && [[ ${CURRENT_PID} != "" ]] && WPMessage "Dispatcher: Already running : ${LINK_DETAILS}" && exit 1
   [[ ! -L ${DISPATCH_LOCK} ]] && [[ ${CURRENT_PID} != "" ]] && WPMessage "Dispatcher: Repairing lock file : ${LINK_DETAILS}" && \
-                        LINK_DETAILS=${WHOAMI}_${PROGNAME}_$( ps -ef | grep ${PROGNAME} | grep daemon | tail -1 | awk -F" " '{print $2}') &&  \
+                        LINK_DETAILS=${WHOAMI}_${RUNDIR}/${PROGNAME}_$( ps -ef | grep ${PROGNAME} | grep daemon | tail -1 | awk -F" " '{print $2}') &&  \
                         ln -s  ${LINK_DETAILS} ${DISPATCH_LOCK} && exit 1
 
 
@@ -670,7 +737,7 @@ Dispatcher_Daemon()
       exit 1
     fi
 
-    typeset local _EACH_JOB
+    typeset local _EACH_JOB=
 
     # Function block to promote queued jobs
     typeset local QUEUED_JOBS=$(ls -rt1 ${QUEUED_JOBDIR})
@@ -708,7 +775,9 @@ Dispatcher_Daemon()
 
     done
     #
-    # Stubbed for dead-job running - so move to failed
+
+
+    # Check for dead-job running - so move to failed
     typeset local RUNNING_JOBS=$(ls -rt1 ${RUNNING_JOBDIR})
     for _EACH_JOB in ${RUNNING_JOBS} ; do
       if [ ! "$(ps -ef | grep ${_EACH_JOB} | grep -v grep )" ] ; then
@@ -729,15 +798,16 @@ Dispatcher_Daemon()
   WPMessage "No queued jobs. Dispatcher exiting"
   rm -f ${DISPATCH_LOCK}
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
+  exit 0
 }
 
 StartJobs()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset local USER=$1
 
@@ -746,19 +816,20 @@ StartJobs()
 
   for _EACH_JOB in ${STARTING_JOBS} ; do
     WPMessage "Job started: $(basename ${_EACH_JOB})"
+    [[ "${AUTOMANAGE}" -eq "1" ]] && Audit ${_EACH_JOB} automanaged
     nohup ${_EACH_JOB} < /dev/null  >> ${LOG_JOBDIR}/$(basename ${_EACH_JOB}).log &
     sleep 1
   done
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ShowTop()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
    # This function refreshes the display Displays the top of the screen
    clear
@@ -769,20 +840,20 @@ ShowTop()
    (( TOP_DISPLAY_WIDTH=$SCREEN_WIDTH - ${TITLE_WDTH} - ${JIRA_WDTH} - ${ENV_WDTH} - 5 ))
    _DF="$(df ${BASEDIR} | tail -1 | cut -d% -f1 | awk -F" " '{print $NF}')"
    [[ ${_DF} -gt 80 ]] && _DF="${redb}${_DF}${reset}" || ( [[ ${_DF} -gt 70 ]] && _DF="${yellowb}${blackf}${_DF}${reset}" )
-   printf "%${TITLE_WDTH}s %${ID_WDTH}s %${ENV_WDTH}s %${TOP_DISPLAY_WIDTH}s" "${PROGNAME}[${VERSION}]|" "${_DF}%|" "D:${LOCK_PID}|" "$(date +'%D %T')"
+   printf "%${TITLE_WDTH}s %${ID_WDTH}s %${ENV_WDTH}s %${TOP_DISPLAY_WIDTH}s" "${PROGNAME}[${VERSION}]|" "${_DF}%|" "D:${LOCK_PID}|" "${ACCESS_LEVEL}:${ACCESS_ROLE} $(date +'%D %T')"
    echo "${reset}"
    COUNT=1
 
   unset JOB_STATE JOB_ARRAY
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ShowLog()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   #typeset local LOGDIR=${BASEDIR}/../var/log/
   typeset local _FILES=$(find $LOGDIR -name "*.log" -ctime -4)
@@ -791,7 +862,7 @@ ShowLog()
 
   printf "\n Select a job to show log file\n\n"
 
-  ShowJobs starting failed running queued new completed
+  ShowJobs starting failed running queued pending new completed
   ShowLine
   GetAnswer range
 
@@ -811,22 +882,22 @@ ShowLog()
 #  rm ${LOG_JOBDIR}/cache.$$
 #  PressEnter
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
 ShowTasks()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   ShowTop
   ShowLine
 
   printf "\n Select a job to shows tasks\n\n"
-  ShowJobs starting failed running queued new completed
+  ShowJobs starting failed running queued pending new completed
   ShowLine
   GetAnswer range
 
@@ -838,15 +909,15 @@ ShowTasks()
     done
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 EnterMOTD()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Function allows users to add own message of the day
   typeset local _MOTD
@@ -856,15 +927,15 @@ EnterMOTD()
   read _MOTD
   [[ "${_MOTD}" != "" ]] && echo "+$(date +'%D %T') ${WHOAMI}: ${_MOTD}" >> ${MOTD_FILE} || echo "$(date +'%D %T') ${WHOAMI} cleared+" >> ${MOTD_FILE}
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ShowMOTD()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # The functions shows the last line of the MOTD file
   if [ -r ${MOTD_FILE} ] ; then
@@ -872,15 +943,15 @@ ShowMOTD()
     [ "${MOTD}" != "" ] && echo " Message: ${MOTD}" && ShowLine
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 FailureLog()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset local JOB_FILE=$1
 
@@ -891,19 +962,19 @@ FailureLog()
   [[ "${_FAILURE_MESSAGE}" != "" ]] && echo "FAILURE MESSAGE+$(date +'%D %T') ${WHOAMI}+${_FAILURE_MESSAGE}" >> ${JOB_FILE}
 
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ProcessJob()
 {
   # Function moves jobs from one user controlled state to another
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset ACTION=$1
-  typeset TARGET
+  typeset TARGET=
 
   ShowTop
   ShowLine
@@ -911,8 +982,8 @@ ProcessJob()
   printf "\n Select a job to ${ACTION}\n\n"
   case ${ACTION} in
     unqueue ) ShowJobs starting queued ; TARGET=${NEW_JOBDIR}     ;;
-    start   ) ShowJobs failed new      ; TARGET=${QUEUED_JOBDIR}  ; Ck_Dispatcher ;;
-    delete  ) ShowJobs failed new      ; TARGET=${DELETED_JOBDIR} ;;
+    start   ) ShowJobs failed pending new      ; TARGET=${QUEUED_JOBDIR}  ; Ck_Dispatcher ;;
+    delete  ) ShowJobs failed pending new      ; TARGET=${DELETED_JOBDIR} ;;
     resume  ) ShowJobs failed          ; TARGET=${QUEUED_JOBDIR}  ; Ck_Dispatcher ;;
   esac
 
@@ -938,7 +1009,7 @@ ProcessJob()
             :
 
           else
-            printf "\n\n $(basename ${JOB_FILE}) WARNING\n You cannot start a job you do not own.\n\n"
+            printf "\n\n $(basename ${JOB_FILE}) WARNING\n You cannot change the state of a job you do not own.\n\n"
             read -p " Do you wish to take ownership of this job (y/n)? " ANS
             if [[ "$ANS" = "y" ]]  ; then
               ChangeOwner ${JOB_FILE}
@@ -976,17 +1047,17 @@ ProcessJob()
     done
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ChangeOrder()
 {
   # This function will change the order of a directories files. It can be used to change all files
   # or used to promote a subset of files leaving the outer set in the original order.
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   ShowTop
   ShowLine
@@ -995,7 +1066,7 @@ ChangeOrder()
   printf "\n Select a job to promote or choose a new order\n\n"
 
   ShowLine
-  GetAnswer
+  GetAnswer range
   ((COUNT-=1))
   typeset ORIG_ORDER=$(range 1-$COUNT)
   typeset NEW_ORIG=""
@@ -1018,8 +1089,8 @@ ChangeOrder()
     done
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
@@ -1027,36 +1098,44 @@ GetJobID()
 {
   # DESCRIPTION :  creates a job id for tracking runs and increments by one if required
 
-  MODULE=$(push "$MODULE" "GetJobID")
-  SCENE="Entering GetJobID"
-
-  WPCheckRC 0 "Entering GetJobID"
+#  MODULE=$(push "$MODULE" "GetJobID")
+#  SCENE="Entering GetJobID"
+#  WPCheckRC 0 "Entering GetJobID"
 
   # Check JOBIDFILE variable is set
   if [ -z "${JOBIDFILE}" ] ; then
     WPError "JOBIDFILE Variable has not been set ... cannot continue"
   fi
 
+  # Using noclobber to make an atomic action creating a lock file
   # Get the JOBID number if the file might contain it
-  if [ -e "${JOBIDFILE}" ] && [ -r "${JOBIDFILE}" ]  ; then
-    _JOBID=$(cat ${JOBIDFILE})
+
+  if ( set -o noclobber; echo "$$" > "${JOBIDFILE}.lock") 2> /dev/null; then
+
+    if [ -e "${JOBIDFILE}" ] && [ -r "${JOBIDFILE}" ]  ; then
+      _JOBID=$(cat ${JOBIDFILE})
+    else
+      _JOBID=0
+    fi
+
+    touch "${JOBIDFILE}" > /dev/null 2>&1
+    chmod 755 "${JOBIDFILE}" > /dev/null 2>&1
+
+    # Set the new number
+    if [ -w "${JOBIDFILE}" ] ; then
+      (( _JOBID+=1 ))
+      echo ${_JOBID} > ${JOBIDFILE}
+    else
+      WPError "Cannot increment the JOBIDFILE <${JOBIDFILE}>"
+    fi
+   rm -f "${JOBIDFILE}.lock"
   else
-    _JOBID=0
+    echo "Failed to acquire lockfile: ${JOBIDFILE}.lock."
+    echo "Held by $(cat ${JOBIDFILE}.lock)"
   fi
 
-  touch "${JOBIDFILE}" > /dev/null 2>&1
-  chmod 755 "${JOBIDFILE}" > /dev/null 2>&1
-
-  # Set the new number
-  if [ -w "${JOBIDFILE}" ] ; then
-    (( _JOBID+=1 ))
-    echo ${_JOBID} > ${JOBIDFILE}
-  else
-    WPError "Cannot increment the JOBIDFILE <${JOBIDFILE}>"
-  fi
-
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 AddTask()
@@ -1067,9 +1146,9 @@ AddTask()
   #printf "Task_${TASKNUMBER}()\n{\n  \${WP_TASK} $1 < /dev/null >> \${LOG_FILE} \n  WPCheck_Status \$? ${TASKNUMBER}\n}\n\n" >> ${JOB_FILE}
   # $1 is set then create a counter extension for the log
   # Add the passed variable to a task function within the JOB_FILE
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   if [ "${JOB_FILE}" = "/dev/null" ] ; then
     echo "# $1"
@@ -1087,8 +1166,8 @@ AddTask()
   # Increment the TASKNUMBER
   ((TASKNUMBER+=1))
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 JobHeader()
@@ -1097,9 +1176,9 @@ JobHeader()
   # This function initialises the self contained job file with variables gained from the framework
   # Tasks are added later from the plugins
   # Eventually when all tasks are added a JobFooter is appended which runs all the tasks
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
 
   JOB_NAME=$(basename ${JOB_FILE})
@@ -1139,6 +1218,7 @@ ENVIRONMENT=${ENVIRONMENT}
 
 
 mv \${STARTING_JOBDIR}/\${JOB_NAME} \${RUNNING_JOBDIR}/.
+${START_NOTIFICATION} ${JIRAID}
 echo " " >>  \${LOG_FILE}
 echo "\$(date ${DATEFORMAT}) Started Running" >> \${LOG_FILE}
 
@@ -1151,6 +1231,8 @@ WPCheck_Status()
     RESUME=\${TASK}
     echo "FAILED: Resume point:\${TASK}" >> \${LOG_FILE}
     mv \${RUNNING_JOBDIR}/\${JOB_NAME} \${FAILED_JOBDIR}/.
+    ${FAILED_NOTIFICATION} ${JIRAID}
+    echo \$(date) \${WHOAMI} Task \${TASK} failed >> \${FAILED_JOBDIR}/\${JOB_NAME}
 
     # if no dependancies
     rm \${LOCK_FILE} > /dev/null 2>&1
@@ -1163,16 +1245,16 @@ WPCheck_Status()
 
 EOF
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 JobFooter()
 {
   # This funtion add the Footer to the Job file
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # If parserequest has finshed the current tasks for the current job apply the JobFooter
   ((TASKNUMBER-=1))
@@ -1187,15 +1269,19 @@ while [ \${START} -le \${LAST} ] ; do
   ((START+=1))
 done
 #
+
+# If here then all tasks completed successfully
+echo \$(date) \${WHOAMI} Task \${TASK} completed >> \${RUNNING_JOBDIR}/\${JOB_NAME}
+mv \${RUNNING_JOBDIR}/\${JOB_NAME} \${COMPLETED_JOBDIR}
+${COMPLETED_NOTIFICATION} ${JIRAID}
+
 # Count how many FAILURES there were
-FAILURE_COUNT=\$(grep "^FAILURE MESSAGE+"  \${RUNNING_JOBDIR}/\${JOB_NAME} | wc -l 2>/dev/null)
+FAILURE_COUNT=\$(grep "^FAILURE MESSAGE+"  \${COMPLETED_JOBDIR}/\${JOB_NAME} | wc -l 2>/dev/null)
 if [ "\${FAILURE_COUNT}" -ge "1" ] ; then
   echo \$(date +'%D %T') \${LAST} Tasks completed with \$FAILURE_COUNT failures >> \${LOG_FILE}
 else
   echo \$(date +'%D %T') \${LAST} Tasks completed successfully >> \${LOG_FILE}
 fi
-# If here then all tasks completed successfully
-mv \${RUNNING_JOBDIR}/\${JOB_NAME} \${COMPLETED_JOBDIR}
 
 # Stubbed for updating JIRA ticket or emailing user on successful deploy
 
@@ -1215,25 +1301,10 @@ EOF
   cat ${TMP_FILE} >> ${JOB_FILE}
   echo "======================" >> ${JOB_FILE}
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
-old_GetRequest()
-{
-  # This function repeatively gets lines of code from standard in until a full stop is provided on a line on its own
-  # The lines that have a field delimeter on them are stored in a temporary files for further processing
-
-  TMP_FILE=${BASEDIR}/var/tmp/${_JOBID}.${PID}
-  typeset local _EACHLINE=""
-
-  create_file ${TMP_FILE}  blank
-
-  while [[ "${_EACHLINE}" != "." ]] ; do
-    read _EACHLINE
-    printf "${_EACHLINE}" | grep ":" | sed 's/  / /g' >> ${TMP_FILE}
-  done
-}
 
 GetRequest()
 {
@@ -1241,9 +1312,9 @@ GetRequest()
   #  1 ) gets lines of a request from standard in until a full stop is provided on a line on its own
   #  2 ) gets lines of a request from a file
   # The lines that have a field delimeter on them are stored in a temporary files for further processing
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset local _FILE=${1:-}
   typeset local _EACHLINE=""
@@ -1264,20 +1335,73 @@ GetRequest()
       echo ${_EACHLINE} | grep ":" >> ${TMP_FILE}
     done < ${_FILE}
 
-  #cat ${TMP_FILE}
-
   else
 
     while [[ "${_EACHLINE}" != "." ]] ; do
       read _EACHLINE
       printf "${_EACHLINE}" | grep ":" | sed 's/  / /g' >> ${TMP_FILE}
+#      printf "${_EACHLINE}" | awk '$0~/:/ gsub("  "," ")' >> "${TMP_FILE}"
+#      printf "${_EACHLINE}" | awk '$0~/:/ && gsub(" "," ")' >> "${TMP_FILE}"
+
     done
 
   fi
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
+
+KeyPair()
+{
+  # KeyPair string / value declaritive from the request TMP_FILE
+  #
+  #     -k "string"        Accepts KEYNAME search string -k
+  #     -v "name"          Variable to assign it to      -v
+  #     -c                 Flag that forces the search string to check to be case sensitive
+  #     stubbed -l                 Flag to force the return string to lower case
+  #     stubbed -u                 Flag to force the return string to upper case
+  #     -d "string"        If no value found use the default found in "string"
+  #     -list              Flag that expects a list seperated by commas apersand or spaces "E1 & E2, E3 E4"
+  #
+  # Example usage
+  #                  KeyPair -k ENV   -v   ENVIRONMENT_LIST -list -u   -d "NONE"
+
+  typeset local KEY_SEARCH=
+  typeset local VALUE_NAME=
+  typeset local TO_CASE=
+  typeset local IGNORECASE=1
+  typeset local LIST=
+  typeset local DEFAULT=
+
+  if [ $# -ne 0 ] ; then
+    while [ $# -gt 0 ] ; do
+      _ARG="$1"
+      case ${_ARG} in
+        -k    ) shift ; KEY_SEARCH=${1} ;;
+        -v    ) shift ; VALUE_NAME=${1} ;;
+        -l    ) TO_CASE="tolower(\$0)"  ;;
+        -u    ) TO_CASE="toupper(\$0)"  ;;
+        -d    ) shift ; DEFAULT=${1}    ;;
+        -c    ) IGNORECASE=0            ;;
+        -list ) LIST=1                  ;;
+      esac
+      shift
+    done
+  fi
+
+
+  if [ "${LIST}" ] ; then
+    typeset local VALUE="$(awk 'BEGIN{FS=":" ; IGNORECASE='"$IGNORECASE"'} $1 ~ /^ *'"$KEY_SEARCH"'/ {print $2}' ${TMP_FILE} | sed -e 's/[&,]/ /g' -e  's/^ *//')"
+  else
+    typeset local VALUE="$(awk 'BEGIN{FS=":" ; IGNORECASE='"$IGNORECASE"'} $1 ~ /^ *'"$KEY_SEARCH"'.*/ {gsub(/[ \t]+/, "");$2=$2; print $2}' ${TMP_FILE})"
+  fi
+
+
+  [[ "${VALUE}" ]] || VALUE="${DEFAULT}"
+  eval "${VALUE_NAME}=\"$VALUE\""
+
+}
+
 
 
 Extract_Envs()
@@ -1285,32 +1409,22 @@ Extract_Envs()
   # Common extractions of KEY PAIRS from the input file
   # Sometimes not all values will be passed but we need a few to default for job name consistancy
 
-  # GLOBAL VARIABLES
-  SYSTEM=$(grep -i "^ *SYSTEM *:"  ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[ ,]//g')
-  [[ "${SYSTEM}" ]] || SYSTEM="NONE"
+  #       -k SearchStr  -v   Variable assignment
+  KeyPair -k system     -v   SYSTEM                      -d "NONE"
+  KeyPair -k ACTION     -v   ACTION_LIST      -list      -d ""
+  KeyPair -k RELEASE    -v   RELEASE                     -d "NOREL"
+  KeyPair -k ENV        -v   ENVIRONMENT_LIST -list -u   -d "NONE"
+  KeyPair -k TYPE       -v   TYPE                        -d "NOTYPE"
+  KeyPair -k JIRA       -v   JIRAID                      -d ""
 
-  RELEASE=$(grep -i "^ *release"  ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[ ,]//g')
-  [[ "${RELEASE}" ]] || RELEASE="NONE"
-
-  JIRAID=$(grep -i "^ *jira" ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[ ,]//g')
-  [[ "${JIRAID}" ]]  || JIRAID="NONE"
-
-  ENVIRONMENT_LIST=$(grep -i "^ *envir"  ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[&,]/ /g')
-  [[ "${ENVIRONMENT_LIST}" ]] || ENVIRONMENT_LIST="NONE"
-
-  ACTION_LIST=$(grep -i "^ *action"  ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[&,]//g')
-  [[ "${ACTION_LIST}" ]] || ACTION_LIST=""
-
-  TYPE=$(grep -i "^ *TYPE *ID *:" ${TMP_FILE} | awk -F":" '{print $2}' | sed 's/[ ,]//g')
-  [[ "${TYPE}" ]]  || TYPE=""
 }
 
 
 ProcessRequest()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Assume a TMP_FILE is ready to be processed and process it
   GetJobID
@@ -1331,18 +1445,21 @@ ProcessRequest()
 
         TASKNUMBER=0
 
+        # Capture "_"s in Action names
+        _UNDERSCORE_ACTION=$(echo ${ACTION} | sed s:_:-:g)
         # Create a new blank job file in the new directory
-        JOB_FILE=${NEW_JOBDIR}/${JIRAID}_${_JOBID}.${JOB_ID_COUNT}_${ENVIRONMENT}_${ACTION}_${RELEASE}
+        JOB_FILE=${NEW_JOBDIR}/${JIRAID}_${_JOBID}.${JOB_ID_COUNT}_${ENVIRONMENT}_${_UNDERSCORE_ACTION}_${RELEASE}
+        #echo create_file ${JOB_FILE} blank
         create_file ${JOB_FILE} blank
-        chmod 770 ${JOB_FILE}
+        chmod 774 ${JOB_FILE}
 
         # Create a new blank related log file in the dman tmp directory
-        JOB_LOG=${LOG_JOBDIR}/${JIRAID}_${_JOBID}.${JOB_ID_COUNT}_${ENVIRONMENT}_${ACTION}_${RELEASE}.log
+        JOB_LOG=${LOG_JOBDIR}/${JIRAID}_${_JOBID}.${JOB_ID_COUNT}_${ENVIRONMENT}_${_UNDERSCORE_ACTION}_${RELEASE}.log
         create_file ${JOB_LOG} blank
-        echo "Job for ${JIRAID} created by ${WHOAMI} $(date +'%D %T')" >> ${JOB_LOG}
+        echo "If you see this message there maybe a problem with your plugin ${ACTION}: ${WHOAMI} $(date +'%D %T')" > ${JOB_LOG}
         JobHeader
         AddTask "date +%s ; echo PID:\$$"
-        Plugin_${ACTION} >> ${LOG_FILE} 2>&1
+        Plugin_${ACTION} >> ${JOB_LOG} 2>&1
         _RC=$?
         if [[ ${_RC} -eq 0 ]] ; then
           JobFooter
@@ -1359,17 +1476,18 @@ ProcessRequest()
           echo "ERROR when creating job. Please check this log file." >> ${JOB_LOG}
           Audit ${JOB_FILE} created
           mv ${JOB_FILE} ${FAILED_JOBDIR}
-          echo "ERROR in Plugin_${ACTION}" && PressEnter
+          echo "ERROR in Plugin_${ACTION}" && cat ${JOB_LOG} && PressEnter
         fi
 
+        echo "Job ${JIRAID} created by ${WHOAMI} $(date +'%D %T')" > ${JOB_LOG}
         ((JOB_ID_COUNT+=1))
       done
     fi
   done
   rm ${TMP_FILE}
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 AddJob()
@@ -1380,7 +1498,6 @@ AddJob()
   WPCheckRC 0 "Entering ${FUNCNAME}"
 
   InitPlugins
-#  GetJobID
 
   #Show some example requests for demo/testing only
   printf "\n\n"
@@ -1401,9 +1518,9 @@ AddJob()
 
 ChangeOwner()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset local JOB_FILE=$1
   typeset local JOB_LOGFILE=${LOG_JOBDIR}/$(basename $1).log
@@ -1429,6 +1546,7 @@ ChangeOwner()
     printf "Now set to : "
     grep "^OWNER=" ${JOB_FILE}
     WPMessage "${WHOAMI} accepted job ${JOB_FILE}" >> ${JOB_LOGFILE}
+    WPMessage "${WHOAMI} accepted job"             >> ${JOB_FILE}
 
   else
 
@@ -1442,8 +1560,8 @@ ChangeOwner()
   sleep 2
 
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 ChangeStart()
@@ -1451,9 +1569,9 @@ ChangeStart()
   # This function will use the "FAILED: Resume point: n" found on the last line of the log file
   # to set a new "RESUME=" in the JOBFILE
   #  typeset local JOB_FILE=${JOBDIR}/${JOB_STATE}/$1
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   typeset local JOB_FILE=${FAILED_JOBDIR}/$1
   typeset local JOB_FILE=$1
@@ -1463,9 +1581,6 @@ ChangeStart()
   # Make sure the JOB_FILE and it's JOB_LOGFILE are readable
   if [[ -r ${JOB_FILE}    ]] && [[ -r ${JOB_LOGFILE} ]] ; then
 
-    # Check in the last 10 lines of the log file to find the Resume point
-   # typeset RESUME_POINT=$(tail -10 ${JOB_LOGFILE} | grep "FAILED: Resume point:" | tail -1 | cut -d: -f3)
-
     # Need to add a check to make sure a number is returned that is between the START and LAST task
     # more required checks etc
 
@@ -1474,15 +1589,16 @@ ChangeStart()
     (( RESUME_POINT+=0 ))
 
    # printf "Previously : "
-#    grep "^RESUME=" ${JOB_FILE}
+   # grep "^RESUME=" ${JOB_FILE}
 
     # Change the resume point in the job to the new reume point
     cat ${JOB_FILE} | sed "s/^RESUME=.*/RESUME=${RESUME_POINT}/" > ${JOB_FILE}.$$.tmp
 
     # Make sure that we still have TASKS in the tmp job before copying it back over the original
     [[ "$(grep RESUME=  ${JOB_FILE}.$$.tmp)" ]]  && cp ${JOB_FILE}.$$.tmp ${JOB_FILE} && rm ${JOB_FILE}.$$.tmp
+
    # printf "Now set to : "
-#    grep "^RESUME=" ${JOB_FILE}
+   # grep "^RESUME=" ${JOB_FILE}
 
   else
 
@@ -1493,10 +1609,10 @@ ChangeStart()
 
   fi
 
-  sleep 1
+  # sleep 1
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 Audit()
@@ -1509,9 +1625,9 @@ DoWhat()
 {
   # This function takes a job location and allows actions to be run against it
   #   [0-9]*) DoWhat ${JOBDIR}/${JOB_STATE[${CHOICE}]}/${JOB_ARRAY[${CHOICE}]} ;;
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
 
   # Parameter 1 is expected to be the "state"
@@ -1552,22 +1668,23 @@ DoWhat()
    t | T ) grep "{WP_TASK}" ${JOB_FILE}  ; PressEnter ;;
    c | C ) ChangeOrder                   ;;
    l | L ) vi ${LOG_JOBDIR}/$2.log       ;;
+   p | P ) Audit ${JOB_FILE} pending && mv ${JOB_FILE} ${PENDING_JOBDIR} ;;
    x | X | q | Q ) return ;;
   esac
 
   # After a vi the screen takes a moment to clear before the menu system comes back up so an additional clear command is required here
   clear
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
 Menu()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
 
   SCREEN_WIDTH=$(tput cols)
@@ -1597,16 +1714,16 @@ Menu()
 
 
   PressEnter
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
 Manager()
 {
-  MODULE=$(push "$MODULE" "${FUNCNAME}")
-  SCENE="Entering ${FUNCNAME}"
-  WPCheckRC 0 "Entering ${FUNCNAME}"
+#  MODULE=$(push "$MODULE" "${FUNCNAME}")
+#  SCENE="Entering ${FUNCNAME}"
+#  WPCheckRC 0 "Entering ${FUNCNAME}"
 
   # Check dispatcher is running
   [[ "${DAEMON}" == "0" ]] || Ck_Dispatcher
@@ -1623,7 +1740,7 @@ Manager()
     fi
 
     ShowTop
-    ShowJobs failed superseded starting running queued new completed
+    ShowJobs failed superseded starting running queued pending new completed
     ShowLine
 
     ShowMOTD
@@ -1632,17 +1749,17 @@ Manager()
 
     read -t 10 CHOICE
     case ${CHOICE} in
-      a | A ) Ck_Dispatcher ; AddJob ;;
-      u | U ) ProcessJob unqueue     ;;
-      s | S ) ProcessJob start       ;;
-      d | D ) ProcessJob delete      ;;
-      r | R ) ProcessJob resume      ;;
+      a | A ) [ "${RESTRICTED}" ] || ( Ck_Dispatcher ; ${RUNDIR}/${PROGNAME} ${PASS_PLUGINDIR} -a || echo "Failed" ) ;;
+      u | U ) [ "${RESTRICTED}" ] || ( ProcessJob unqueue    ) ;;
+      s | S ) [ "${RESTRICTED}" ] || ( ProcessJob start      ) ;;
+      d | D ) [ "${RESTRICTED}" ] || ( ProcessJob delete     ) ;;
+      r | R ) [ "${RESTRICTED}" ] || ( ProcessJob resume     ) ;;
       t | T ) ShowTasks              ;;
-      c | C ) ChangeOrder            ;;
+      c | C ) [ "${RESTRICTED}" ] || ( ChangeOrder           ) ;;
       l | L ) ShowLog                ;;
-      m | M ) EnterMOTD              ;;
+      m | M ) [ "${RESTRICTED}" ] || ( EnterMOTD             ) ;;
       debug ) DEBUG=full             ;;
-      maint ) create_file ${MAINTENANCE_FILE} blank ;;
+      maint ) [ "${RESTRICTED}" ] || ( create_file ${MAINTENANCE_FILE} blank ) ;;
       [0-9]*) DoWhat ${JOB_STATE[${CHOICE}]} ${JOB_ARRAY[${CHOICE}]} ;;
       x | X | q | Q ) break ;;
     esac
@@ -1653,10 +1770,11 @@ Manager()
   done
 
   #CheckQueuedJobs
+  Ck_Own_Jobs
   HouseKeeping
 
-  WPCheckRC 0 "Leaving ${FUNCNAME}"
-  MODULE=$(cdr "$MODULE")
+#  WPCheckRC 0 "Leaving ${FUNCNAME}"
+#  MODULE=$(cdr "$MODULE")
 }
 
 
@@ -1679,18 +1797,6 @@ function_template()
 }
 
 
-##########################################################################
-view_change_env()
-{
-  set | more
-  echo " "
-  echo "Enter new Variable <or leave blank> and press <RETURN>"
-  echo " "
-  read ans
-  echo "Setting.."
-  eval $ans
-  sleep 1
-}
 ##########################################################################
 create_file()
 {
@@ -2061,16 +2167,40 @@ initializeANSI                                                          # Set up
 
 MODULE="main"
 
+# Check that the program is installedd correctly with access to job directories
 CheckSetUp
-# Stubbed:   CheckAuthorisation
 
-[[ "${DAEMON}" -eq "1" ]] && Dispatcher_Daemon && exit 0
+# Stubbed: Optional Authorisation checks and setup
+ CheckAuthorisation
 
-InitPlugins
+# Check if we are running as the Dispatcher
+if [[ "${DAEMON}" -eq "1" ]] ; then
+  Dispatcher_Daemon
+  exit 0
+fi
 
-[[ ${FILE} ]] && GetRequest $FILE && ProcessRequest && exit 0
+# Check if we are running in background to complete a user's jobs
+if [[ "${AUTOMANAGE}" -eq "1" ]] ; then
+  echo "Enjoy your day."
+  sleep 2
+  AutoManage
+  exit 0
+fi
 
-[[ ! ${FILE} ]] && Manager
+# Check if we are being run to add a job
+if [ ${ADDJOB} ]  ; then
+  AddJob
+  exit $?
+fi
+
+# Check to see if we are running with a file otherwise run the manager dashboard
+if [[ ${FILE} ]] ; then
+  InitPlugins
+  GetRequest $FILE
+  ProcessRequest
+  exit 0
+else
+  Manager
+fi
 
 exit
-
