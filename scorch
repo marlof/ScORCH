@@ -1,0 +1,47 @@
+#!/bin/bash
+# Copyright 2015 WebMarcIT Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# scorch
+# 
+# VARIABLE naming convention
+# Variable names will use <prefix Hungarian Notation>_CamelCase
+# b   boolean                  TRUE,1 | FALSE,0
+# fn  function name            fn_function
+# p   pointer
+# str string
+# _ext_<var name>     A variable that has been derived from running an external script / command that might change
+# LOCAL_<var name>   Variable that is defined as local for the function it is used for
+# GLOBAL_<var name>   Global variable that can be used in plugins when adding tasks to a scorch job
+# JOB_<var name>      Variables that are used when the job is running. Used to protect GLOBAL variable polution
+
+# Determine the program name and the running directory
+str_ProgramName=$(basename $0)
+str_RunDir=$(dirname $0)
+
+fn_BaseDir()
+{
+  # Taking a directory name as a parameter, output the full absolute path
+  if [[ $(echo ${1} | grep "^ *\.\/") ]] ; then
+    # This looks like a relative path so use the pwd
+    echo "$(cd $(pwd)/${1} ; pwd)"
+  else
+    # It could be absolute or relative but clean out any <dir>/../<dir> additions
+    echo "$(cd ${1} ; pwd)"
+  fi
+}
+
+# The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
+str_BaseDir=$(fn_BaseDir ${str_RunDir}
+exit 0
