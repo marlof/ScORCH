@@ -18,26 +18,95 @@
 # 
 # VARIABLE naming convention
 # Variable names will use <prefix Hungarian Notation>_CamelCase
-# b   boolean                  TRUE,1 | FALSE,0
-# fn  function name            fn_function
-# p   pointer
-# str string
+# b    boolean                  TRUE,1 | FALSE,0
+# fn   function name            fn_function
+# p    pointer
+# str  string
+# dir  the variable defines a directory
+# file the variable defines a filename
+#
 # <hn>_ext_<var name>     A variable that has been derived from running an external script / command that might change
 # <hn>_Local_<var name>    Variable that is defined as local for the function it is used for
 # <hn>_Global_<var name>   Global variable that can be used in plugins when adding tasks to a scorch job
 # <hn>_Job_<var name>      Variables that are used when the job is running. Used to protect GLOBAL variable polution
 
 # Determine the program name and the running directory
-str_Global_ProgramName=$(basename "$0")
-str_RunDir=$(dirname "$0")
+typeset str_ProgramName=$(basename "$0")
+typeset      dir_Run=$(dirname "$0")
 
 fn_BaseDir()
 {
   # Taking a directory name as a parameter, output the full absolute path
   # It could be absolute or relative so check and clean out any <dir>/../<dir> additions
-  cd $(pwd)/${1} && pwd || return 1
+  cd "$(pwd)/${1}" && pwd || return 1
 }
 
 # The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
-str_BaseDir=$(fn_BaseDir ${str_RunDir})
+typeset dir_Base=$(fn_BaseDir ${dir_Run})
+
+# Directory definitions
+# =====================
+typeset dir_Etc=${dir_Base}/etc
+typeset dir_Var=${dir_Base}/var
+typeset dir_Tmp=${dir_Base}/tmp
+
+# Job definitions
+# ===============
+typeset         dir_Job=${dir_Base}/jobs
+typeset         dir_New=${dir_Job}/new
+typeset     dir_Running=${dir_Job}/running
+typeset      dir_Failed=${dir_Job}/failed
+typeset   dir_Completed=${dir_Job}/completed
+typeset    dir_Starting=${dir_Job}/starting
+typeset      dir_Queued=${dir_Job}/queued
+typeset dir_Superceeded=${dir_Job}/superceeded
+typeset     dir_Deleted=${dir_Job}/deleted 
+typeset    dir_Archived=${dir_Job}/archived 
+typeset      file_JobId=${dir_Var}/jobid
+
+# Job states
+# ==========
+file_States=${dir_Var}/states
+[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
+
+
+# Load Functions
+# ==============
+fn_LoadFunctions()
+{
+  # Load Functions from a directory based on a search criteria
+  # $1 Directory
+  # $2 Search string
+  #   Next
+  #   -d    dir
+  #   -pre  pre search
+  #   -post post search
+  typeset local dir_Directory="${1}"
+  typeset local str_Search="${2}"
+  if [ -d "${dir_Directory}" ] ; then
+    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}\")"
+    arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sort)
+    for str_EachFile in "${arr_Functions}" ; do
+      if [ -r "${str_EachFile}" ] ; then
+        echo "${str_EachFile}"
+        bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
+      else
+        echo "Cannot access <${str_EachFile}>"
+      fi
+    done
+  fi
+}
+
+echo ${dir_Base}
+
+echo "Strings"
+set | grep "^ *str_"
+echo "Files"
+set | grep "^ *file_"
+echo "Dirs"
+set | grep "^ *dir_"
+
+fn_LoadFunctions "${dir_Base}/functions" "Scorch_"
+fn_CheckSetUp
+
 exit 0
