@@ -1,10 +1,13 @@
 fn_CheckSetUp()
 {
   # This function will check that all Scorch components are set to allow a smooth run.
-  typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted dir_Running dir_Superceeded dir_Completed"
+  typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
+                                 dir_Running dir_Superceeded dir_Completed"
   for p_Variable in ${arr_Directories} ; do
     [[ ! -d ${!p_Variable} ]] && echo "  mkdir -p -m 770 \"${!p_Variable}\""
   done
+
+  str_JobPrefix="Job_"
 
 }
 

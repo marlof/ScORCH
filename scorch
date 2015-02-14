@@ -25,14 +25,18 @@
 # dir  the variable defines a directory
 # file the variable defines a filename
 #
-# <hn>_ext_<var name>     A variable that has been derived from running an external script / command that might change
-# <hn>_Local_<var name>    Variable that is defined as local for the function it is used for
-# <hn>_Global_<var name>   Global variable that can be used in plugins when adding tasks to a scorch job
-# <hn>_Job_<var name>      Variables that are used when the job is running. Used to protect GLOBAL variable polution
+# <hn>_ext_<var name>     A variable that has been derived from running an external script or
+#                         command that might change
+# <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
+# <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a 
+#                         scorch job
+# <hn>_Job_<var name>     Variables that are used when the job is running. Used to protect
+#                         GLOBAL variable polution
 
 # Determine the program name and the running directory
-typeset str_ProgramName=$(basename "$0")
-typeset      dir_Run=$(dirname "$0")
+typeset    str_ProgramName=$(basename "$0")
+typeset            dir_Run=$(dirname "$0")
+typeset str_ProgramVersion="1.0"
 
 fn_BaseDir()
 {
@@ -83,10 +87,11 @@ fn_LoadFunctions()
   #   -post post search
   typeset local dir_Directory="${1}"
   typeset local str_Search="${2}"
+  cd "${dir_Base}"
   if [ -d "${dir_Directory}" ] ; then
-    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}\")"
-    arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sort)
-    for str_EachFile in "${arr_Functions}" ; do
+    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
+    arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
+    for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
         echo "${str_EachFile}"
         bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
@@ -94,19 +99,37 @@ fn_LoadFunctions()
         echo "Cannot access <${str_EachFile}>"
       fi
     done
+  else
+    echo "$(pwd) ${dir_Directory} could not be found"
   fi
 }
 
 echo ${dir_Base}
 
-echo "Strings"
-set | grep "^ *str_"
-echo "Files"
-set | grep "^ *file_"
-echo "Dirs"
-set | grep "^ *dir_"
 
-fn_LoadFunctions "${dir_Base}/functions" "Scorch_"
+fn_LoadFunctions "functions" "Scorch_"
 fn_CheckSetUp
+fn_SetLayout
+fn_Help
+fn_ShowTop
+#fn_ShowLine
+fn_ShowJobs failed warning running starting queued new completed
+fn_ShowLine "="
+echo "Arrays===================="
+set | grep "^arr_"
+exit 0
+sleep 2
+echo "Strings===================="
+set | grep "^str_"
+echo "Files======================"
+set | grep "^file_"
+echo "Dirs======================="
+set | grep "^dir_"
+echo "Functions=================="
+set | grep "^fn_"
+echo "Numbers===================="
+set | grep "^int_"
+echo "Arrays===================="
+set | grep "^arr_"
 
 exit 0
