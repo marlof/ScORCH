@@ -1,0 +1,8 @@
+str_ANSI="["
+# Foreground colours
+dis_FBlack="${str_ANSI}30m"
+dis_FRed="${str_ANSI}31m"
+dis_FYellow="${str_ANSI}33m"
+dis_BRed="${str_ANSI}41m"
+dis_BYellow="${str_ANSI}43m"
+dis_Reset="${str_ANSI}0m"

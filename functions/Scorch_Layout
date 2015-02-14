@@ -1,0 +1,100 @@
+#
+# Copyright 2015 WebMarcIT Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+
+# This file contains functions to set and display layout
+# fn_SetLayout
+# fn_ShowTop
+# fn_ShowOptions
+# fn_
+
+
+
+fn_SetLayout()
+{
+  # Define the bounds of the screen
+  # The default screen layout is broken in columns to split up job names into
+  # meaningfull groups
+  #
+  #  C1|        C2|        C3|        C4|
+  #==========================================================
+  #    |          |          |          |
+  int_ScreenWidth=$(tput cols)
+  int_Column1Width=3        # Selection number
+  int_Column2Width=10       # System reference numner (like JIRA)
+  int_Column3Width=10       # The service 
+  int_Column4Width=10       # Action preformed / Plugin name
+  int_Column5Width=10       # The Environment performed on
+  int_Column6Width=10       # The Version / Release being actioned
+  int_Column7Width=10       # The Version / Release being actioned
+  cha_ColumnSep="|"
+}
+
+
+fn_ShowTop()
+{
+  # Display the name of the program and any interesting facts about the environment
+  typeset local int_TitleWidth
+  (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
+  clear
+  int_ScreenWidth=$(tput cols)
+  printf "%${int_TitleWidth}s ${cha_ColumnSep}\n" "${str_ProgramName} [${str_ProgramVersion}]"
+}
+
+fn_ShowLine()
+{
+  # Show a line of dashes unless a dirrent character is past or character and title is passed
+  
+  # Check if parameters have been past
+  typeset local cha_LineChar=${1:-"-"}
+  typeset local str_LineTitle=${2:-"${cha_LineChar}"}
+
+  # Find the width of the title
+  typeset local int_LineTitleWidth=$(echo ${str_LineTitle} | wc -c)
+
+  # Set the number of characters required to the correct width
+  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
+  printf "   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
+}
+
+fn_ShowJobs()
+{
+  # Show job details for each job state past. The value passed is one or more directory names
+  typeset local str_EachJobState=
+  typeset local arr_JobList=
+  typeset local str_StatusColour="${dis_Reset}"
+  typeset local int_Count=1
+
+  for str_EachJobState in $@ ; do
+    str_StatusColour="${dis_Reset}"
+    lis_Jobs=$(ls "${dir_Base}/jobs/${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null | tr ' ' '\ ')
+    if [ "${lis_Jobs}" ] ; then
+
+      # Show a title line for the job state and make is display in uppercase
+      fn_ShowLine "-" "$(echo ${str_EachJobState} | tr [:lower:] [:upper:])"
+
+      # If job state is failed or warning, set a line colour
+      [[ "${str_EachJobState}" = "failed"  ]] && str_StatusColour="${dis_BRed}"
+      [[ "${str_EachJobState}" = "warning" ]] && str_StatusColour="${dis_BYellow}"
+      for str_EachJob in ${lis_Jobs} ; do
+        echo "${dis_Reset}${str_StatusColour}${int_Count} adding to array${dis_Reset}"
+        arr_Jobs[${int_Count}]="${str_EachJob}"
+        (( int_Count+=1 ))
+      done
+    fi
+  done
+}
