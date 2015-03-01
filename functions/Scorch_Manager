@@ -1,0 +1,56 @@
+#
+# Copyright 2015 WebMarcIT Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+# function included
+# fn_Manager   # Loop
+
+
+fn_Manager()
+{
+  typeset local char_Choice=
+  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXX})
+  while : ; do
+    # Use cache file
+    fn_ShowTop > "${file_ScreenCache}"
+    fn_ShowJobs failed warning running starting queued new completed >> "${file_ScreenCache}"
+    fn_ShowLine "=" >> "${file_ScreenCache}"
+    fn_DisplayMOTD >> "${file_ScreenCache}"
+    fn_ContextMenu >> "${file_ScreenCache}"
+    clear ; cat "${file_ScreenCache}"
+    read -t 10 char_Choice
+    echo "."
+
+    case ${char_Choice} in
+
+      # Create a new job
+      c | C ) "${dir_Orig}/${str_ProgramName} -add" ;;
+
+      # Job State transition
+      d | D ) fn_Transition delete  ;;
+      q | Q ) fn_Transition queue   ;;
+      r | R ) fn_Transition resume  ;;
+      u | U ) fn_Transition unqueue ;;
+
+      # Misc
+      m | M ) fn_EditMOTD           ;;
+      t | T ) fn_ShowTasks          ;;
+      
+      
+      x | X ) break ;;
+    esac
+  done
+}
