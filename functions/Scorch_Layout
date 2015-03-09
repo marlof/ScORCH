@@ -19,9 +19,9 @@
 # This file contains functions to set and display layout
 # fn_SetLayout
 # fn_ShowTop
-# fn_ShowOptions
-# fn_
-
+# fn_ShowLine
+# fn_ShowJob 
+# fn_ContextMenu
 
 
 fn_SetLayout()
@@ -48,11 +48,28 @@ fn_SetLayout()
 fn_ShowTop()
 {
   # Display the name of the program and any interesting facts about the environment
+  # ===============================================================================
   typeset local int_TitleWidth
   (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
   clear
+
+  # Check the current width of the screen
+  # =====================================
   int_ScreenWidth=$(tput cols)
-  printf "%${int_TitleWidth}s ${cha_ColumnSep}\n" "${str_ProgramName} [${str_ProgramVersion}]"
+  (( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 7 ))
+
+  # Collect disk usage to display
+  int_DiskUsage=$(df "${dir_Base}" | tail -1 | cut -d"%" -f1 | awk -F" " '{print $NF}')
+  # Output the program name, the dispatcher PID and the date
+  printf "%${int_TitleWidth}s ${cha_ColumnSep} %${int_Column2Width}s %${int_DateLocation}s\n" \
+         "${str_ProgramName} [${str_ProgramVersion}]" \
+         "D:xxxxx ${cha_ColumnSep} ${int_DiskUsage}% ${cha_ColumnSep}" \
+         "$(date +'%D %T')"
+
+
+  # Reset the Array for Jobs and States
+  # ===================================
+  unset arr_Jobs arr_States
 }
 
 fn_ShowLine()
@@ -60,13 +77,16 @@ fn_ShowLine()
   # Show a line of dashes unless a dirrent character is past or character and title is passed
   
   # Check if parameters have been past
+  # ==================================
   typeset local cha_LineChar=${1:-"-"}
   typeset local str_LineTitle=${2:-"${cha_LineChar}"}
 
   # Find the width of the title
+  # ===========================
   typeset local int_LineTitleWidth=$(echo ${str_LineTitle} | wc -c)
 
   # Set the number of characters required to the correct width
+  # ==========================================================
   (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
   printf "   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 }
@@ -74,27 +94,104 @@ fn_ShowLine()
 fn_ShowJobs()
 {
   # Show job details for each job state past. The value passed is one or more directory names
+  # =========================================================================================
   typeset local str_EachJobState=
   typeset local arr_JobList=
   typeset local str_StatusColour="${dis_Reset}"
   typeset local int_Count=1
 
+  # Due to the fact that directories may contain "spaces" so "cd" there first
+  # =========================================================================
+  cd "${dir_Job}"
+
   for str_EachJobState in $@ ; do
     str_StatusColour="${dis_Reset}"
-    lis_Jobs=$(ls "${dir_Base}/jobs/${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null | tr ' ' '\ ')
+    #lis_Jobs=$(ls "${dir_Base}/jobs/${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null | tr ' ' '\\')
+    #time lis_Jobs=$(cd "${dir_Job}" ; ls "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null) # pointless | tr ' ' '\\')
+
+    # Use /dev/null redirect in case there are no files to report
+    # ===========================================================
+    lis_Jobs=$(ls "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
+
+
+    # If there are any jobs, handle them appropriately
+    # ================================================
     if [ "${lis_Jobs}" ] ; then
 
-      # Show a title line for the job state and make is display in uppercase
+      # Show a title line for the job state and make it display in uppercase
+      # ====================================================================
       fn_ShowLine "-" "$(echo ${str_EachJobState} | tr [:lower:] [:upper:])"
+#echo "---${str_EachJobState} -------------------"
+      
 
       # If job state is failed or warning, set a line colour
+      # ====================================================
       [[ "${str_EachJobState}" = "failed"  ]] && str_StatusColour="${dis_BRed}"
-      [[ "${str_EachJobState}" = "warning" ]] && str_StatusColour="${dis_BYellow}"
+      #[[ "${str_EachJobState}" = "warning" ]] && str_StatusColour="${dis_BYellow}"
+
+      # Display each job for each job state
+      # ===================================
       for str_EachJob in ${lis_Jobs} ; do
-        echo "${dis_Reset}${str_StatusColour}${int_Count} adding to array${dis_Reset}"
+        if [[ -r ${str_EachJob} ]] ; then
+          str_Owner=" "
+        else
+          str_Owner="!"
+        fi
+        echo "${dis_Reset}${str_StatusColour}${int_Count} ${str_EachJob}${dis_Reset}"
         arr_Jobs[${int_Count}]="${str_EachJob}"
+        arr_States[${int_Count}]="${str_EachJobState}"
         (( int_Count+=1 ))
       done
     fi
   done
+  #echo "Was in pwd $(pwd)"
+  cd "${dir_Run}"
+  #echo "Back in pwd $(pwd)"
+  #sleep 3
 }
+
+fn_ContextMenu()
+{
+  # A context-based menu based on the state of jobs
+  # Used in two ways....
+  #    specific mode (where a directory name is passed)
+  # and
+  #    generic mode (where is caters for all directories)
+ 
+  typeset local str_State=${1:-}
+  
+  typeset local b_QueuedJobs=
+  typeset local b_FailedJobs=
+  typeset local b_NewJobs=
+  typeset local b_RunningJobs=
+
+  if [[ "${str_State}" ]] ; then
+    # Specific Mode
+    printf " ${dis_ULOn}E${dis_ULOff}dit | "
+    case ${str_State} in
+      queued  ) b_QueuedJobs=1 ;;
+      failed  ) b_FailedJobs=1 ;;
+      new     ) b_NewJobs=1 ;;
+      running ) b_RunningJobs=1 ;;
+    esac
+  else
+    # Generic Mode
+    [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1 
+    [[ "$(echo ${arr_States[@]} | grep -i running)" ]] && b_RunningJobs=1 
+    [[ "$(echo ${arr_States[@]} | grep -i new)"     ]] && b_NewJobs=1 
+    [[ "$(echo ${arr_States[@]} | grep -i failed)"  ]] && b_FailedJobs=1 
+  fi
+  
+  printf "\n\n${dis_Reset}"
+  printf " ${dis_ULOn}N${dis_ULOff}ew | "
+  [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}U${dis_ULOff}unqueue | "
+  [[ "${b_RunningJobs}" ]] && printf "${dis_ULOn}P${dis_ULOff}ause | "
+  [[ "${b_FailedJobs}" ]]  && printf "${dis_ULOn}R${dis_ULOff}esume | "
+  [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | S${dis_ULOn}k${dis_ULOff}ip"
+  [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}S${dis_ULOff}tart | "
+  [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
+  printf "e${dis_ULOn}X${dis_ULOff}it\n"
+}
+
+
+# End

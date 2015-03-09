@@ -14,7 +14,39 @@
 # limitations under the License.
 #
 
-fn_CreateJob()
+# fn_NewJob
+# fn_GetRequest
+# fn_JobHeader
+# fn_JobFooter
+# Task
+# GetVar
+
+fn_JobHeader()
+{
+  # Function to create and initialise the job file. This job file is incomplete without a Footer
+  # Tasks are added via the "Task" function which is made available to the plugin
+  #
+  # The file to be created is passed as a variable
+
+  typeset local file_Job=${1}
+  echo "Creating ${dir_New}/${file_Job}"
+  touch "${dir_New}"/${file_Job}
+  echo "LIST=${LIST}"
+
+}
+
+fn_JobFooter()
+{
+  # Function to add the processing power to a job file. This requires a JobHeader to have been run
+  #
+  # The file to be appended to is passed as a variable
+
+  typeset local file_Job=${1}
+  echo "Adding footer to ${dir_New}/${file_Job}"
+
+}
+
+fn_NewJob()
 {
   echo " initailise any plugins"
 
@@ -23,8 +55,10 @@ fn_CreateJob()
   # fn_ProcessRequest
 
   echo "Header"
+  fn_JobHeader ${str_JobPrefix}file
   echo "Add Tasks"
   echo "Footer"
+  fn_JobFooter ${str_JobPrefix}file
 
 }
 
@@ -46,6 +80,69 @@ Task()
   str_Task1=${1}
   str_OR=${2:-}
   str_Task2=${2}
+
+}
+
+GetVar()
+{
+  # Exception to the naming convention is GetVar. This is used in plugins by users
+  #
+  # This function is used to set global variables with value pairs from templates
+  # =============================================================================
+  #
+  # Given    KEYNAME : VALUE
+  # In a template, 
+  # 
+  # -label  "<key name>"          specifies the key name search string
+  # -name   "<variable name>"  the global variable to assign the VALUE to
+  # -c                         Enforce case in the label pattern
+  # -default "<value>"         Set a default is no value passed
+  # -list                      Expect a list of values into an array by space or comma
+  #
+  # Examples
+  #
+  # GetVar -label "data label" -name DATA_LABEL -d "None"
+  typeset local str_Pattern=
+  typeset local str_Name=
+  typeset local str_Default=
+  typeset local b_IgnoreCase=1
+  typeset local b_List=
+  
+  if [ $# -ne 0 ] ; then
+    while [ $# -gt 0 ] ; do
+      case "${1}" in
+        -pattern   ) shift ; str_Pattern="${1}" ;;
+        -name    ) shift ; str_Name="${1}"    ;;
+        -default ) shift ; str_Default="${1}" ;;
+        -c       )         b_IgnoreCase=0     ;;
+        -list    )         b_List=1           ;;
+      esac
+      shift
+    done
+  fi
+
+#ls -l "${file_Template}"
+  typeset local str_Value=
+  # Awk is a pain depending on if the items are in a list so handle lists seperately
+  if [ "${b_List}" ] ; then
+    #str_Value="$(awk 'BEGIN { FS=":" ; IGNORECASE='"$b_IgnoreCase"' 
+    #                        $1 ~ /^ *'"$str_Pattern"'/ 
+    #                             {print $2}' ${file_Template} } | sed -e 's/[,]/ /g' -e 's/^ *//')"
+    str_Value=$(awk 'BEGIN {
+       FS=":"
+       IGNORECASE='"$b_IgnoreCase"' }
+       $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Template}" | sed -e 's/[,&]/ /g' ) 
+  else
+    str_Value=$(awk 'BEGIN {
+       FS=":"
+       IGNORECASE='"$b_IgnoreCase"' }
+       $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
+         $2=$2;
+         print $2}'       "${file_Template}" ) 
+  fi
+
+[[ "${str_Value}" ]] || str_Value=${str_Default}
+eval "${str_Name}=\"${str_Value}\""
 
 }
 

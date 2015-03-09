@@ -1,8 +1,24 @@
+#
+# Copyright 2015 WebMarcIT Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 fn_CheckSetUp()
 {
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
-                                 dir_Running dir_Superceeded dir_Completed"
+                                 dir_Running dir_Superceeded dir_Completed dir_Tmp"
   for p_Variable in ${arr_Directories} ; do
     [[ ! -d ${!p_Variable} ]] && echo "  mkdir -p -m 770 \"${!p_Variable}\""
   done
@@ -15,6 +31,6 @@ fn_Help()
 {
   # Help 
   echo "${str_ProgramName} "
-
+  echo "-BIG HELP PAGE-"
 }
 

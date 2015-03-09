@@ -36,23 +36,26 @@
 # Determine the program name and the running directory
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
+typeset            dir_Orig="$(pwd)/${dir_Run}"
 typeset str_ProgramVersion="1.0"
 
 fn_BaseDir()
 {
   # Taking a directory name as a parameter, output the full absolute path
   # It could be absolute or relative so check and clean out any <dir>/../<dir> additions
-  cd "$(pwd)/${1}" && pwd || return 1
+  # if ${1} starts "/"
+  cd "${1}" && pwd || return 1
 }
 
 # The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
-typeset dir_Base=$(fn_BaseDir ${dir_Run})
+typeset dir_Base=$(fn_BaseDir "${dir_Run}")
 
 # Directory definitions
 # =====================
 typeset dir_Etc=${dir_Base}/etc
 typeset dir_Var=${dir_Base}/var
 typeset dir_Tmp=${dir_Base}/tmp
+typeset dir_Plugins=${dir_Base}/Plugins
 
 # Job definitions
 # ===============
@@ -70,8 +73,8 @@ typeset      file_JobId=${dir_Var}/jobid
 
 # Job states
 # ==========
-file_States=${dir_Var}/states
-[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
+#file_States=${dir_Var}/states
+#[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
 
 
 # Load Functions
@@ -87,14 +90,20 @@ fn_LoadFunctions()
   #   -post post search
   typeset local dir_Directory="${1}"
   typeset local str_Search="${2}"
+  typeset local b_Errors=
+
   cd "${dir_Base}"
+
   if [ -d "${dir_Directory}" ] ; then
     echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
         echo "${str_EachFile}"
-        bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
+        #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
+
+        # Bash the function file for errors before loading it
+        bash "${str_EachFile}" && . "${str_EachFile}" || b_Errors=1
       else
         echo "Cannot access <${str_EachFile}>"
       fi
@@ -102,25 +111,57 @@ fn_LoadFunctions()
   else
     echo "$(pwd) ${dir_Directory} could not be found"
   fi
+
+  [ "${b_Errors}" ] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
 }
 
-echo ${dir_Base}
+#echo ${dir_Base}
+typeset b_Help=
+typeset b_Dispatcher=
+typeset b_NewJob=
 
+# Check for argument list
+# scorch can be run in several ways (create, file)
+if [ $# -ne 0 ] ; then
+
+  while [ $# -gt 0 ] ; do
+
+    case "$1" in
+      -h          ) b_Help=1 ;;
+      -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+      -dispatcher ) b_Dispatcher=1 ;;
+      -new        ) b_New=1 ;;
+
+    esac
+    shift
+
+  done
+
+fi
 
 fn_LoadFunctions "functions" "Scorch_"
 fn_CheckSetUp
 fn_SetLayout
-fn_Help
-fn_ShowTop
-#fn_ShowLine
-fn_ShowJobs failed warning running starting queued new completed
-fn_ShowLine "="
+[ "${b_Help}" ] && fn_Help && exit 0
+
+[ "${b_New}" ] && fn_NewJob && exit 0
+
+fn_Manager
+file_Template="${dir_Tmp}"/request1
+pwd
+GetVar -pattern LIST -name LIST -list
+echo "LIST=$LIST"
+GetVar -pattern NOLIST -name NOLIST
+echo "NOLIST=$NOLIST"
+
+#exit 0
+
 echo "Arrays===================="
 set | grep "^arr_"
-exit 0
-sleep 2
 echo "Strings===================="
 set | grep "^str_"
+echo "Booleans==================="
+set | grep "^b_"
 echo "Files======================"
 set | grep "^file_"
 echo "Dirs======================="

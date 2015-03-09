@@ -37,7 +37,7 @@ fn_Manager()
     case ${char_Choice} in
 
       # Create a new job
-      c | C ) "${dir_Orig}/${str_ProgramName} -add" ;;
+      n | N ) "${dir_Base}"/${str_ProgramName} -new ;;
 
       # Job State transition
       d | D ) fn_Transition delete  ;;
