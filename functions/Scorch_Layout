@@ -150,6 +150,21 @@ fn_ShowJobs()
   #sleep 3
 }
 
+fn_ShowTasks()
+{
+  # This functions simply displays the list of tasks that will be run
+  # If a value was passed assume that was the job for which to show the tasks
+  typeset local str_JobName=${1}
+
+  fn_ShowTop
+  printf "\n Display tasks for which job?\n\n"
+  fn_ShowJobs starting failed running queued pending new completed
+  fn_GetAnswer range
+  str_Answer=$(fn_Range "${str_Answer}")
+  echo ${str_Answer}
+
+}
+
 fn_ContextMenu()
 {
   # A context-based menu based on the state of jobs
@@ -184,12 +199,13 @@ fn_ContextMenu()
   
   printf "\n\n${dis_Reset}"
   printf " ${dis_ULOn}N${dis_ULOff}ew | "
-  [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}U${dis_ULOff}unqueue | "
+  [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
   [[ "${b_RunningJobs}" ]] && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}" ]]  && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | S${dis_ULOn}k${dis_ULOff}ip"
-  [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}S${dis_ULOff}tart | "
+  [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
+  [[ "${arr_Jobs[1]}" ]]   && printf "${dis_ULOn}T${dis_ULOff}asks | "
   printf "e${dis_ULOn}X${dis_ULOff}it\n"
 }
 

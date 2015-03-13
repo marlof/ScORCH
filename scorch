@@ -55,7 +55,7 @@ typeset dir_Base=$(fn_BaseDir "${dir_Run}")
 typeset dir_Etc=${dir_Base}/etc
 typeset dir_Var=${dir_Base}/var
 typeset dir_Tmp=${dir_Base}/tmp
-typeset dir_Plugins=${dir_Base}/Plugins
+typeset dir_Plugins=${dir_Base}/plugins
 
 # Job definitions
 # ===============
@@ -118,7 +118,7 @@ fn_LoadFunctions()
 #echo ${dir_Base}
 typeset b_Help=
 typeset b_Dispatcher=
-typeset b_NewJob=
+typeset b_New=
 
 # Check for argument list
 # scorch can be run in several ways (create, file)
@@ -154,7 +154,7 @@ echo "LIST=$LIST"
 GetVar -pattern NOLIST -name NOLIST
 echo "NOLIST=$NOLIST"
 
-#exit 0
+fn_HouseKeeping
 
 echo "Arrays===================="
 set | grep "^arr_"

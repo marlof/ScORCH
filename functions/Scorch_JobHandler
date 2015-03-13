@@ -18,6 +18,7 @@
 # fn_GetRequest
 # fn_JobHeader
 # fn_JobFooter
+# fn_Transition
 # Task
 # GetVar
 
@@ -50,7 +51,7 @@ fn_NewJob()
 {
   echo " initailise any plugins"
 
-  # fn_LoadFunctions ${dir_Plugins} "SP_"
+  fn_LoadFunctions "${dir_Plugins}" "SP_"
   # fn_GetRequest
   # fn_ProcessRequest
 
@@ -104,6 +105,7 @@ GetVar()
   # GetVar -label "data label" -name DATA_LABEL -d "None"
   typeset local str_Pattern=
   typeset local str_Name=
+  typeset local str_Value=
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
@@ -121,17 +123,14 @@ GetVar()
     done
   fi
 
-#ls -l "${file_Template}"
-  typeset local str_Value=
-  # Awk is a pain depending on if the items are in a list so handle lists seperately
+
+  # Awk is a pain if the items are in a list so handle lists seperately
+  # ===================================================================
   if [ "${b_List}" ] ; then
-    #str_Value="$(awk 'BEGIN { FS=":" ; IGNORECASE='"$b_IgnoreCase"' 
-    #                        $1 ~ /^ *'"$str_Pattern"'/ 
-    #                             {print $2}' ${file_Template} } | sed -e 's/[,]/ /g' -e 's/^ *//')"
-    str_Value=$(awk 'BEGIN {
+    str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
-       $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Template}" | sed -e 's/[,&]/ /g' ) 
+       $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Template}" | sed -e 's/[,&]/ /g' )"
   else
     str_Value=$(awk 'BEGIN {
        FS=":"
@@ -141,8 +140,35 @@ GetVar()
          print $2}'       "${file_Template}" ) 
   fi
 
-[[ "${str_Value}" ]] || str_Value=${str_Default}
-eval "${str_Name}=\"${str_Value}\""
+  # If a value hasnt been found or is empty, use the default if one is set
+  # ======================================================================
+  [[ "${str_Value}" ]] || str_Value=${str_Default}
+  eval "${str_Name}=\"${str_Value}\""
 
 }
 
+fn_Transition()
+{
+  # Transition a job to a new state
+  # ===============================
+
+  typeset local str_Transition="${1}"
+
+  echo "Moving to $1"
+  sleep 2
+  fn_ShowTop
+
+  case ${str_Transition} in
+
+    # Jobs requiring the dispatcher
+    queue   ) fn_ShowJobs new failed ; fn_CheckDispatcher ;;
+    resume  ) fn_ShowJobs     failed ; fn_CheckDispatcher ;;
+
+    # Jobs not requiring the dispatcher
+    delete  ) fn_ShowJobs new         ;;
+    unqueue ) fn_ShowJobs start queue ;;
+
+  esac
+
+  fn_ShowLine
+}

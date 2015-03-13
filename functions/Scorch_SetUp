@@ -14,6 +14,15 @@
 # limitations under the License.
 #
 
+# Functions
+# fn_CheckSetup
+# fn_Help
+# fn_HouseKeeping
+# fn_GetAnswer
+
+# Some global variables for setup functions
+typeset str_Answer       # Used in fn_PressEnter and fn_GetAnswer
+
 fn_CheckSetUp()
 {
   # This function will check that all Scorch components are set to allow a smooth run.
@@ -31,6 +40,74 @@ fn_Help()
 {
   # Help 
   echo "${str_ProgramName} "
-  echo "-BIG HELP PAGE-"
+  echo " # Options"
+  echo "    -p <alternative plugin dir>   Use a different plugin directory"
+  echo " "
+  echo " # Help"
+  echo "    -h                            Show help"
+  echo "    -v                            Display version"
+  echo " "
+  echo " # Internal Modes"
+  echo "    -dispatcher                   Run is dispatcher mode"
+  echo "    -new                          Load new job from input"
+  echo "    -file <file template> [-s]    Load new job from file [ and move to start ]"
+  echo " "
 }
 
+fn_HouseKeeping()
+{
+  # Cleanup of dir_deleted dir_completed
+  echo "Housekeepimng...."
+
+  typeset local int_MaxJobs=30
+  typeset local int_DaysDeleted=10
+
+  find "${dir_Deleted}"/${str_JobPrefix}*    -mtime +${int_DaysDeleted}
+  find "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted}
+
+  rm "${dir_New}"/${str_JobPrefix}file
+}
+
+fn_GetAnswer()
+{
+  # Library function to get an answer or range of answers
+  # =====================================================
+
+  typeset local b_Range=${1:-""}
+
+  printf "\n e${dis_ULOn}X${dis_ULOff}it.\n\n"
+  printf " Enter choice "
+  [[ "${b_Range}" ]] && printf "(range enabled : i.e 1-3,7,8)"
+  printf ":"
+  read str_Answer
+  str_Answer=${str_Answer:-"x"}
+}
+
+fn_Range()
+{
+  # Library function to turn a range of numbers into a list
+  # =======================================================
+
+  typeset local str_Input=$(echo $1 | tr ',' ' ')
+
+  for int_EachItem in ${str_Input} ; do
+    if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
+      typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
+      typeset local int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+
+      if [ ${int_First} -lt ${int_Last} ] ; then
+        while [[ ${int_First} -le ${int_Last} ]] ; do
+          printf "${int_First} "
+          ((int_First+=1))
+        done
+      else
+        while [[ ${int_First} -ge ${int_Last} ]] ; do
+          printf "${int_First} "
+          ((int_First-=1))
+        done
+      fi
+    else
+      printf  "${int_EachItem} "
+    fi
+  done
+}
