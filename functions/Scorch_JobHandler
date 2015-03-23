@@ -32,7 +32,35 @@ fn_JobHeader()
   typeset local file_Job=${1}
   echo "Creating ${dir_New}/${file_Job}"
   touch "${dir_New}"/${file_Job}
-  echo "LIST=${LIST}"
+
+  cat > "${dir_New}"/${file_Job} << EOF
+#!/bin/bash
+# Created: $(date)
+# By: $(whoami)
+# Using: ${str_ProgramName}[${str_ProgramVersion}]
+#
+
+# Audit
+str_StartTime="\$(date +%s)"
+
+# Job settings
+int_ResumePoint=
+str_JobName="\$(basename \$0)"
+
+# Directory locations
+dir_Job="${dir_Job}"
+dir_Running="${dir_Running}"
+dir_Failed="${dir_Failed}"
+dir_Completed="${dir_Completed}"
+
+
+[[ ! -f "${dir_Starting}"/\${str_JobName} ]] && echo "Dont running these scripts manually unless you know what you are doing." && exit 1
+
+[[ -w "${dir_Starting}"/\${str_JobName} ]] && mv "${dir_Starting}"/\${str_JobName} "${dir_Running}"/.
+
+
+exit 0
+EOF
 
 }
 
