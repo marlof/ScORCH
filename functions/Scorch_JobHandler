@@ -35,6 +35,13 @@ fn_JobHeader()
 
   cat > "${dir_New}"/${file_Job} << EOF
 #!/bin/bash
+
+    #####  ####  ####  #####   #### #    #
+   #     #     #    # #    # #     #    #
+   ###  #     #    # #####  #     ######
+     # #     #    # #   #  #     #    #
+#####  ####  ####  #    #  #### #    #
+
 # Created: $(date)
 # By: $(whoami)
 # Using: ${str_ProgramName}[${str_ProgramVersion}]
@@ -42,6 +49,7 @@ fn_JobHeader()
 
 # Audit
 str_StartTime="\$(date +%s)"
+str_Owner=$(whoami)
 
 # Job settings
 int_ResumePoint=
@@ -52,14 +60,28 @@ dir_Job="${dir_Job}"
 dir_Running="${dir_Running}"
 dir_Failed="${dir_Failed}"
 dir_Completed="${dir_Completed}"
+dir_Starting="${dir_Starting}"
+file_Log="${dir_Var}/log/\${str_JobName}.log"
 
 
-[[ ! -f "${dir_Starting}"/\${str_JobName} ]] && echo "Dont running these scripts manually unless you know what you are doing." && exit 1
+[[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
 
-[[ -w "${dir_Starting}"/\${str_JobName} ]] && mv "${dir_Starting}"/\${str_JobName} "${dir_Running}"/.
+[[ -w "\${dir_Starting}"/\${str_JobName} ]] && mv "\${dir_Starting}"/\${str_JobName} "\${dir_Running}"/.
 
+# Check Tasks
+fn_CheckTask()
+{
+  typeset local int_RC=\${1}
+  typeset local int_Task=\${2}
 
-exit 0
+  if [ \${int_RC} -ne 0 ] ; then
+    echo failed
+    mv \${dir_Running}/\${dir_JobName} \${dir_Failed}/.
+  else
+    echo "Task \${int_Task} completed \$(date)"
+  fi
+}
+
 EOF
 
 }
@@ -72,16 +94,19 @@ fn_JobFooter()
 
   typeset local file_Job=${1}
   echo "Adding footer to ${dir_New}/${file_Job}"
+  cat >> "${dir_New}"/${file_Job} << EOF
 
+exit 0
+EOF
 }
 
 fn_NewJob()
 {
-  echo " initailise any plugins"
+  echo "Initailise plugins"
 
-  fn_LoadFunctions "${dir_Plugins}" "SP_"
-  # fn_GetRequest
-  # fn_ProcessRequest
+  fn_LoadFunctions ${str_Plugins} "SP_"
+  fn_GetRequest
+  fn_ProcessRequest
 
   echo "Header"
   fn_JobHeader ${str_JobPrefix}file
@@ -93,11 +118,39 @@ fn_NewJob()
 
 fn_GetRequest()
 {
-  # Recieve the request 
+  # Receive the request from a file or interactively
+  typeset local str_File="${1:-}"
+  typeset local str_Line=""
+
+  # global tmp file
+  file_Request=${dir_Tmp}/${str_ProgramName}.$$
+  echo ${file_Request}
+
+  if [ ! -z "${str_File}" ] ; then
+    echo "stub:file in fn_GetRequest"
+  else
+    while [[ "${str_Line}" != "." ]] ; do
+      read str_Line
+      printf "${str_Line}" | grep ":" >> "${file_Request}"
+    done
+    echo "stub output:"
+    cat "${file_Request}"
+  fi
+
   printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
-  
 }
 
+fn_ProcessRequest()
+{
+  echo "stub:fn_ProcessRequest"
+  sleep 5
+}
+
+fn_CheckDispatcher()
+{
+  # Check Dispatcher
+  echo "stub: fn_CheckDispatcher"
+}
 
 Task()
 {
