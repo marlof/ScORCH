@@ -155,13 +155,25 @@ fn_ShowTasks()
   # This functions simply displays the list of tasks that will be run
   # If a value was passed assume that was the job for which to show the tasks
   typeset local str_JobName=${1}
+  typeset local int_Answer=
 
   fn_ShowTop
-  printf "\n Display tasks for which job?\n\n"
+  fn_ShowLine
+
+  printf "\n Display tasks for which job(s)?\n\n"
+
   fn_ShowJobs starting failed running queued pending new completed
   fn_GetAnswer range
   str_Answer=$(fn_Range "${str_Answer}")
-  echo ${str_Answer}
+  if [ ${str_Answer} != "x" ] ; then
+    for int_Answer in ${str_Answer} ; do
+      ls -l "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+echo      grep "{${str_ProgramName}_Task}" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+    done
+  else
+    echo "Nothing chosen"
+  fi
+  
 
 }
 

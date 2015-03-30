@@ -22,7 +22,7 @@
 fn_Manager()
 {
   typeset local char_Choice=
-  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXX})
+  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
   while : ; do
     # Use cache file
     fn_ShowTop > "${file_ScreenCache}"
@@ -53,4 +53,5 @@ fn_Manager()
       x | X ) break ;;
     esac
   done
+  rm "${file_ScreenCache}"
 }

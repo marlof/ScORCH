@@ -53,6 +53,7 @@ str_Owner=$(whoami)
 
 # Job settings
 int_ResumePoint=
+int_Last=0
 str_JobName="\$(basename \$0)"
 
 # Directory locations
@@ -75,10 +76,13 @@ fn_CheckTask()
   typeset local int_Task=\${2}
 
   if [ \${int_RC} -ne 0 ] ; then
-    echo failed
     mv \${dir_Running}/\${dir_JobName} \${dir_Failed}/.
+    echo "Failed:Resume point:\${int_Task}" >> \${file_Log}
+    echo "\$(date):Failed:\${int_Task}" >> \${dir_Failed}/\${str_JobName}
+    exit 1
   else
     echo "Task \${int_Task} completed \$(date)"
+    echo "\$(date):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
   fi
 }
 
@@ -96,6 +100,17 @@ fn_JobFooter()
   echo "Adding footer to ${dir_New}/${file_Job}"
   cat >> "${dir_New}"/${file_Job} << EOF
 
+int_StartTask=\${int_Resume:-1}
+#int_Last=${int_Task}
+
+while [ \${int_StartTask} -le \${int_Last} ] ; do
+  fn_Task_\${int_StartTask}
+  (( int_StartTask+=1 ))
+done
+
+mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
+
+
 exit 0
 EOF
 }
@@ -103,8 +118,8 @@ EOF
 fn_NewJob()
 {
   echo "Initailise plugins"
-
   fn_LoadFunctions ${str_Plugins} "SP_"
+
   fn_GetRequest
   fn_ProcessRequest
 
@@ -113,6 +128,11 @@ fn_NewJob()
   echo "Add Tasks"
   echo "Footer"
   fn_JobFooter ${str_JobPrefix}file
+  echo "# Template Used" >> "${dir_New}"/${str_JobPrefix}file
+  cat "${file_Request}" >> "${dir_New}"/${str_JobPrefix}file
+  rm "${file_Request}"
+  chmod 754 "${dir_New}"/${str_JobPrefix}file
+  sleep 2
 
 }
 
@@ -127,29 +147,51 @@ fn_GetRequest()
   echo ${file_Request}
 
   if [ ! -z "${str_File}" ] ; then
-    echo "stub:file in fn_GetRequest"
+    echo "$(date +'%D %T'): Processing file:${file_Request}"
+    while read str_Line : ; do
+      echo ${str_Line} | grep ":" >> ${file_Request}
+    done < ${str_File}
   else
+    printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read str_Line
       printf "${str_Line}" | grep ":" >> "${file_Request}"
     done
-    echo "stub output:"
-    cat "${file_Request}"
+    #cat "${file_Request}"
   fi
 
-  printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
 }
 
 fn_ProcessRequest()
 {
   echo "stub:fn_ProcessRequest"
+  fn_GetJobID
+  fn_ExtractPairs
+echo "$ACTION:$RELEASE:$ENVIRONMENT:$TYPE:$TICKET"
   sleep 5
+
 }
 
 fn_CheckDispatcher()
 {
   # Check Dispatcher
   echo "stub: fn_CheckDispatcher"
+}
+
+fn_GetJobID()
+{
+  echo "stub: ${FUNCNAME}"
+}
+
+fn_ExtractPairs()
+{
+  echo "stub: ${FUNCNAME}"
+  GetVar -pattern "System"  -name SYSTEM             -default "NO-SYS"
+  GetVar -pattern "Action"  -name ACTION
+  GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
+  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -deafult "NO-ENV"
+  GetVar -pattern "Type"    -name TYPE               -default ""
+  GetVar -pattern "Ticket"  -name TICKET             -default ""
 }
 
 Task()
@@ -183,7 +225,7 @@ GetVar()
   #
   # Examples
   #
-  # GetVar -label "data label" -name DATA_LABEL -d "None"
+  # GetVar -pattern "data label" -name DATA_LABEL -d "None"
   typeset local str_Pattern=
   typeset local str_Name=
   typeset local str_Value=
@@ -194,7 +236,7 @@ GetVar()
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
       case "${1}" in
-        -pattern   ) shift ; str_Pattern="${1}" ;;
+        -pattern ) shift ; str_Pattern="${1}" ;;
         -name    ) shift ; str_Name="${1}"    ;;
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
@@ -211,14 +253,14 @@ GetVar()
     str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
-       $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Template}" | sed -e 's/[,&]/ /g' )"
+       $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
     str_Value=$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
          $2=$2;
-         print $2}'       "${file_Template}" ) 
+         print $2}'       "${file_Request}" ) 
   fi
 
   # If a value hasnt been found or is empty, use the default if one is set
