@@ -112,3 +112,21 @@ fn_Range()
     fi
   done
 }
+
+fn_CreateFile()
+{
+  echo ""
+  typeset local file_Name="${1}"
+  typeset local b_Blank="${2:""}"
+  touch "${file_Name}" 
+  [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
+  chmod 664 "${file_Name}"
+  [[ "${b_Blank}" ]] && > "${file_Name}"
+
+}
+
+fn_PressEnter()
+{
+  printf "\n\n"
+  read -p " Press Enter to continue "
+}

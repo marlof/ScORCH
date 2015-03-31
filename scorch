@@ -155,12 +155,10 @@ fn_SetLayout
 fn_Manager
 file_Template="${dir_Tmp}"/request1
 pwd
-GetVar -pattern LIST -name LIST -list
-echo "LIST=$LIST"
-GetVar -pattern NOLIST -name NOLIST
-echo "NOLIST=$NOLIST"
 
 fn_HouseKeeping
+
+fn_PressEnter
 
 echo "Arrays===================="
 set | grep "^arr_"
