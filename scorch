@@ -101,11 +101,13 @@ fn_LoadFunctions()
 #echo "dir:${dir_Directory}"
 #echo "$*"
   if [ -d "${dir_Directory}" ] ; then
-    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
+#    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
+    echo "Initialising. Please wait...."
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-        echo "${str_EachFile}"
+#        echo "${str_EachFile}"
+        printf "."
         #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
 
         # Bash the function file for errors before loading it

@@ -25,6 +25,7 @@ typeset str_Answer       # Used in fn_PressEnter and fn_GetAnswer
 
 fn_CheckSetUp()
 {
+  printf "."
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \

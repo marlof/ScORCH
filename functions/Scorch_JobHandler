@@ -126,10 +126,6 @@ fn_NewJob()
   fn_GetRequest
   fn_ProcessRequest
 
-
-
-
-
   echo "# Template Used" >> "${file_Job}"
   cat "${file_Request}" >> "${file_Job}"
   rm "${file_Request}"
@@ -157,7 +153,7 @@ fn_GetRequest()
     printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read str_Line
-      printf "${str_Line}" | grep ":" >> "${file_Request}"
+      printf "${str_Line}" | grep ":" | tr -d "[ \t]" >> "${file_Request}"
     done
     #cat "${file_Request}"
   fi
@@ -174,13 +170,28 @@ fn_ProcessRequest()
   echo "Action: ${ACTION}"
   for str_EachACTION in ${ACTION} ; do
     file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_${RELEASE}
+    echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
     fn_JobHeader "${file_Job}"
 
     Task "date +$s ; echo PID:\$$"
 
-    echo "Add Tasks"
+    echo "Adding Tasks from Plugin ${SYSTEM}_${strEachACTION}"
+    echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+    #eval "SP_${SYSTEM}_${str_EachACTION}"
+echo "Will run SP_${SYSTEM}_${str_EachACTION}"
+    if [[ $? -ne 0 ]] ; then
+      echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+      exit 1
+    fi
+
     fn_JobFooter "${file_Job}"
+    echo "Job created by $(whoami) ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
     (( int_JobCount+=1 ))
+
+    # If there is already another job in a failed state, mv that failed job to the superceeded directory
+    if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_*) ]] ; then
+      mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
+    fi
   done
   fn_PressEnter
 }
@@ -223,7 +234,7 @@ fn_ExtractPairs()
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -deafult "NO-ENV"
   GetVar -pattern "Type"    -name TYPE               -default ""
-  GetVar -pattern "Ticket"  -name TICKET             -default ""
+  GetVar -pattern "Ticket"  -name TICKET             -default "TKT000"
 }
 
 Task()
@@ -310,21 +321,29 @@ fn_Transition()
 
   typeset local str_Transition="${1}"
 
-  echo "Moving to $1"
-  sleep 2
   fn_ShowTop
+  echo "Moving to $1"
 
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs new failed ; fn_CheckDispatcher ;;
-    resume  ) fn_ShowJobs     failed ; fn_CheckDispatcher ;;
+    queue   ) fn_ShowJobs new failed ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    resume  ) fn_ShowJobs     failed ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs new         ;;
-    unqueue ) fn_ShowJobs start queue ;;
+    delete  ) fn_ShowJobs new         ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs start queue ; str_Target="${dir_New}"     ;;
 
   esac
 
+  echo "mv x to ${str_Target}"
+  fn_GetAnswer range
+  arr_Answer=$(fn_Range ${str_Answer})
+echo ${arr_Answer}
+  for str_EachAnswer in ${arr_Answer} ; do
+    echo ${str_EachAnswer}
+  done
+
+  
   fn_ShowLine
 }

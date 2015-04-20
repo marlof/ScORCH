@@ -25,11 +25,17 @@ fn_Manager()
   file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
   while : ; do
     # Use cache file
+    printf "."
     fn_ShowTop > "${file_ScreenCache}"
+    printf "."
     fn_ShowJobs failed warning running starting queued new completed >> "${file_ScreenCache}"
+    printf "."
     fn_ShowLine "=" >> "${file_ScreenCache}"
+    printf "."
     fn_DisplayMOTD >> "${file_ScreenCache}"
+    printf "."
     fn_ContextMenu >> "${file_ScreenCache}"
+    printf "."
     clear ; cat "${file_ScreenCache}"
     read -t 10 char_Choice
     echo "."
