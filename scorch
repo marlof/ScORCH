@@ -56,6 +56,7 @@ typeset dir_Etc=${dir_Base}/etc
 typeset dir_Var=${dir_Base}/var
 typeset dir_Log=${dir_Var}/log
 typeset dir_Tmp=${dir_Base}/tmp
+typeset dir_Tmp=/tmp
 typeset dir_Plugins=${dir_Base}/plugins
 typeset str_Plugins=$(basename "${dir_Plugins}")
 typeset dir_Functions=${dir_Base}/functions
@@ -98,20 +99,20 @@ fn_LoadFunctions()
 
   cd "${dir_Base}"
 #echo "base:${dir_Base}"
-#echo "dir:${dir_Directory}"
+echo "Loading ${dir_Directory}"
 #echo "$*"
   if [ -d "${dir_Directory}" ] ; then
-#    echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
-    echo "Initialising. Please wait...."
+#echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
+#echo "Initialising. Please wait...."
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-#        echo "${str_EachFile}"
-        printf "."
+printf "%15s" "${str_EachFile#${dir_Directory}/${str_Search}}"
+        #printf "."
         #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
 
         # Bash the function file for errors before loading it
-        bash "${str_EachFile}" && . "${str_EachFile}" || b_Errors=1
+        bash "${str_EachFile}" && . "${str_EachFile}" && printf "%10s\n" "OK" || ( printf "%10s\n" "ERROR" && b_Errors=1)
       else
         echo "Cannot access <${str_EachFile}>"
       fi
@@ -129,7 +130,7 @@ typeset b_Dispatcher=
 typeset b_New=
 
 # Check for argument list
-# scorch can be run in several ways (create, file)
+# scorch can be run in several ways (create, file, dispatcher)
 if [ $# -ne 0 ] ; then
 
   while [ $# -gt 0 ] ; do
@@ -158,25 +159,25 @@ fn_Manager
 file_Template="${dir_Tmp}"/request1
 pwd
 
-fn_HouseKeeping
+#fn_HouseKeeping
 
-fn_PressEnter
+#fn_PressEnter
 
-echo "Arrays===================="
-set | grep "^arr_"
-echo "Strings===================="
-set | grep "^str_"
-echo "Booleans==================="
-set | grep "^b_"
-echo "Files======================"
-set | grep "^file_"
-echo "Dirs======================="
-set | grep "^dir_"
-echo "Functions=================="
-set | grep "^fn_"
-echo "Numbers===================="
-set | grep "^int_"
-echo "Arrays===================="
-set | grep "^arr_"
+#echo "Arrays===================="
+#set | grep "^arr_"
+#echo "Strings===================="
+#set | grep "^str_"
+#echo "Booleans==================="
+#set | grep "^b_"
+#echo "Files======================"
+#set | grep "^file_"
+#echo "Dirs======================="
+#set | grep "^dir_"
+#echo "Functions=================="
+#set | grep "^fn_"
+#echo "Numbers===================="
+#set | grep "^int_"
+#echo "Arrays===================="
+#set | grep "^arr_"
 
 exit 0

@@ -28,7 +28,7 @@ fn_Manager()
     printf "."
     fn_ShowTop > "${file_ScreenCache}"
     printf "."
-    fn_ShowJobs failed warning running starting queued new completed >> "${file_ScreenCache}"
+    fn_ShowJobs superceeded failed warning running starting queued new completed >> "${file_ScreenCache}"
     printf "."
     fn_ShowLine "=" >> "${file_ScreenCache}"
     printf "."

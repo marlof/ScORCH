@@ -112,7 +112,7 @@ fn_ShowJobs()
 
     # Use /dev/null redirect in case there are no files to report
     # ===========================================================
-    lis_Jobs=$(ls "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
+    lis_Jobs=$(ls -rt "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
 
     # If there are any jobs, handle them appropriately
     # ================================================

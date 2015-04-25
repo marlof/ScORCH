@@ -175,10 +175,10 @@ fn_ProcessRequest()
 
     Task "date +$s ; echo PID:\$$"
 
-    echo "Adding Tasks from Plugin ${SYSTEM}_${strEachACTION}"
+    echo "Adding Tasks from Plugin ${SYSTEM}_${str_EachACTION}"
     echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
-    #eval "SP_${SYSTEM}_${str_EachACTION}"
 echo "Will run SP_${SYSTEM}_${str_EachACTION}"
+    eval "SP_${SYSTEM}_${str_EachACTION}"
     if [[ $? -ne 0 ]] ; then
       echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
       exit 1
@@ -189,7 +189,7 @@ echo "Will run SP_${SYSTEM}_${str_EachACTION}"
     (( int_JobCount+=1 ))
 
     # If there is already another job in a failed state, mv that failed job to the superceeded directory
-    if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_*) ]] ; then
+    if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* 2>/dev/null)  ]] ; then
       mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
     fi
   done
@@ -234,7 +234,7 @@ fn_ExtractPairs()
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -deafult "NO-ENV"
   GetVar -pattern "Type"    -name TYPE               -default ""
-  GetVar -pattern "Ticket"  -name TICKET             -default "TKT000"
+  GetVar -pattern "Ticket"  -name TICKET             -default ""
 }
 
 Task()
@@ -341,7 +341,7 @@ fn_Transition()
   arr_Answer=$(fn_Range ${str_Answer})
 echo ${arr_Answer}
   for str_EachAnswer in ${arr_Answer} ; do
-    echo ${str_EachAnswer}
+    mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${dir_Job}"/${str_Transition}/.
   done
 
   
