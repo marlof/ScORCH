@@ -25,7 +25,7 @@ typeset str_Answer=      # Used in fn_PressEnter and fn_GetAnswer
 
 fn_CheckSetUp()
 {
-  typsset b_SetUp=         # Is this the first run
+  typeset b_SetUp=         # Is this the first run
   #printf "."
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
@@ -37,8 +37,8 @@ fn_CheckSetUp()
 
   str_JobPrefix="Job_"
   if [[ ${b_SetUp} ]] ; then
-    printf "If this is the first time you are running ${str_ProgramName} run the above"
-    printf "steps as the framework owner."
+    printf "\n\n\nIf this is the first time you are running ${str_ProgramName} run the above"
+    printf "steps as the framework owner\n"
     exit 1
   fi
 
