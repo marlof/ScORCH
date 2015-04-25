@@ -21,20 +21,26 @@
 # fn_GetAnswer
 
 # Some global variables for setup functions
-typeset str_Answer       # Used in fn_PressEnter and fn_GetAnswer
+typeset str_Answer=      # Used in fn_PressEnter and fn_GetAnswer
 
 fn_CheckSetUp()
 {
-  printf "."
+  typsset b_SetUp=         # Is this the first run
+  #printf "."
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
                                  dir_Var dir_Log"
   for p_Variable in ${arr_Directories} ; do
-    [[ ! -d ${!p_Variable} ]] && echo "  mkdir -p -m 770 \"${!p_Variable}\""
+    [[ ! -d ${!p_Variable} ]] && printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
   done
 
   str_JobPrefix="Job_"
+  if [[ ${b_SetUp} ]] ; then
+    printf "If this is the first time you are running ${str_ProgramName} run the above"
+    printf "steps as the framework owner."
+    exit 1
+  fi
 
 }
 
