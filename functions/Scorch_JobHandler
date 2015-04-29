@@ -79,9 +79,9 @@ fn_CheckTask()
   typeset local int_Task=\${2}
 
   if [ \${int_RC} -ne 0 ] ; then
-    mv \${dir_Running}/\${dir_JobName} \${dir_Failed}/.
-    echo "Failed:Resume point:\${int_Task}" >> \${file_Log}
-    echo "\$(date):Failed:\${int_Task}" >> \${dir_Failed}/\${str_JobName}
+    echo "\$(date):Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+    mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+    echo "Failed:Resume point:\${int_Task}" >> "\${file_Log}"
     exit 1
   else
     echo "Task \${int_Task} completed \$(date)"
@@ -104,9 +104,9 @@ fn_JobFooter()
   cat >> "${file_Job}" << EOF
 
 int_StartTask=\${int_Resume:-1}
-#int_Last=${int_Task}
+int_Last=${int_TaskCount}
 
-while [ \${int_StartTask} -le \${int_Last} ] ; do
+while [ \${int_StartTask} -lt \${int_Last} ] ; do
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
@@ -175,9 +175,8 @@ fn_ProcessRequest()
 
     Task "date +$s ; echo PID:\$$"
 
-    echo "Adding Tasks from Plugin ${SYSTEM}_${str_EachACTION}"
-    echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
-echo "Will run SP_${SYSTEM}_${str_EachACTION}"
+    echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}"
+    echo "Run SP_${SYSTEM}_${str_EachACTION}"
     eval "SP_${SYSTEM}_${str_EachACTION}"
     if [[ $? -ne 0 ]] ; then
       echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
@@ -204,7 +203,6 @@ fn_CheckDispatcher()
 
 fn_GetJobID()
 {
-  echo "stub: ${FUNCNAME}"
   file_JobID="${dir_Var}"/JobID
   [[ ! -f "${file_JobID}" ]] && echo "BROKEN" && fn_CreateFile "${file_JobID}"
   
@@ -229,7 +227,7 @@ fn_GetJobID()
 fn_ExtractPairs()
 {
   echo "stub: ${FUNCNAME}"
-  GetVar -pattern "System"  -name SYSTEM             -default "NO-SYS"
+  GetVar -pattern "System"  -name SYSTEM             -default "LOCAL"
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -deafult "NO-ENV"
@@ -244,10 +242,14 @@ Task()
   # This function will Add Tasks to a scorch Job
   # ================================================================================
   echo " "
+  int_TaskCount=${int_TaskCount:-0}
   str_Task1=${1}
   str_OR=${2:-}
   str_Task2=${2}
-  echo "${str_Task1}" >> "${file_Job}"
+
+  printf "fn_Task_${int_TaskCount}()\n{\n  ${str_Task1}\t>> \"\${file_Log}\" 2>\&1 \t#${str_ProgramName}_Task\n  fn_CheckTask \$? \${int_StartTask}\n}\n\n" >> "${file_Job}"
+
+  (( int_TaskCount+=1 ))
 
 }
 
@@ -327,22 +329,25 @@ fn_Transition()
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs new failed ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
-    resume  ) fn_ShowJobs     failed ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    queue   ) fn_ShowJobs new failed   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    resume  ) fn_ShowJobs     failed   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs new         ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs start queue ; str_Target="${dir_New}"     ;;
+    delete  ) fn_ShowJobs new          ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs starting queued ; str_Target="${dir_New}"     ;;
 
   esac
 
   echo "mv x to ${str_Target}"
   fn_GetAnswer range
   arr_Answer=$(fn_Range ${str_Answer})
-echo ${arr_Answer}
-  for str_EachAnswer in ${arr_Answer} ; do
-    mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${dir_Job}"/${str_Transition}/.
-  done
+echo ">${arr_Answer}<"
+  if [ "${arr_Answer}" != "x " ] ; then
+    for str_EachAnswer in ${arr_Answer} ; do
+      mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${str_Target}"/.
+      # mv "\"${dir_Job}\""/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${dir_Job}"/${str_Transition}/.
+    done
+  fi
 
   
   fn_ShowLine

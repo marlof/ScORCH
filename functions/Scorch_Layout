@@ -190,13 +190,14 @@ fn_ShowTasks()
   if [ ${str_Answer} != "x" ] ; then
     for int_Answer in ${str_Answer} ; do
       ls -l "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
-echo      grep "{${str_ProgramName}_Task}" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+      #echo grep "{${str_ProgramName}_Task}" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+      grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | more
     done
   else
     echo "Nothing chosen"
   fi
   
-
+  fn_PressEnter
 }
 
 fn_ContextMenu()
