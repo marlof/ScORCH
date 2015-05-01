@@ -100,13 +100,15 @@ fn_JobFooter()
   # The file to be appended to is passed as a variable
 
   typeset local file_Job=${1}
-  echo "Adding footer to ${file_Job}"
+  (( int_TaskCount-=1 ))
+
+  # echo "Adding footer to ${file_Job}"
   cat >> "${file_Job}" << EOF
 
 int_StartTask=\${int_Resume:-1}
 int_Last=${int_TaskCount}
 
-while [ \${int_StartTask} -lt \${int_Last} ] ; do
+while [ \${int_StartTask} -le \${int_Last} ] ; do
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
@@ -126,10 +128,12 @@ fn_NewJob()
   fn_GetRequest
   fn_ProcessRequest
 
-  echo "# Template Used" >> "${file_Job}"
-  cat "${file_Request}" >> "${file_Job}"
+  if [ -f "${file_Job}" ] ; then
+    echo "# Template Used" >> "${file_Job}"
+    cat "${file_Request}" >> "${file_Job}"
+    chmod 754 "${file_Job}"
+  fi
   rm "${file_Request}"
-  chmod 754 "${file_Job}"
   sleep 2
 
 }
@@ -142,7 +146,7 @@ fn_GetRequest()
 
   # global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$
-  echo ${file_Request}
+  #echo ${file_Request}
 
   if [ ! -z "${str_File}" ] ; then
     echo "$(date +'%D %T'): Processing file:${file_Request}"
@@ -150,10 +154,18 @@ fn_GetRequest()
       echo ${str_Line} | grep ":" >> ${file_Request}
     done < ${str_File}
   else
+    printf "\n     help <plugin>    for additonal parameters\n"
     printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read str_Line
-      printf "${str_Line}" | grep ":" | tr -d "[ \t]" >> "${file_Request}"
+      if [[  "${str_Line}" =~ "help" ]] ; then
+        typeset local str_Help=${str_Line#help }
+        if [[ "${str_Line}" ]] ; then
+          declare -f "SP_${str_Help}" | grep GetVar 
+        fi
+      else
+        printf "${str_Line}" | grep ":" | tr -d "[ \t]" >> "${file_Request}"
+      fi
     done
     #cat "${file_Request}"
   fi
@@ -163,11 +175,10 @@ fn_GetRequest()
 fn_ProcessRequest()
 {
   typeset local int_JobCount=1
-  echo "stub:fn_ProcessRequest"
   fn_GetJobID
   fn_ExtractPairs
   
-  echo "Action: ${ACTION}"
+  #echo "Action: ${ACTION}"
   for str_EachACTION in ${ACTION} ; do
     file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_${RELEASE}
     echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
@@ -192,7 +203,7 @@ fn_ProcessRequest()
       mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
     fi
   done
-  fn_PressEnter
+  #fn_PressEnter
 }
 
 fn_CheckDispatcher()
@@ -226,7 +237,6 @@ fn_GetJobID()
 
 fn_ExtractPairs()
 {
-  echo "stub: ${FUNCNAME}"
   GetVar -pattern "System"  -name SYSTEM             -default "LOCAL"
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
@@ -324,7 +334,7 @@ fn_Transition()
   typeset local str_Transition="${1}"
 
   fn_ShowTop
-  echo "Moving to $1"
+  printf "\n\nSelect jobs to move to $1 state\n\n"
 
   case ${str_Transition} in
 
@@ -338,17 +348,14 @@ fn_Transition()
 
   esac
 
-  echo "mv x to ${str_Target}"
+  #echo "mv x to ${str_Target}"
+  fn_ShowLine
   fn_GetAnswer range
   arr_Answer=$(fn_Range ${str_Answer})
-echo ">${arr_Answer}<"
+  # echo ">${arr_Answer}<"
   if [ "${arr_Answer}" != "x " ] ; then
     for str_EachAnswer in ${arr_Answer} ; do
       mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${str_Target}"/.
-      # mv "\"${dir_Job}\""/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${dir_Job}"/${str_Transition}/.
     done
   fi
-
-  
-  fn_ShowLine
 }

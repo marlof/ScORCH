@@ -99,7 +99,7 @@ fn_LoadFunctions()
 
   cd "${dir_Base}"
 #echo "base:${dir_Base}"
-echo "Loading ${dir_Directory}"
+ printf "\nLoading ${dir_Directory}\n"
 #echo "$*"
   if [ -d "${dir_Directory}" ] ; then
 #echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
@@ -107,7 +107,7 @@ echo "Loading ${dir_Directory}"
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-printf "%15s" "${str_EachFile#${dir_Directory}/${str_Search}}"
+printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
         #printf "."
         #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
 
