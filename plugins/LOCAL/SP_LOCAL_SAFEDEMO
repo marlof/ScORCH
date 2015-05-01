@@ -1,0 +1,11 @@
+SP_LOCAL_SAFEDEMO()
+{
+  GetVar -pattern "Pause" -name "PAUSE" -default "60"
+  GetVar -pattern "Fail"  -name "FAIL"  -default "0"
+  Task "hostname"
+  Task "sleep ${PAUSE}"
+  if [ ${FAIL} -ne 0 ] ; then
+    Task "false"
+  fi
+
+}
