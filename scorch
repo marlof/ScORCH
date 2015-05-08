@@ -107,7 +107,7 @@ fn_LoadFunctions()
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
+        printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
         #printf "."
         #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
 
@@ -121,10 +121,9 @@ printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
     echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
-  [ "${b_Errors}" ] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
+  [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
 }
 
-#echo ${dir_Base}
 typeset b_Help=
 typeset b_Dispatcher=
 typeset b_New=

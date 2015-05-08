@@ -54,10 +54,12 @@ fn_Manager()
       # Misc
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
+	  [0-9]* ) echo "Not yet ready" && sleep 2 ;;
       
       
       x | X ) break ;;
     esac
+	fn_RunJobs
   done
   rm "${file_ScreenCache}"
 }
