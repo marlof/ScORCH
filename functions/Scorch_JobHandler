@@ -56,7 +56,7 @@ str_Owner=$(whoami)
 int_JobID=${int_JobID}
 int_ResumePoint=
 int_Last=0
-str_JobName="\$(basename \"\$0\")"
+str_JobName="\$(basename "\$0")"
 
 
 # Directory locations
