@@ -56,7 +56,7 @@ str_Owner=$(whoami)
 int_JobID=${int_JobID}
 int_ResumePoint=
 int_Last=0
-str_JobName="\$(basename "\$0")"
+str_JobName="\$(basename \"\$0\")"
 
 
 # Directory locations
@@ -161,7 +161,11 @@ fn_GetRequest()
       if [[  "${str_Line}" =~ "help" ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
-          declare -f "SP_${str_Help}" | grep GetVar 
+          echo "==SYSTEM============="
+		  declare -f fn_ExtractPairs | grep "GetVar -pattern"
+		  echo "==CUSTOM============="
+          declare -f "SP_${str_Help}" | grep "GetVar "
+          echo "==============="
         fi
       else
         printf "${str_Line}" | grep ":" | tr -d "[ \t]" >> "${file_Request}"
@@ -234,7 +238,7 @@ fn_ExtractPairs()
   GetVar -pattern "System"  -name SYSTEM             -default "LOCAL"
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
-  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -deafult "NO-ENV"
+  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
   GetVar -pattern "Type"    -name TYPE               -default ""
   GetVar -pattern "Ticket"  -name TICKET             -default ""
 }

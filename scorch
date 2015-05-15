@@ -149,6 +149,7 @@ fi
 
 fn_LoadFunctions "${str_Functions}" "Scorch_"
 fn_CheckSetUp
+[[ ${b_Dispatcher} ]] && fn_Dispatcher 
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir ${dir_Tmp} &&  exit 1
 fn_SetLayout
 [ "${b_Help}" ] && fn_Help && exit 0

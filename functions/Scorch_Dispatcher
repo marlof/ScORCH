@@ -15,17 +15,34 @@
 #
 
 # This file contains functions to set and display layout
+# fn_Dispatcher
 # fn_CheckDispatcher
-# fn_Check
+# fn_RunJobs
+
+fn_Dispatcher()
+{
+  while : ; do
+    # Move queued jobs to start state
+	for file_EachJob in $(ls "${dir_Queued}") ; do
+	  echo check queue lock ${file_EachJob}
+	  # if queue ok mv file
+	  mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
+    done
+	
+	sleep 20
+  done
+
+}
 
 fn_CheckDispatcher()
 {
   # Check Dispatcher
   echo "stub: fn_CheckDispatcher"
+  # Make sure a dispatcher is runnning
   echo "Lock dir: ${dir_Locks}"
+  # repair lock file or start a dispatcher  
+  ${str_ProgramName} -dispatcher &
 }
-
-
 
 fn_RunJobs()
 {
