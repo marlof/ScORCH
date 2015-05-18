@@ -41,7 +41,7 @@ fn_CheckDispatcher()
   # Make sure a dispatcher is runnning
   echo "Lock dir: ${dir_Locks}"
   # repair lock file or start a dispatcher  
-  ${str_ProgramName} -dispatcher &
+  echo "check this is running .... ${str_ProgramName} -dispatcher &"
 }
 
 fn_RunJobs()
