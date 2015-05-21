@@ -77,6 +77,10 @@ typeset     dir_Deleted=${dir_Job}/deleted
 typeset    dir_Archived=${dir_Job}/archived 
 typeset      file_JobId=${dir_Var}/jobid
 
+# Dispatcher definitions
+# ======================
+typeset     int_DispatcherPID=0
+
 # Job states
 # ==========
 #file_States=${dir_Var}/states
