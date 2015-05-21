@@ -25,20 +25,20 @@ fn_Manager()
   file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
   while : ; do
     # Use cache file
-    printf "."
+    #printf "."
     fn_ShowTop > "${file_ScreenCache}"
-    printf "."
+    #printf "."
     fn_ShowJobs superceeded failed warning running starting queued new completed >> "${file_ScreenCache}"
-    printf "."
+    #printf "."
     fn_ShowLine "=" >> "${file_ScreenCache}"
-    printf "."
+    #printf "."
     fn_DisplayMOTD >> "${file_ScreenCache}"
-    printf "."
+    #printf "."
     fn_ContextMenu >> "${file_ScreenCache}"
-    printf "."
+    #printf "."
     clear ; cat "${file_ScreenCache}"
     read -t 10 char_Choice
-    echo "."
+    #echo "."
 
     case ${char_Choice} in
 
@@ -54,7 +54,7 @@ fn_Manager()
       # Misc
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
-	  [0-9]* ) echo "Not yet ready" && sleep 2 ;;
+	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
       
       
       x | X ) break ;;

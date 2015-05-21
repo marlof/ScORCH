@@ -61,9 +61,10 @@ fn_ShowTop()
   # Collect disk usage to display
   int_DiskUsage=$(df "${dir_Base}" | tail -1 | cut -d"%" -f1 | awk -F" " '{print $NF}')
   # Output the program name, the dispatcher PID and the date
+  typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2 2>/dev/null || echo 0)
   printf "%${int_TitleWidth}s ${cha_ColumnSep} %${int_Column2Width}s %${int_DateLocation}s\n" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
-         "D:xxxxx ${cha_ColumnSep} ${int_DiskUsage}% ${cha_ColumnSep}" \
+         "D:${int_DispatcherPID} ${cha_ColumnSep} ${int_DiskUsage}% ${cha_ColumnSep}" \
          "$(date +'%D %T')"
 
 
@@ -112,7 +113,9 @@ fn_ShowJobs()
 
     # Use /dev/null redirect in case there are no files to report
     # ===========================================================
-    lis_Jobs=$(ls -rt "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
+	[[ "${str_EachJobState}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+	#echo "${str_EachJobState}_is_${str_Reverse}"
+    lis_Jobs=$(ls -t${str_Reverse} "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
 
     # If there are any jobs, handle them appropriately
     # ================================================

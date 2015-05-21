@@ -55,6 +55,7 @@ typeset dir_Base=$(fn_BaseDir "${dir_Run}")
 typeset dir_Etc=${dir_Base}/etc
 typeset dir_Var=${dir_Base}/var
 typeset dir_Log=${dir_Var}/log
+typeset dir_Lock=${dir_Var}/locks
 typeset dir_Tmp=${dir_Base}/tmp
 typeset dir_Tmp=/tmp
 typeset dir_Plugins=${dir_Base}/plugins

@@ -21,6 +21,10 @@
 # fn_Transition
 # Task
 # GetVar
+# fn_Transition
+# fn_GetJobID
+# fn_ExtractPairs
+# fn_AdminFunctions
 
 fn_JobHeader()
 {
@@ -184,28 +188,30 @@ fn_ProcessRequest()
   
   #echo "Action: ${ACTION}"
   for str_EachACTION in ${ACTION} ; do
-    file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_${RELEASE}
-    echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
-    fn_JobHeader "${file_Job}"
+    for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
+      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_${RELEASE}
+      echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
+      fn_JobHeader "${file_Job}"
 
-    Task "date +$s ; echo PID:\$$"
+      Task "date +$s ; echo PID:\$$"
 
-    echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}"
-    echo "Run SP_${SYSTEM}_${str_EachACTION}"
-    eval "SP_${SYSTEM}_${str_EachACTION}"
-    if [[ $? -ne 0 ]] ; then
-      echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
-      exit 1
-    fi
+      echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}"
+      echo "Run SP_${SYSTEM}_${str_EachACTION}"
+      eval "SP_${SYSTEM}_${str_EachACTION}"
+      if [[ $? -ne 0 ]] ; then
+        echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+        exit 1
+      fi
 
-    fn_JobFooter "${file_Job}"
-    echo "Job created by $(whoami) ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
-    (( int_JobCount+=1 ))
+      fn_JobFooter "${file_Job}"
+       echo "Job created by $(whoami) ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+      (( int_JobCount+=1 ))
 
-    # If there is already another job in a failed state, mv that failed job to the superceeded directory
-    if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* 2>/dev/null)  ]] ; then
-      mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
-    fi
+      # If there is already another job in a failed state, mv that failed job to the superceeded directory
+      if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* 2>/dev/null)  ]] ; then
+        mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
+      fi
+    done
   done
   #fn_PressEnter
 }
@@ -356,4 +362,16 @@ fn_Transition()
       mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${str_Target}"/.
     done
   fi
+}
+
+fn_AdminFunctions()
+{
+  echo "Stubbed for $1"
+  typeset local file_Job=${dir_Job}/${arr_States[${1}]}/${arr_Jobs[${1}]}
+  echo "${file_Job}"
+  clear
+  fn_ShowTop
+  ls -l "${file_Job}"
+  
+  sleep 2
 }

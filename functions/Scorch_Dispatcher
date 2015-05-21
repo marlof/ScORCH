@@ -21,6 +21,14 @@
 
 fn_Dispatcher()
 {
+  echo $$
+  file_Lock=${dir_Lock}/${str_ProgramName}.lck
+  set | grep -i who
+  if [[ ! -f ${file_Lock} ]] ; then
+    ln -s $(whoami)_$$ "${file_Lock}"
+  else
+    echo "Stubbed check run a new dispatcher"
+  fi
   while : ; do
     # Move queued jobs to start state
 	for file_EachJob in $(ls "${dir_Queued}") ; do
@@ -30,6 +38,7 @@ fn_Dispatcher()
     done
 	
 	sleep 20
+	
   done
 
 }

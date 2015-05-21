@@ -30,7 +30,7 @@ fn_CheckSetUp()
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
-                                 dir_Queued dir_Var dir_Log"
+                                 dir_Queued dir_Var dir_Log dir_Lock"
   for p_Variable in ${arr_Directories} ; do
     [[ ! -d ${!p_Variable} ]] && printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
   done
