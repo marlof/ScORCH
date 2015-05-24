@@ -364,14 +364,3 @@ fn_Transition()
   fi
 }
 
-fn_AdminFunctions()
-{
-  echo "Stubbed for $1"
-  typeset local file_Job=${dir_Job}/${arr_States[${1}]}/${arr_Jobs[${1}]}
-  echo "${file_Job}"
-  clear
-  fn_ShowTop
-  ls -l "${file_Job}"
-  
-  sleep 2
-}

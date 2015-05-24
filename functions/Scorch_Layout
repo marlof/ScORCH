@@ -179,27 +179,33 @@ fn_ShowTasks()
 {
   # This functions simply displays the list of tasks that will be run
   # If a value was passed assume that was the job for which to show the tasks
-  typeset local str_JobName=${1}
+  typeset local file_Job="${1}"
   typeset local int_Answer=
 
   fn_ShowTop
   fn_ShowLine
 
-  printf "\n Display tasks for which job(s)?\n\n"
-
-  fn_ShowJobs superceeded starting failed running queued pending new completed
-  fn_ShowLine
-  fn_GetAnswer range
-  str_Answer=$(fn_Range "${str_Answer}")
-  if [ ${str_Answer} != "x" ] ; then
-    for int_Answer in ${str_Answer} ; do
-      printf "\n\n${int_Answer}:  "
-      ls "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
-      printf "\n"
-      grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
-    done
+  if [[ "${file_Job}" ]] ; then
+    ls -l "${file_Job}"
+	fn_ShowLine
+    grep "#${str_ProgramName}_Task" "${file_Job}" | rev | cut -d">" -f4- | rev | more
   else
-    echo "Nothing chosen"
+    printf "\n Display tasks for which job(s)?\n\n"
+
+    fn_ShowJobs superceeded starting failed running queued pending new completed
+    fn_ShowLine
+    fn_GetAnswer range
+    str_Answer=$(fn_Range "${str_Answer}")
+    if [ ${str_Answer} != "x" ] ; then
+      for int_Answer in ${str_Answer} ; do
+        printf "\n\n${int_Answer}:  "
+        ls "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+         printf "\n"
+        grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
+      done
+    else
+      echo "Nothing chosen"
+    fi
   fi
   
   fn_PressEnter
@@ -219,7 +225,8 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
-
+#echo "Passed ${str_State}"
+  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode
     printf " ${dis_ULOn}E${dis_ULOff}dit | "
@@ -231,21 +238,21 @@ fn_ContextMenu()
     esac
   else
     # Generic Mode
+    printf " ${dis_ULOn}N${dis_ULOff}ew | "
     [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1 
     [[ "$(echo ${arr_States[@]} | grep -i running)" ]] && b_RunningJobs=1 
     [[ "$(echo ${arr_States[@]} | grep -i new)"     ]] && b_NewJobs=1 
     [[ "$(echo ${arr_States[@]} | grep -i failed)"  ]] && b_FailedJobs=1 
   fi
   
-  printf "\n\n${dis_Reset}"
-  printf " ${dis_ULOn}N${dis_ULOff}ew | "
   [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
   [[ "${b_RunningJobs}" ]] && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}" ]]  && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | S${dis_ULOn}k${dis_ULOff}ip"
   [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
-  [[ "${arr_Jobs[1]}" ]]   && printf "${dis_ULOn}T${dis_ULOff}asks | "
+  [[ "${arr_Jobs[1]}" ]] || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
+
   printf "e${dis_ULOn}X${dis_ULOff}it\n"
 }
 

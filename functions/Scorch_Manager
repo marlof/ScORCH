@@ -63,3 +63,44 @@ fn_Manager()
   done
   rm "${file_ScreenCache}"
 }
+
+fn_AdminFunctions()
+{
+  echo "Stubbed for $1"
+  typeset str_JobState=${arr_States[${1}]}
+  typeset local file_Job=${dir_Job}/${str_JobState}/${arr_Jobs[${1}]}
+  echo "${file_Job}"
+  clear
+  fn_ShowTop
+  fn_ShowLine
+  typeset local str_JobOwner=$(grep ^str_Owner "${file_Job}")
+  echo " Job Owner : ${str_JobOwner}"
+  fn_ShowLine "-" 
+  ls -l "${file_Job}"
+  fn_ShowLine "-" 
+#echo Passing ${str_JobState}
+  fn_ContextMenu  ${str_JobState}
+    read char_Choice
+    #echo "."
+
+    case ${char_Choice} in
+
+      # Create a new job
+      e | E ) vi "${file_Job}" ;;
+
+      # Job State transition
+      d | D ) fn_Transition delete  ;;
+      q | Q ) fn_Transition queue   ;;
+      r | R ) fn_Transition resume  ;;
+      u | U ) fn_Transition unqueue ;;
+
+      # Misc
+      #m | M ) fn_EditMOTD           ;;
+      t | T ) fn_ShowTasks "${file_Job}"          ;;
+	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
+      
+      
+      x | X ) break ;;
+    esac
+  sleep 5
+}
