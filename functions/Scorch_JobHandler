@@ -172,7 +172,7 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-        printf "${str_Line}" | grep ":" | tr -d "[ \t]" >> "${file_Request}"
+        printf "${str_Line}" | grep ":" >> "${file_Request}"
       fi
     done
     #cat "${file_Request}"
@@ -186,10 +186,11 @@ fn_ProcessRequest()
   fn_GetJobID
   fn_ExtractPairs
   
-  #echo "Action: ${ACTION}"
+  [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
   for str_EachACTION in ${ACTION} ; do
     for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
-      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_${RELEASE}
+      #echo "${str_EachACTION} ${str_EachENVIRONMENT}"
+      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
       fn_JobHeader "${file_Job}"
 
@@ -261,7 +262,7 @@ Task()
   str_OR=${2:-}
   str_Task2=${2}
 
-  printf "fn_Task_${int_TaskCount}()\n{\n  ${str_Task1}\t>> \"\${file_Log}\" 2>\&1 \t#${str_ProgramName}_Task\n  fn_CheckTask \$? \${int_StartTask}\n}\n\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}()\n{\n  ${str_Task1}\t>> \"\${file_Log}\" 2>&1 \t#${str_ProgramName}_Task\n  fn_CheckTask \$? \${int_StartTask}\n}\n\n" >> "${file_Job}"
 
   (( int_TaskCount+=1 ))
 
@@ -283,6 +284,7 @@ GetVar()
   # -default "<value>"         Set a default is no value passed
   # -list                      Expect a list of values into an array by space or comma
   #
+  # awk 20070501 does not allow ignorecase so dont worry if it doesnt work
   # Examples
   #
   # GetVar -pattern "data label" -name DATA_LABEL -d "None"
@@ -306,27 +308,29 @@ GetVar()
     done
   fi
 
-
-  # Awk is a pain if the items are in a list so handle lists seperately
+  # Awk is a pain if the items are in a list so handle lists separately
   # ===================================================================
   if [ "${b_List}" ] ; then
-    str_Value="$(awk 'BEGIN {
+    echo "ListPattern : ${str_Pattern} Name: ${str_Name}"
+    str_Value="$(gawk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
-    str_Value=$(awk 'BEGIN {
+    str_Value="$(gawk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
          $2=$2;
-         print $2}'       "${file_Request}" ) 
+         print $2}'       "${file_Request}" )" 
   fi
 
   # If a value hasnt been found or is empty, use the default if one is set
   # ======================================================================
+  echo "String is ${str_Value}"
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   eval "${str_Name}=\"${str_Value}\""
+  fn_PressEnter
 
 }
 

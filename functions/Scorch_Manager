@@ -17,6 +17,7 @@
 
 # function included
 # fn_Manager   # Loop
+# fn_AdminFunctions
 
 
 fn_Manager()
@@ -36,7 +37,7 @@ fn_Manager()
     #printf "."
     fn_ContextMenu >> "${file_ScreenCache}"
     #printf "."
-    clear ; cat "${file_ScreenCache}"
+    clear ; cat "${file_ScreenCache}" | cut -c1-${int_ScreenWidth}
     read -t 10 char_Choice
     #echo "."
 

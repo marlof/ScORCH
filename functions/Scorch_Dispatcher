@@ -55,7 +55,7 @@ fn_CheckDispatcher()
     rm "${dir_Lock}/${str_ProgramName}.lck"
     "${dir_Base}/${str_ProgramName}" -dispatcher &
   fi
-  # Make sure a dispatcher is runnning
+  # Make sure a dispatcher is running
   echo "Lock dir: ${file_Lock}"
   # repair lock file or start a dispatcher  
   echo "check this is running .... ${str_ProgramName} -dispatcher &"
@@ -66,7 +66,7 @@ fn_RunJobs()
   # Run owned jobs in START state
   #ls "${dir_Starting}"
   #shopt -s nullglob
-  for file_EachJob in $(basename "$(stat -c "%n" "${dir_Starting}"/* 2>/dev/null)")  ; do
+  for file_EachJob in $(basename "$(ls "${dir_Starting}"/* 2>/dev/null)")  ; do
     echo "Starting $(basename "${file_EachJob}")"
     nohup "${dir_Starting}"/${file_EachJob} </dev/null >> "${dir_Log}"/${file_EachJob}.log 2>&1 &
   done

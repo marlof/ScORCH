@@ -37,7 +37,7 @@ fn_CheckSetUp()
 
   str_JobPrefix="Job_"
   if [[ ${b_SetUp} ]] ; then
-    printf "\n\n\nIf this is the first time you are running ${str_ProgramName} run the above"
+    printf "\n\n\nIf this is the first time you are running ${str_ProgramName} run the above\n"
     printf "steps as the framework owner\n"
     exit 1
   fi
