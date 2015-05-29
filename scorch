@@ -57,7 +57,6 @@ typeset dir_Var=${dir_Base}/var
 typeset dir_Log=${dir_Var}/log
 typeset dir_Lock=${dir_Var}/locks
 typeset dir_Tmp=${dir_Base}/tmp
-typeset dir_Tmp=/tmp
 typeset dir_Plugins=${dir_Base}/plugins
 typeset str_Plugins=$(basename "${dir_Plugins}")
 typeset dir_Functions=${dir_Base}/functions
@@ -100,24 +99,30 @@ fn_LoadFunctions()
   #   -post post search
   typeset local dir_Directory="$(basename ${1})"
   typeset local str_Search="${2}"
+  typeset local b_Display="${3}"
   typeset local b_Errors=
 
   cd "${dir_Base}"
 #echo "base:${dir_Base}"
- printf "\nLoading ${dir_Directory}\n"
-#echo "$*"
+  [[ ${b_Display} ]] || printf "\nLoading ${dir_Directory}\n"
+#echo "${b_Display}"
   if [ -d "${dir_Directory}" ] ; then
 #echo "arr_Functions=\$(find -L \"${dir_Directory}\" -name \"${str_Search}_*\")"
 #echo "Initialising. Please wait...."
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-        printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
+        [[ ${b_Display} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
         #printf "."
         #bash "${str_EachFile}" > /dev/null 2>&1 && . "${str_EachFile}"
 
         # Bash the function file for errors before loading it
-        bash "${str_EachFile}" && . "${str_EachFile}" && printf "%10s\n" "OK" || ( printf "%10s\n" "ERROR" && b_Errors=1)
+        bash "${str_EachFile}" && . "${str_EachFile}" 
+		if [[ $? = 0 ]] ; then
+		  [[ ${b_Display} ]] || printf "%10s\n" "OK"
+		else
+		  printf "%10s\n" "ERROR" && b_Errors=1
+		fi
       else
         echo "Cannot access <${str_EachFile}>"
       fi
@@ -152,7 +157,7 @@ if [ $# -ne 0 ] ; then
 
 fi
 
-fn_LoadFunctions "${str_Functions}" "Scorch_"
+fn_LoadFunctions "${str_Functions}" "Scorch_" ${b_New}
 fn_CheckSetUp
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir ${dir_Tmp} &&  exit 1

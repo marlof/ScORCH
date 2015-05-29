@@ -35,8 +35,8 @@ fn_JobHeader()
 
   typeset local file_Job=${1}
   echo "Creating ${file_Job}"
-  touch "${file_Job}"
-  fn_CreateFile "${file_Job}"
+  #touch "${file_Job}"
+  fn_CreateFile "${file_Job}" blank
 
   cat > "${file_Job}" << EOF
 #!/bin/bash
@@ -121,25 +121,25 @@ mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 
 
 exit 0
+
 EOF
+
+  echo "# Template Used" >> "${file_Job}"
+  cat "${file_Request}" >> "${file_Job}"
+  chmod 754 "${file_Job}"
+
 }
 
 fn_NewJob()
 {
-  echo "Initailise plugins"
+  fn_ShowTop
+  fn_ShowLine "-"
   fn_LoadFunctions ${str_Plugins} "SP_"
 
   fn_GetRequest
   fn_ProcessRequest
 
-  if [ -f "${file_Job}" ] ; then
-    echo "# Template Used" >> "${file_Job}"
-    cat "${file_Request}" >> "${file_Job}"
-    chmod 754 "${file_Job}"
-  fi
   rm "${file_Request}"
-  sleep 2
-
 }
 
 fn_GetRequest()
@@ -196,11 +196,12 @@ fn_ProcessRequest()
 
       Task "date +$s ; echo PID:\$$"
 
-      echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}"
-      echo "Run SP_${SYSTEM}_${str_EachACTION}"
+      echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
+      #echo "Run SP_${SYSTEM}_${str_EachACTION}"
       eval "SP_${SYSTEM}_${str_EachACTION}"
       if [[ $? -ne 0 ]] ; then
         echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+		fn_PressEnter
         exit 1
       fi
 
@@ -311,13 +312,13 @@ GetVar()
   # Awk is a pain if the items are in a list so handle lists separately
   # ===================================================================
   if [ "${b_List}" ] ; then
-    echo "ListPattern : ${str_Pattern} Name: ${str_Name}"
-    str_Value="$(gawk 'BEGIN {
+    #echo "ListPattern : ${str_Pattern} Name: ${str_Name}"
+    str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
-    str_Value="$(gawk 'BEGIN {
+    str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
@@ -327,10 +328,10 @@ GetVar()
 
   # If a value hasnt been found or is empty, use the default if one is set
   # ======================================================================
-  echo "String is ${str_Value}"
+  #echo "String is ${str_Value}"
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   eval "${str_Name}=\"${str_Value}\""
-  fn_PressEnter
+  #fn_PressEnter
 
 }
 

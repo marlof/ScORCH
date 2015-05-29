@@ -253,7 +253,7 @@ fn_ContextMenu()
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}" ]] || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
 
-  printf "e${dis_ULOn}X${dis_ULOff}it\n"
+  printf "e${dis_ULOn}X${dis_ULOff}it : "
 }
 
 

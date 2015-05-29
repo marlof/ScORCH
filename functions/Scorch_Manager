@@ -86,20 +86,18 @@ fn_AdminFunctions()
 
     case ${char_Choice} in
 
-      # Create a new job
+      # Edit job
       e | E ) vi "${file_Job}" ;;
 
       # Job State transition
-      d | D ) fn_Transition delete  ;;
-      q | Q ) fn_Transition queue   ;;
-      r | R ) fn_Transition resume  ;;
-      u | U ) fn_Transition unqueue ;;
+      d | D ) mv "${file_Job}" "${dir_Deleted}" ;;
+      q | Q ) mv "${file_Job}" "${dir_Queued}"  ;;
+      r | R ) mv "${file_Job}" "${dir_Queued}"  ;;
+      u | U ) mv "${file_Job}" "${dir_New}"     ;;
 
-      # Misc
-      #m | M ) fn_EditMOTD           ;;
+      # Task View
       t | T ) fn_ShowTasks "${file_Job}"          ;;
-	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
-      
+	  
       
       x | X ) break ;;
     esac

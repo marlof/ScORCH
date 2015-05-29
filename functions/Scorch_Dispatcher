@@ -21,14 +21,14 @@
 
 fn_Dispatcher()
 {
-  echo $$
+  # echo $$
   file_Lock=${dir_Lock}/${str_ProgramName}.lck
   set | grep -i who
   if [[ ! -f ${file_Lock} ]] ; then
     ln -s $(whoami)_$$ "${file_Lock}"
   else
     fn_CheckDispatcher
-    echo "Stubbed check run a new dispatcher"
+    #echo "Stubbed check run a new dispatcher"
   fi
   while : ; do
     # Move queued jobs to start state
@@ -47,7 +47,7 @@ fn_Dispatcher()
 fn_CheckDispatcher()
 {
   # Check Dispatcher
-  echo "stub: fn_CheckDispatcher"
+  # echo "stub: fn_CheckDispatcher"
   typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2 2>/dev/null || echo 0)
   if [[ $(ps -ef | grep ${int_DispatcherPID}) ]] ; then
     echo "Dispatcher ok"
@@ -56,9 +56,9 @@ fn_CheckDispatcher()
     "${dir_Base}/${str_ProgramName}" -dispatcher &
   fi
   # Make sure a dispatcher is running
-  echo "Lock dir: ${file_Lock}"
+  #echo "Lock dir: ${file_Lock}"
   # repair lock file or start a dispatcher  
-  echo "check this is running .... ${str_ProgramName} -dispatcher &"
+  #echo "check this is running .... ${str_ProgramName} -dispatcher &"
 }
 
 fn_RunJobs()
@@ -66,7 +66,7 @@ fn_RunJobs()
   # Run owned jobs in START state
   #ls "${dir_Starting}"
   #shopt -s nullglob
-  for file_EachJob in $(basename "$(ls "${dir_Starting}"/* 2>/dev/null)")  ; do
+  for file_EachJob in $(basename "$(ls -tr "${dir_Starting}"/* 2>/dev/null)")  ; do
     echo "Starting $(basename "${file_EachJob}")"
     nohup "${dir_Starting}"/${file_EachJob} </dev/null >> "${dir_Log}"/${file_EachJob}.log 2>&1 &
   done
