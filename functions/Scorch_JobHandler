@@ -190,6 +190,7 @@ fn_ProcessRequest()
   for str_EachACTION in ${ACTION} ; do
     for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
       #echo "${str_EachACTION} ${str_EachENVIRONMENT}"
+	  int_TaskCount=0
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
       fn_JobHeader "${file_Job}"
