@@ -37,7 +37,6 @@ fn_JobHeader()
   echo "Creating ${file_Job}"
   #touch "${file_Job}"
   fn_CreateFile "${file_Job}" blank
-
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
@@ -190,11 +189,12 @@ fn_ProcessRequest()
   for str_EachACTION in ${ACTION} ; do
     for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
       #echo "${str_EachACTION} ${str_EachENVIRONMENT}"
+
 	  int_TaskCount=0
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
-      fn_JobHeader "${file_Job}"
 
+      fn_JobHeader "${file_Job}"
       Task "date +$s ; echo PID:\$$"
 
       echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
@@ -258,13 +258,13 @@ Task()
   # 
   # This function will Add Tasks to a scorch Job
   # ================================================================================
-  echo " "
   int_TaskCount=${int_TaskCount:-0}
   str_Task1=${1}
   str_OR=${2:-}
   str_Task2=${2}
 
-  printf "fn_Task_${int_TaskCount}()\n{\n  ${str_Task1}\t>> \"\${file_Log}\" 2>&1 \t#${str_ProgramName}_Task\n  fn_CheckTask \$? \${int_StartTask}\n}\n\n" >> "${file_Job}"
+#  printf "fn_Task_${int_TaskCount}()\n{\n  ${str_Task1}\t>> \"\${file_Log}\" 2>&1 \t#${str_ProgramName}_Task\n  fn_CheckTask \$? \${int_StartTask}\n}\n\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}(){ ${str_Task1}\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 
   (( int_TaskCount+=1 ))
 

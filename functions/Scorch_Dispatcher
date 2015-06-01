@@ -23,7 +23,7 @@ fn_Dispatcher()
 {
   # echo $$
   file_Lock=${dir_Lock}/${str_ProgramName}.lck
-  set | grep -i who
+ # set | grep -i who
   if [[ ! -f ${file_Lock} ]] ; then
     ln -s $(whoami)_$$ "${file_Lock}"
   else
@@ -33,9 +33,10 @@ fn_Dispatcher()
   while : ; do
     # Move queued jobs to start state
 	for file_EachJob in $(ls "${dir_Queued}") ; do
-	  echo check queue lock ${file_EachJob}
+	  echo Need to check queue lock ${file_EachJob}
 	  # if queue ok mv file
 	  mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
+	  # fi
     done
 	
 	sleep 20
@@ -66,8 +67,9 @@ fn_RunJobs()
   # Run owned jobs in START state
   #ls "${dir_Starting}"
   #shopt -s nullglob
-  for file_EachJob in $(basename "$(ls -tr "${dir_Starting}"/* 2>/dev/null)")  ; do
+  for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
     echo "Starting $(basename "${file_EachJob}")"
-    nohup "${dir_Starting}"/${file_EachJob} </dev/null >> "${dir_Log}"/${file_EachJob}.log 2>&1 &
+    nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+	sleep .2
   done
 }
