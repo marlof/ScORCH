@@ -69,7 +69,7 @@ dir_Failed="${dir_Failed}"
 dir_Completed="${dir_Completed}"
 dir_Starting="${dir_Starting}"
 file_Log="${dir_Var}/log/\${str_JobName}.log"
-
+LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
 
 [[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
 
@@ -85,6 +85,7 @@ fn_CheckTask()
     echo "\$(date):Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
     echo "Failed:Resume point:\${int_Task}" >> "\${file_Log}"
+    rm "\${LOCK}"
     exit 1
   else
     echo "Task \${int_Task} completed \$(date)"
@@ -117,7 +118,7 @@ while [ \${int_StartTask} -le \${int_Last} ] ; do
 done
 
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
-
+rm "\${LOCK}"
 
 exit 0
 
@@ -157,8 +158,8 @@ fn_GetRequest()
       echo ${str_Line} | grep ":" >> ${file_Request}
     done < ${str_File}
   else
-    printf "\n     help <plugin>    for additonal parameters\n"
-    printf "\n Please enter the request. When the request is complete use a fullstop on a newline.\n\n"
+    printf "\n help <plugin>    at any time for additional parameters\n\n"
+    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read str_Line
       if [[  "${str_Line}" =~ "help" ]] ; then

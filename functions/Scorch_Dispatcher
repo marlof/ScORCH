@@ -22,21 +22,25 @@
 fn_Dispatcher()
 {
   # echo $$
-  file_Lock=${dir_Lock}/${str_ProgramName}.lck
+  file_DispatchLock="${dir_Lock}/${str_ProgramName}.lck"
  # set | grep -i who
-  if [[ ! -f ${file_Lock} ]] ; then
-    ln -s $(whoami)_$$ "${file_Lock}"
+  if [[ ! -f ${file_DispatchLock} ]] ; then
+    ln -s $(whoami)_$$ "${file_DispatchLock}"
   else
     fn_CheckDispatcher
     #echo "Stubbed check run a new dispatcher"
   fi
   while : ; do
     # Move queued jobs to start state
-	for file_EachJob in $(ls "${dir_Queued}") ; do
-	  echo Need to check queue lock ${file_EachJob}
-	  # if queue ok mv file
-	  mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
-	  # fi
+	for file_EachJob in $(ls -rt1 "${dir_Queued}") ; do
+	  str_QueueLock=$(echo ${file_EachJob} | awk -F"_" '{print $4"_"$5}')
+      file_QueueLock="${file_JobLock}.${str_QueueLock}"
+	  #echo "Checking queue lock ${file_EachJob} and ${file_QueueLock}"
+	  if [ ! -L "${file_QueueLock}" ] ; then
+	    ln -s "${file_EachJob}" "${file_QueueLock}"
+	    mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
+		sleep .5
+	  fi
     done
 	
 	sleep 20

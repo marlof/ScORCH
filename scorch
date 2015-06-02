@@ -82,6 +82,7 @@ typeset      file_JobId=${dir_Var}/jobid
 # Dispatcher definitions
 # ======================
 typeset     int_DispatcherPID=0
+typeset     file_JobLock=${dir_Lock}/JobLock
 
 # Job states
 # ==========
