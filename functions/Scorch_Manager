@@ -35,9 +35,10 @@ fn_Manager()
     #printf "."
     fn_DisplayMOTD >> "${file_ScreenCache}"
     #printf "."
-    fn_ContextMenu >> "${file_ScreenCache}"
+    #fn_ContextMenu >> "${file_ScreenCache}"
     #printf "."
     clear ; cat "${file_ScreenCache}" | cut -c1-${int_ScreenWidth}
+	fn_ContextMenu
     read -t 10 char_Choice
     #echo "."
 
@@ -69,7 +70,8 @@ fn_AdminFunctions()
 {
   echo "Stubbed for $1"
   typeset str_JobState=${arr_States[${1}]}
-  typeset local file_Job=${dir_Job}/${str_JobState}/${arr_Jobs[${1}]}
+  typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${1}]}
+  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   echo "${file_Job}"
   clear
   fn_ShowTop
@@ -88,18 +90,35 @@ fn_AdminFunctions()
 
       # Edit job
       e | E ) vi "${file_Job}" ;;
+	  l | L ) vi "${file_Log}" ;;
 
       # Job State transition
-      d | D ) mv "${file_Job}" "${dir_Deleted}" ;;
-      q | Q ) mv "${file_Job}" "${dir_Queued}"  ;;
-      r | R ) mv "${file_Job}" "${dir_Queued}"  ;;
-      u | U ) mv "${file_Job}" "${dir_New}"     ;;
+      d | D ) fn_Audit "${file_Job}" deleted
+              mv "${file_Job}" "${dir_Deleted}" ;;
+
+      q | Q ) fn_Audit "${file_Job}" queued
+              fn_UpdateResumePoint "${file_Job}" 0
+              mv "${file_Job}" "${dir_Queued}"  ;;
+
+	  r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
+              fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
+              mv "${file_Job}" "${dir_Queued}"  ;;
+
+	  s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
+              fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
+              mv "${file_Job}" "${dir_Queued}"  ;;
+
+
+	  u | U ) fn_Audit "${file_Job}" unqueued
+              mv "${file_Job}" "${dir_New}"     ;;
 
       # Task View
       t | T ) fn_ShowTasks "${file_Job}"          ;;
-	  
-      
+
+	  f | F ) fn_Audit "${file_Job}" "fix in progress"
+              echo "Fix in Progress: Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
+
       x | X ) break ;;
     esac
-  sleep 5
+  sleep .5
 }

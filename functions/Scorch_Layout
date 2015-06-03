@@ -127,7 +127,9 @@ fn_ShowJobs()
 
       # If job state is failed or warning, set a line colour
       # ====================================================
-      [[ "${str_EachJobState}" = "failed"  ]] && str_StatusColour="${dis_BRed}"
+      if [[ "${str_EachJobState}" = "failed"  ]] ; then
+        str_StatusColour="${dis_BRed}"
+      fi
       #[[ "${str_EachJobState}" = "warning" ]] && str_StatusColour="${dis_BYellow}"
 
       # Display each job for each job state
@@ -248,7 +250,7 @@ fn_ContextMenu()
   [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
   [[ "${b_RunningJobs}" ]] && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}" ]]  && printf "${dis_ULOn}R${dis_ULOff}esume | "
-  [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | S${dis_ULOn}k${dis_ULOff}ip"
+  [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
   [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}" ]] || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "

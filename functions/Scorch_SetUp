@@ -130,6 +130,31 @@ fn_CreateFile()
   [[ "${b_Blank}" ]] && > "${file_Name}"
 }
 
+fn_GetResumePoint()
+{
+  typeset local file_Log="${1}"
+  tail -10 "${file_Log}" | grep "Resume point:" | tail -1 | awk -F":" '{print $NF}'
+}
+
+fn_UpdateResumePoint()
+{
+  typeset local file_Job="${1}"                             # The Job to update
+  typeset local int_ResumePoint="${2}"                      # The new start task
+  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+
+  (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
+  cat "${file_Job}" | sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ > "${file_Job}".tmp
+  [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" && rm "${file_Job}".tmp
+  echo "Resuming from task ${int_ResumePoint}" >> "${file_Log}"
+}
+
+fn_Audit()
+{
+  typeset local file_Job="${1}"                             # The Job to update
+  typeset local str_Transition="${2}"                       # The transition being performed
+  echo $(date "+%D %T") $(whoami) ${str_Transition} >> ${file_Job}
+}
+
 fn_PressEnter()
 {
   printf "\n\n"
