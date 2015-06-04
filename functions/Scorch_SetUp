@@ -19,6 +19,13 @@
 # fn_Help
 # fn_HouseKeeping
 # fn_GetAnswer
+# fn_Range()
+# fn_CreateFile()
+# fn_GetResumePoint()
+# fn_UpdateResumePoint()
+# fn_Audit()
+# fn_PressEnter()
+
 
 # Some global variables for setup functions
 typeset str_Answer=      # Used in fn_PressEnter and fn_GetAnswer

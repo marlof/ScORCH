@@ -55,7 +55,8 @@ fn_CheckDispatcher()
   # echo "stub: fn_CheckDispatcher"
   typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2 2>/dev/null || echo 0)
   if [[ $(ps -ef | grep ${int_DispatcherPID}) ]] ; then
-    echo "Dispatcher ok"
+    :
+	#echo "Dispatcher ok"
   else
     rm "${dir_Lock}/${str_ProgramName}.lck"
     "${dir_Base}/${str_ProgramName}" -dispatcher &

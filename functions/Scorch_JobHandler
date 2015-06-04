@@ -15,16 +15,15 @@
 #
 
 # fn_NewJob
-# fn_GetRequest
-# fn_JobHeader
-# fn_JobFooter
-# fn_Transition
-# Task
-# GetVar
-# fn_Transition
-# fn_GetJobID
-# fn_ExtractPairs
-# fn_AdminFunctions
+# fn_JobHeader()
+# fn_CheckTask()
+# fn_JobFooter()
+# fn_NewJob()
+# fn_GetRequest()
+# fn_ProcessRequest()
+# fn_GetJobID()
+# fn_ExtractPairs()
+# fn_Transition()
 
 fn_JobHeader()
 {
@@ -82,14 +81,14 @@ fn_CheckTask()
   typeset local int_Task=\${2}
 
   if [ \${int_RC} -ne 0 ] ; then
-    echo "\$(date):Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+    echo "+\$(date "+%D %T") Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
     echo "Failed:Resume point:\${int_Task}" >> "\${file_Log}"
     rm "\${LOCK}"
     exit 1
   else
     echo "Task \${int_Task} completed \$(date)"
-    echo "\$(date):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
+    echo "\$(date "+%D %T"):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
   fi
 }
 
@@ -120,12 +119,17 @@ done
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}"
 
+int_FailureCount=\$(grep "^+Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
+(( int_FailureCount+=0 ))
+echo "\$(date "+%D %T") Tasks Run[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
+
 exit 0
 
 EOF
 
   echo "# Template Used" >> "${file_Job}"
   cat "${file_Request}" >> "${file_Job}"
+  echo "=============================" >> "${file_Job}"
   chmod 754 "${file_Job}"
 
 }
@@ -177,7 +181,6 @@ fn_GetRequest()
     done
     #cat "${file_Request}"
   fi
-
 }
 
 fn_ProcessRequest()
@@ -217,7 +220,6 @@ fn_ProcessRequest()
       fi
     done
   done
-  #fn_PressEnter
 }
 
 fn_GetJobID()
@@ -240,7 +242,6 @@ fn_GetJobID()
     echo "Could not get exclusive lock"
     exit 1
   fi
-  
 }
 
 fn_ExtractPairs()
