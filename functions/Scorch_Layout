@@ -136,6 +136,7 @@ fn_ShowJobs()
       # Display each job for each job state
       # ===================================
       for str_EachJob in ${lis_Jobs} ; do
+	    [ ${int_Count} -gt ${int_MaxShown} ] && break
         if [[ -r ${str_EachJob} ]] ; then
           str_Owner=" "
         else

@@ -1,0 +1,5 @@
+SP_DEMO_RANDOM()
+{
+  Task "hostname"
+  Task "printf \${RANDOM:4}"
+}

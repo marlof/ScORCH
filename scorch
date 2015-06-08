@@ -84,6 +84,9 @@ typeset      file_JobId=${dir_Var}/jobid
 typeset     int_DispatcherPID=0
 typeset     file_JobLock=${dir_Lock}/JobLock
 
+# Layout Option
+typeset     int_MaxShown=15
+
 # Job states
 # ==========
 #file_States=${dir_Var}/states
@@ -141,6 +144,8 @@ fn_LoadFunctions()
 typeset b_Help=
 typeset b_Dispatcher=
 typeset b_New=
+typeset b_Start=
+typeset file_Template=
 
 # Check for argument list
 # scorch can be run in several ways (create, file, dispatcher)
@@ -153,6 +158,8 @@ if [ $# -ne 0 ] ; then
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -dispatcher ) b_Dispatcher=1 ;;
       -new        ) b_New=1 ;;
+      -file       ) shift ; file_Template=$1 ;;
+	  -s          ) b_Start=1 ;;
 
     esac
     shift
@@ -164,6 +171,11 @@ fi
 fn_LoadFunctions "${str_Functions}" "Scorch_" ${b_New}
 fn_CheckSetUp
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
+if [[ ${file_Template} ]] ; then
+  [[ ! -r "${file_Template}" ]] &&  echo "Error: Cannot read template file ${file_Request}" && exit 1
+  fn_NewJob "${file_Template}"
+  exit 0
+fi
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir ${dir_Tmp} &&  exit 1
 fn_SetLayout
 [ "${b_Help}" ] && fn_Help && exit 0

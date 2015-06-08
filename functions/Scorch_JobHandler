@@ -119,7 +119,7 @@ done
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}"
 
-int_FailureCount=\$(grep "^+Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
+int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
 (( int_FailureCount+=0 ))
 echo "\$(date "+%D %T") Tasks Run[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
 
@@ -140,7 +140,7 @@ fn_NewJob()
   fn_ShowLine "-"
   fn_LoadFunctions ${str_Plugins} "SP_"
 
-  fn_GetRequest
+  fn_GetRequest "${file_Template}"
   fn_ProcessRequest
 
   rm "${file_Request}"
@@ -149,18 +149,18 @@ fn_NewJob()
 fn_GetRequest()
 {
   # Receive the request from a file or interactively
-  typeset local str_File="${1:-}"
+  typeset local file_Template="${1:-}"
   typeset local str_Line=""
 
   # global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$
   #echo ${file_Request}
 
-  if [ ! -z "${str_File}" ] ; then
-    echo "$(date +'%D %T'): Processing file:${file_Request}"
-    while read str_Line : ; do
+  if [ ! -z "${file_Template}" ] ; then
+    echo "$(date +'%D %T'): Processing file:${file_Template}"
+    while read str_Line ; do
       echo ${str_Line} | grep ":" >> ${file_Request}
-    done < ${str_File}
+    done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
@@ -218,6 +218,7 @@ fn_ProcessRequest()
       if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* 2>/dev/null)  ]] ; then
         mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
       fi
+	  [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
     done
   done
 }
@@ -351,12 +352,12 @@ fn_Transition()
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs new failed   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
-    resume  ) fn_ShowJobs     failed   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    queue   ) fn_ShowJobs failed new   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    resume  ) fn_ShowJobs failed       ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs new          ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs starting queued ; str_Target="${dir_New}"     ;;
+    delete  ) fn_ShowJobs failed new          ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs failed starting queued     ; str_Target="${dir_New}"     ;;
 
   esac
 
