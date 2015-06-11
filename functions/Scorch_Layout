@@ -62,7 +62,8 @@ fn_ShowTop()
   # Collect disk usage to display
   int_DiskUsage=$(df "${dir_Base}" | tail -1 | cut -d"%" -f1 | awk -F" " '{print $NF}')
   # Output the program name, the dispatcher PID and the date
-  typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2 2>/dev/null || echo 0)
+  typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
+  int_DispatcherPID=${int_DispatcherPID:-0}
   printf "%${int_TitleWidth}s ${cha_ColumnSep} %${int_Column2Width}s %${int_DateLocation}s\n" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID} ${cha_ColumnSep} ${int_DiskUsage}% ${cha_ColumnSep}" \

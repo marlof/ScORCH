@@ -22,44 +22,66 @@
 fn_Dispatcher()
 {
   # echo $$
-  file_DispatchLock="${dir_Lock}/${str_ProgramName}.lck"
+  typeset local file_DispatchLock="${dir_Lock}/${str_ProgramName}.lck"
+  typeset local int_DispatchCount=0
+  
+  fn_CreateFile ${file_DispatchLog}
  # set | grep -i who
-  if [[ ! -f ${file_DispatchLock} ]] ; then
+  if [[ ! -L ${file_DispatchLock} ]] ; then
     ln -s $(whoami)_$$ "${file_DispatchLock}"
   else
-    fn_CheckDispatcher
-    #echo "Stubbed check run a new dispatcher"
+    rm "${file_DispatchLock}"
+    #fn_CheckDispatcher
   fi
-  while : ; do
-    # Move queued jobs to start state
-	for file_EachJob in $(ls -rt1 "${dir_Queued}") ; do
-	  str_QueueLock=$(echo ${file_EachJob} | awk -F"_" '{print $4"_"$5}')
-      file_QueueLock="${file_JobLock}.${str_QueueLock}"
-	  #echo "Checking queue lock ${file_EachJob} and ${file_QueueLock}"
-	  if [ ! -L "${file_QueueLock}" ] ; then
-	    ln -s "${file_EachJob}" "${file_QueueLock}"
-	    mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
-		sleep .5
-	  fi
-    done
-	
-	sleep 20
-	
-  done
+  while [ ${int_DispatchCount} -lt ${int_DispatchMax} ] ; do
+    # Repair any missing lock file for dispatcher
+    [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
 
+    # Move queued jobs to start state
+	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
+	if [[ "${arr_QueuedJobs}" ]] ; then
+      for file_EachJob in ${arr_QueuedJobs} ; do
+        str_QueueLock=$(echo "${file_EachJob}" | awk -F"_" '{print $4"_"$5}')
+        file_QueueLock="${file_JobLock}.${str_QueueLock}"
+  
+        if [ ! -L "${file_QueueLock}" ] ; then
+          ln -s "${file_EachJob}" "${file_QueueLock}"
+          echo "$(date +"%D %T") Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
+          mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
+		  int_DispatchCount=0
+          sleep 1
+        else
+          # Check that for every env lock file that there is a job in a non finish state
+          # (failed, completed, deleted, new)
+          typeset local arr_JobLocks=$(ls "${file_JobLock}"*)
+          for file_EachLock in ${arr_JobLocks} ; do
+            [[ "$(find ${dir_Job}/running ${dir_Job}/starting -name $(ls -l "${file_EachLock}" | awk -F" " '{print $NF}'))" ]] || rm ${file_EachLock}
+          done
+          sleep 1
+        fi
+      done
+    fi
+	(( int_DispatchCount+=1 ))
+    sleep 20
+  done
+  rm -f "${file_DispatchLock}"
+  typeset int_DispatcherPID=0
+  exit 0
 }
 
 fn_CheckDispatcher()
 {
   # Check Dispatcher
-  # echo "stub: fn_CheckDispatcher"
-  typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2 2>/dev/null || echo 0)
-  if [[ $(ps -ef | grep ${int_DispatcherPID}) ]] ; then
+  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
+
+  ps -p ${int_DispatcherPID} > /dev/null 2>&1 && return 0
+
+  if $(ps -p ${int_DispatcherPID} > /dev/null 2>&1 ) ; then
     :
 	#echo "Dispatcher ok"
   else
-    rm "${dir_Lock}/${str_ProgramName}.lck"
-    "${dir_Base}/${str_ProgramName}" -dispatcher &
+    rm "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null
+    "${dir_Base}/${str_ProgramName}" -dispatcher >> ${file_DispatchLog} &
   fi
   # Make sure a dispatcher is running
   #echo "Lock dir: ${file_Lock}"
@@ -75,6 +97,6 @@ fn_RunJobs()
   for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
     echo "Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
-	sleep .2
+	sleep 1
   done
 }

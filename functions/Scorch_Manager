@@ -98,15 +98,18 @@ fn_AdminFunctions()
 
       q | Q ) fn_Audit "${file_Job}" queued
               fn_UpdateResumePoint "${file_Job}" 0
-              mv "${file_Job}" "${dir_Queued}"  ;;
+              mv "${file_Job}" "${dir_Queued}"
+              fn_CheckDispatcher			    ;;
 
 	  r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
               fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
-              mv "${file_Job}" "${dir_Queued}"  ;;
+              mv "${file_Job}" "${dir_Queued}"
+              fn_CheckDispatcher                ;;
 
 	  s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
               fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
-              mv "${file_Job}" "${dir_Queued}"  ;;
+              mv "${file_Job}" "${dir_Queued}"
+              fn_CheckDispatcher                ;;
 
 
 	  u | U ) fn_Audit "${file_Job}" unqueued

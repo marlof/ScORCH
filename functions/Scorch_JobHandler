@@ -368,8 +368,17 @@ fn_Transition()
   # echo ">${arr_Answer}<"
   if [ "${arr_Answer}" != "x " ] ; then
     for str_EachAnswer in ${arr_Answer} ; do
-	  fn_Audit "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "$(basename ${str_Target})"
-      mv "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "${str_Target}"/.
+	  typeset local file_Job="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
+      typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+
+#	  fn_Audit "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "$(basename ${str_Target})"
+	  fn_Audit "${file_Job}" "$(basename ${str_Target})"
+case ${str_Transition} in 
+ queue ) fn_UpdateResumePoint "${file_Job}" 0  ;;
+ resume ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"      ;;
+       # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
+esac
+      mv "${file_Job}" "${str_Target}"/.
     done
   fi
 }

@@ -82,7 +82,9 @@ typeset      file_JobId=${dir_Var}/jobid
 # Dispatcher definitions
 # ======================
 typeset     int_DispatcherPID=0
+typeset     int_DispatchMax=10
 typeset     file_JobLock=${dir_Lock}/JobLock
+typeset     file_DispatchLog=${dir_Log}/dispatch.log
 
 # Layout Option
 typeset     int_MaxShown=15
