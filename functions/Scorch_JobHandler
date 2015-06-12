@@ -138,7 +138,7 @@ fn_NewJob()
 {
   fn_ShowTop
   fn_ShowLine "-"
-  fn_LoadFunctions ${str_Plugins} "SP_"
+  fn_LoadFunctions ${dir_Plugins} "SP_"
 
   fn_GetRequest "${file_Template}"
   fn_ProcessRequest

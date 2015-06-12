@@ -57,7 +57,7 @@ fn_ShowTop()
   # Check the current width of the screen
   # =====================================
   int_ScreenWidth=$(tput cols)
-  (( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 7 ))
+  (( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 11 ))
 
   # Collect disk usage to display
   int_DiskUsage=$(df "${dir_Base}" | tail -1 | cut -d"%" -f1 | awk -F" " '{print $NF}')
@@ -92,7 +92,8 @@ fn_ShowLine()
   # ==========================================================
   (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
-}
+
+  }
 
 fn_ShowJobs()
 {

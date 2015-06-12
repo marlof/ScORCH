@@ -106,12 +106,13 @@ fn_LoadFunctions()
   #   -d    dir
   #   -pre  pre search
   #   -post post search
-  typeset local dir_Directory="$(basename ${1})"
+  #typeset local dir_Directory="$(basename ${1})"
+  typeset local dir_Directory="${1}"
   typeset local str_Search="${2}"
   typeset local b_Display="${3}"
   typeset local b_Errors=
-
-  cd "${dir_Base}"
+#pwd; sleep 4
+#  cd "${dir_Base}"
 #echo "base:${dir_Base}"
   [[ ${b_Display} ]] || printf "\nLoading ${dir_Directory}\n"
 #echo "${b_Display}"
@@ -160,8 +161,10 @@ if [ $# -ne 0 ] ; then
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -dispatcher ) b_Dispatcher=1 ;;
       -new        ) b_New=1 ;;
-      -file       ) shift ; file_Template=$1 ;;
+      -file       ) shift ; file_Template="$1" ;;
 	  -s          ) b_Start=1 ;;
+	  -p          ) shift ; dir_Plugins="$1"   ;;
+	  -f          ) shift ; dir_Functions="$1" ;;
 
     esac
     shift
@@ -170,7 +173,7 @@ if [ $# -ne 0 ] ; then
 
 fi
 
-fn_LoadFunctions "${str_Functions}" "Scorch_" ${b_New}
+fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
 fn_CheckSetUp
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
 if [[ ${file_Template} ]] ; then

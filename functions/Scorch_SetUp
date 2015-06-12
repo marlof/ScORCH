@@ -67,6 +67,10 @@ fn_Help()
   echo "    -new                          Load new job from input"
   echo "    -file <file template> [-s]    Load new job from file [ and move to start ]"
   echo " "
+  echo " # Admin and development "
+  echo "    -p <dir>                      Use Plugins from given directory"
+  echo "    -f <dir>                      Use Functions from given directory"
+  echo " "
 }
 
 fn_HouseKeeping()
