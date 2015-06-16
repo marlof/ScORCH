@@ -57,17 +57,25 @@ fn_ShowTop()
   # Check the current width of the screen
   # =====================================
   int_ScreenWidth=$(tput cols)
-  (( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 11 ))
+  #(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
+  (( int_DatePut = ${int_ScreenWidth} - 21 ))
 
   # Collect disk usage to display
-  int_DiskUsage=$(df "${dir_Base}" | tail -1 | cut -d"%" -f1 | awk -F" " '{print $NF}')
+  #int_DiskUsage=$(df "${dir_Base}" |  awk 'NR==2 {sub(/%/,""); if ($5 > 44 ) print "[41m"$5"[0m" else print $5}')
+  int_DiskUsage=$(df "${dir_Base}" |  awk 'NR==2 {sub(/%/,""); if ($5 > 80 ) { 
+                                        printf "[41m"$5"%" } 
+	                                  else { 
+	                                    printf $5"%"
+									  }
+                                      printf "[0m" }')
   # Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   int_DispatcherPID=${int_DispatcherPID:-0}
-  printf "%${int_TitleWidth}s ${cha_ColumnSep} %${int_Column2Width}s %${int_DateLocation}s\n" \
+  printf " %${int_TitleWidth}s| %${int_Column3Width}s| %${int_Column4Width}s| " \
          "${str_ProgramName} [${str_ProgramVersion}]" \
-         "D:${int_DispatcherPID} ${cha_ColumnSep} ${int_DiskUsage}% ${cha_ColumnSep}" \
-         "$(date +'%D %T')"
+         "D:${int_DispatcherPID}" \
+		 "${int_DiskUsage}"
+  tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
   # Reset the Array for Jobs and States
@@ -90,7 +98,7 @@ fn_ShowLine()
 
   # Set the number of characters required to the correct width
   # ==========================================================
-  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
+  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 2 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
   }
@@ -152,10 +160,9 @@ fn_ShowJobs()
           str_Ticket="$(echo ${str_EachJob}| cut -d"_" -f3)"
         fi
         #   colour number 
-        printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s |"   "${int_Count}"
+        printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}"
         printf " %${int_Column2Width}s|"   "${str_Ticket}"
         printf " %${int_Column3Width}s|"   "$(echo ${str_EachJob}| cut -d"_" -f4)"
-
 
         # slow way
         printf " %${int_Column4Width}s|"   "$(echo ${str_EachJob}| cut -d"_" -f5)"

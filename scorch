@@ -148,6 +148,7 @@ typeset b_Help=
 typeset b_Dispatcher=
 typeset b_New=
 typeset b_Start=
+typeset b_Install=
 typeset file_Template=
 
 # Check for argument list
@@ -165,6 +166,7 @@ if [ $# -ne 0 ] ; then
 	  -s          ) b_Start=1 ;;
 	  -p          ) shift ; dir_Plugins="$1"   ;;
 	  -f          ) shift ; dir_Functions="$1" ;;
+      -install    ) b_Install=1 ;;
 
     esac
     shift

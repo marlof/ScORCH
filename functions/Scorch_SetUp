@@ -33,21 +33,30 @@ typeset str_Answer=      # Used in fn_PressEnter and fn_GetAnswer
 fn_CheckSetUp()
 {
   typeset b_SetUp=         # Is this the first run
-  #printf "."
+
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
                                  dir_Queued dir_Var dir_Log dir_Lock"
+  [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${arr_Directories} ; do
-    [[ ! -d ${!p_Variable} ]] && printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
-  done
+    if [[ ! -d ${!p_Variable} ]] ; then
+      printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
+      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
 
-  str_JobPrefix="Job_"
+    fi
+  done
+  
+  typeset local arr_Files="${file_DispatchLog}"
+
   if [[ ${b_SetUp} ]] ; then
-    printf "\n\n\nIf this is the first time you are running ${str_ProgramName} run the above\n"
-    printf "steps as the framework owner\n"
+    printf "\n\n\nThere are missing files and directories.\n"
+    printf "Please rerun \t ${dir_Orig}/${str_ProgramName} -install\n"
+    printf "as the framework owner.\n"
     exit 1
   fi
+
+  str_JobPrefix="Job_"
 
 }
 
@@ -76,7 +85,7 @@ fn_Help()
 fn_HouseKeeping()
 {
   # Cleanup of dir_deleted dir_completed
-  echo "Housekeepimng...."
+  echo "Housekeeping...."
 
   typeset local int_MaxJobs=30
   typeset local int_DaysDeleted=10
