@@ -87,8 +87,19 @@ fn_CheckTask()
     rm "\${LOCK}"
     exit 1
   else
-    echo "Task \${int_Task} completed \$(date)"
+    #echo "Task \${int_Task} completed \$(date)"
     echo "\$(date "+%D %T"):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
+  fi
+
+  # Checking if PAUSED
+  if [ -f "\${dir_Running}"/\${str_JobName}".pause" ] ; then
+    mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+	rm "\${dir_Running}"/\${str_JobName}".pause"
+    echo "+\$(date "+%D %T") Paused After Task:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+	(( int_Task+=1 ))
+    echo "Paused:Resume point:\${int_Task}" >> "\${file_Log}"
+    rm "\${LOCK}"
+    exit 1
   fi
 }
 
@@ -121,7 +132,7 @@ rm "\${LOCK}"
 
 int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
 (( int_FailureCount+=0 ))
-echo "\$(date "+%D %T") Tasks Run[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
+echo "\$(date "+%D %T") Tasks[\${int_Last}]	Failures[\${int_FailureCount}]" >> "\${file_Log}"
 
 exit 0
 
@@ -358,6 +369,8 @@ fn_Transition()
     # Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs failed new          ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs failed starting queued     ; str_Target="${dir_New}"     ;;
+	
+	pause   ) fn_ShowJobs running starting queued    ; str_Target="${dir_Running}" ;;
 
   esac
 
@@ -373,12 +386,13 @@ fn_Transition()
 
 #	  fn_Audit "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "$(basename ${str_Target})"
 	  fn_Audit "${file_Job}" "$(basename ${str_Target})"
-case ${str_Transition} in 
- queue ) fn_UpdateResumePoint "${file_Job}" 0  ;;
- resume ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"      ;;
+      case ${str_Transition} in 
+        queue ) fn_UpdateResumePoint "${file_Job}" 0 ; mv "${file_Job}" "${str_Target}"/. ;;
+        resume ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"  ; mv "${file_Job}" "${str_Target}"/.    ;;
+		pause ) touch "${dir_Running}"/$(basename ${file_Job}).pause ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
-esac
-      mv "${file_Job}" "${str_Target}"/.
+      esac
+      
     done
   fi
 }

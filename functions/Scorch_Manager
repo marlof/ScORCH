@@ -27,17 +27,17 @@ fn_Manager()
   while : ; do
     # Use cache file
     #printf "."
-    fn_ShowTop > "${file_ScreenCache}"
+    fn_ShowTop #> "${file_ScreenCache}"
     #printf "."
-    fn_ShowJobs superceeded failed warning running starting queued new completed >> "${file_ScreenCache}"
+    fn_ShowJobs superceeded failed warning running starting queued new completed #>> "${file_ScreenCache}"
     #printf "."
-    fn_ShowLine "=" >> "${file_ScreenCache}"
+    fn_ShowLine "=" #>> "${file_ScreenCache}"
     #printf "."
-    fn_DisplayMOTD >> "${file_ScreenCache}"
+    fn_DisplayMOTD #>> "${file_ScreenCache}"
     #printf "."
     #fn_ContextMenu >> "${file_ScreenCache}"
     #printf "."
-    clear ; cat "${file_ScreenCache}" | cut -c1-${int_ScreenWidth}
+   # clear ; cat "${file_ScreenCache}" | cut -c1-${int_ScreenWidth}
 	fn_ContextMenu
     read -t 10 char_Choice
     #echo "."
@@ -52,6 +52,7 @@ fn_Manager()
       q | Q ) fn_Transition queue   ;;
       r | R ) fn_Transition resume  ;;
       u | U ) fn_Transition unqueue ;;
+	  p | P ) fn_Transition pause   ;;
 
       # Misc
       m | M ) fn_EditMOTD           ;;
@@ -82,7 +83,7 @@ fn_AdminFunctions()
   ls -l "${file_Job}"
   fn_ShowLine "-" 
 #echo Passing ${str_JobState}
-  fn_ContextMenu  ${str_JobState}
+  fn_ContextMenu ${str_JobState}
     read char_Choice
     #echo "."
 
@@ -111,7 +112,9 @@ fn_AdminFunctions()
               mv "${file_Job}" "${dir_Queued}"
               fn_CheckDispatcher                ;;
 
-
+	  p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
+	          touch "${file_Job}".pause           ;;
+			  
 	  u | U ) fn_Audit "${file_Job}" unqueued
               mv "${file_Job}" "${dir_New}"     ;;
 

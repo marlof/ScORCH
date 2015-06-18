@@ -36,12 +36,12 @@ fn_SetLayout()
   #    |       |          |          |
   int_ScreenWidth=$(tput cols)
   int_Column1Width=4        # Selection number
-  int_Column2Width=7        # System reference numner (like JIRA) or use ticket number
+  int_Column2Width=7        # System reference number (like JIRA) or use ticket number
   int_Column3Width=10       # The service 
   int_Column4Width=10       # Action preformed / Plugin name
   int_Column5Width=10       # The Environment performed on
   int_Column6Width=10       # The Version / Release being actioned
-  int_Column7Width=10       # The Version / Release being actioned
+  int_Column7Width=10       # The Log
   cha_ColumnSep="|"
 }
 
@@ -98,7 +98,7 @@ fn_ShowLine()
 
   # Set the number of characters required to the correct width
   # ==========================================================
-  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 2 ))
+  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 3 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
   }
@@ -126,7 +126,7 @@ fn_ShowJobs()
     # ===========================================================
 	[[ "${str_EachJobState}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 	#echo "${str_EachJobState}_is_${str_Reverse}"
-    lis_Jobs=$(ls -t${str_Reverse} "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| cut -d"/" -f2- )
+    lis_Jobs=$(ls -t${str_Reverse} "${str_EachJobState}/${str_JobPrefix}"* 2>/dev/null| grep -v 'pause$' | cut -d"/" -f2- )
 
     # If there are any jobs, handle them appropriately
     # ================================================
@@ -147,11 +147,13 @@ fn_ShowJobs()
       # ===================================
       for str_EachJob in ${lis_Jobs} ; do
 	    [ ${int_Count} -gt ${int_MaxShown} ] && break
-        if [[ -r ${str_EachJob} ]] ; then
-          str_Owner=" "
+#echo "$(ls ${str_EachJobState}/${str_EachJob})"
+        if [[ -r "${str_EachJobState}/${str_EachJob}" ]] ; then
+          str_ID=" "
         else
-          str_Owner="!"
+          str_ID="!"
         fi
+		[[ -r "${str_EachJobState}/${str_EachJob}".pause ]] && str_ID="P"
         if [[ "$(echo ${str_EachJob}| cut -d"_" -f2)" ]] ; then
           # Show Ticket number if exists
           str_Ticket="$(echo ${str_EachJob}| cut -d"_" -f2)"
@@ -160,7 +162,7 @@ fn_ShowJobs()
           str_Ticket="$(echo ${str_EachJob}| cut -d"_" -f3)"
         fi
         #   colour number 
-        printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}"
+        printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
         printf " %${int_Column2Width}s|"   "${str_Ticket}"
         printf " %${int_Column3Width}s|"   "$(echo ${str_EachJob}| cut -d"_" -f4)"
 
@@ -169,7 +171,15 @@ fn_ShowJobs()
         printf " %${int_Column5Width}s|"   "$(echo ${str_EachJob}| cut -d"_" -f6)"
         printf " %${int_Column6Width}s|"   "$(echo ${str_EachJob}| cut -d"_" -f7)"
         #echo ${str_EachJob} 
-        tail -1 "${dir_Log}"/${str_EachJob}.log 2>/dev/null || echo "File access issue"
+		
+		(( int_LogWidth=int_ScreenWidth \
+                        - int_Column1Width \
+                        - int_Column2Width \
+                        - int_Column3Width \
+                        - int_Column4Width \
+                        - int_Column5Width - int_Column6Width - int_Column7Width -1 ))
+        #echo ${int_LogWidth}
+        tail -1 "${dir_Log}"/${str_EachJob}.log | cut -c1-${int_LogWidth} 2>/dev/null || echo "File access issue"
 
 
         # quicker way
@@ -268,6 +278,5 @@ fn_ContextMenu()
 
   printf "e${dis_ULOn}X${dis_ULOff}it : "
 }
-
 
 # End
