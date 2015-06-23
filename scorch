@@ -35,12 +35,13 @@
 # =============================================================================================
 # History
 # 1.0		marc		First running demo
-# 1.1		marc		Reversed and improved fn_RunJobs	
+# 1.1		marc		Reversed and improved fn_RunJobs
+# 1.2       marc        Improved fn_ShowJobs, pause feature.	
 # Determine the program name and the running directory
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset            dir_Orig="$(pwd)/${dir_Run}"
-typeset str_ProgramVersion="1.1"
+typeset str_ProgramVersion="1.2"
 
 fn_BaseDir()
 {
@@ -78,6 +79,7 @@ typeset dir_Superceeded=${dir_Job}/superceeded
 typeset     dir_Deleted=${dir_Job}/deleted 
 typeset    dir_Archived=${dir_Job}/archived 
 typeset      file_JobId=${dir_Var}/jobid
+typeset       int_Count=1
 
 # Dispatcher definitions
 # ======================

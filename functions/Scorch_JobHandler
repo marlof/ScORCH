@@ -131,8 +131,8 @@ mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}"
 
 int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
-(( int_FailureCount+=0 ))
-echo "\$(date "+%D %T") Tasks[\${int_Last}]	Failures[\${int_FailureCount}]" >> "\${file_Log}"
+#(( int_FailureCount+=0 ))
+echo "\$(date "+%D %T") Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
 
 exit 0
 
@@ -206,7 +206,7 @@ fn_ProcessRequest()
       #echo "${str_EachACTION} ${str_EachENVIRONMENT}"
 
 	  int_TaskCount=0
-      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_${RELEASE}
+      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
 
       fn_JobHeader "${file_Job}"
@@ -363,14 +363,14 @@ fn_Transition()
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs failed new   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
-    resume  ) fn_ShowJobs failed       ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    queue   ) fn_ShowJobs2 failed new   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    resume  ) fn_ShowJobs2 failed       ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs failed new          ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs failed starting queued     ; str_Target="${dir_New}"     ;;
+    delete  ) fn_ShowJobs2 failed new          ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs2 failed starting queued     ; str_Target="${dir_New}"     ;;
 	
-	pause   ) fn_ShowJobs running starting queued    ; str_Target="${dir_Running}" ;;
+	pause   ) fn_ShowJobs2 running starting queued    ; str_Target="${dir_Running}" ;;
 
   esac
 
@@ -387,9 +387,11 @@ fn_Transition()
 #	  fn_Audit "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "$(basename ${str_Target})"
 	  fn_Audit "${file_Job}" "$(basename ${str_Target})"
       case ${str_Transition} in 
-        queue ) fn_UpdateResumePoint "${file_Job}" 0 ; mv "${file_Job}" "${str_Target}"/. ;;
-        resume ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"  ; mv "${file_Job}" "${str_Target}"/.    ;;
-		pause ) touch "${dir_Running}"/$(basename ${file_Job}).pause ;;
+        queue   ) fn_UpdateResumePoint "${file_Job}" 0 ; mv "${file_Job}" "${str_Target}"/. ;;
+		unqueue ) mv "${file_Job}" "${str_Target}"/. ;;
+        delete  ) mv "${file_Job}" "${str_Target}"/. ;;
+        resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"  ; mv "${file_Job}" "${str_Target}"/.    ;;
+		pause   ) touch "${dir_Running}"/$(basename ${file_Job}).pause ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
       

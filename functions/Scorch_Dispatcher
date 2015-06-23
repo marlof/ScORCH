@@ -18,6 +18,7 @@
 # fn_Dispatcher
 # fn_CheckDispatcher
 # fn_RunJobs
+# fn_LockManager
 
 fn_Dispatcher()
 {
@@ -41,7 +42,7 @@ fn_Dispatcher()
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
 	if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
-        str_QueueLock=$(echo "${file_EachJob}" | awk -F"_" '{print $4"_"$5}')
+        str_QueueLock=$(echo "${file_EachJob}" | awk -F"_" '{print $4"_"$6}')
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
   
         if [ ! -L "${file_QueueLock}" ] ; then
@@ -98,5 +99,38 @@ fn_RunJobs()
     echo "Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 	sleep 1
+  done
+}
+
+fn_LockManager()
+{
+  # An easier way to check locks
+  while : ; do
+    fn_ShowTop
+    fn_ShowLine
+    int_Count=1
+    for file_Lock in $(ls ${dir_Lock}) ; do
+      printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s | "   "${int_Count}"
+      printf "${file_Lock} -> $(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)\n"
+      arr_Jobs[${int_Count}]="${str_EachJob}"
+      (( int_Count+=1 ))
+    done
+    fn_ShowLine "="
+
+    printf "\n ${dis_ULon}D${dis_ULOff}elete | e${dis_ULOn}X${dis_ULOff}it : "
+
+    read -t 10 char_Choice
+
+    case ${char_Choice} in
+
+      # Create a new job
+      n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} ;;
+
+      # Job State transition
+      d | D ) printf "rm lock"  ;;
+	  [0-9]* ) fn_Lock ${char_Choice} ;;
+      
+      x | X ) break ;;
+    esac
   done
 }

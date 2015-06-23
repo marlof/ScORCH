@@ -27,17 +27,20 @@ fn_Manager()
   while : ; do
     # Use cache file
     #printf "."
-    fn_ShowTop #> "${file_ScreenCache}"
+    fn_ShowTop > "${file_ScreenCache}"
     #printf "."
-    fn_ShowJobs superceeded failed warning running starting queued new completed #>> "${file_ScreenCache}"
+    #fn_ShowJobs superceeded failed warning #>> "${file_ScreenCache}"
+	#fn_ShowJobs completed
+	fn_ShowJobs2 superceeded failed running starting queued new completed >> ${file_ScreenCache}
     #printf "."
-    fn_ShowLine "=" #>> "${file_ScreenCache}"
+    fn_ShowLine "=" >> "${file_ScreenCache}"
     #printf "."
-    fn_DisplayMOTD #>> "${file_ScreenCache}"
+    fn_DisplayMOTD >> "${file_ScreenCache}"
     #printf "."
     #fn_ContextMenu >> "${file_ScreenCache}"
     #printf "."
-   # clear ; cat "${file_ScreenCache}" | cut -c1-${int_ScreenWidth}
+#	int_ScreenWidth=$(tput cols)
+    clear ; cat "${file_ScreenCache}" | cut -b1-${int_ScreenWidth}
 	fn_ContextMenu
     read -t 10 char_Choice
     #echo "."
@@ -58,7 +61,8 @@ fn_Manager()
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
-      
+
+      l | L ) fn_LockManager        ;;     
       
       x | X ) break ;;
     esac
@@ -69,21 +73,21 @@ fn_Manager()
 
 fn_AdminFunctions()
 {
-  echo "Stubbed for $1"
-  typeset str_JobState=${arr_States[${1}]}
-  typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${1}]}
-  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-  echo "${file_Job}"
-  clear
-  fn_ShowTop
-  fn_ShowLine
-  typeset local str_JobOwner=$(grep ^str_Owner "${file_Job}")
-  echo " Job Owner : ${str_JobOwner}"
-  fn_ShowLine "-" 
-  ls -l "${file_Job}"
-  fn_ShowLine "-" 
+  if [[ ${char_Choice} -lt ${int_Count} ]] ; then
+    typeset str_JobState=${arr_States[${1}]}
+    typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${1}]}
+    typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+    echo "${file_Job}"
+    clear
+    fn_ShowTop
+    fn_ShowLine
+    typeset local str_JobOwner=$(grep ^str_Owner "${file_Job}")
+    echo " Job Owner : ${str_JobOwner}"
+    fn_ShowLine "-" 
+    ls -l "${file_Job}"
+    fn_ShowLine "-" 
 #echo Passing ${str_JobState}
-  fn_ContextMenu ${str_JobState}
+    fn_ContextMenu ${str_JobState}
     read char_Choice
     #echo "."
 
@@ -126,5 +130,9 @@ fn_AdminFunctions()
 
       x | X ) break ;;
     esac
-  sleep .5
+    sleep .5 #Here to allow NAS to catch up
+  else 
+    echo "Out of range"
+    fn_PressEnter
+  fi
 }

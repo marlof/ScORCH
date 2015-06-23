@@ -98,7 +98,7 @@ fn_ShowLine()
 
   # Set the number of characters required to the correct width
   # ==========================================================
-  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 3 ))
+  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
   }
@@ -111,7 +111,7 @@ fn_ShowJobs()
   typeset local arr_JobList=
   typeset local str_StatusColour="${dis_Reset}"
   typeset local str_StatusColour=""
-  typeset local int_Count=1
+  int_Count=1
 
   # Due to the fact that directories may contain "spaces" so "cd" there first
   # =========================================================================
@@ -138,9 +138,7 @@ fn_ShowJobs()
 
       # If job state is failed or warning, set a line colour
       # ====================================================
-      if [[ "${str_EachJobState}" = "failed"  ]] ; then
-        str_StatusColour="${dis_BRed}"
-      fi
+      [[ "${str_EachJobState}" = "failed"  ]] && str_StatusColour="${dis_BRed}"
       #[[ "${str_EachJobState}" = "warning" ]] && str_StatusColour="${dis_BYellow}"
 
       # Display each job for each job state
@@ -196,6 +194,70 @@ fn_ShowJobs()
   cd "${dir_Run}"
   #echo "Back in pwd $(pwd)"
   #sleep 3
+}
+fn_ShowJobs2()
+{
+  # Show job details for each job state past. The value passed is one or more directory names
+  # =========================================================================================
+  typeset local str_EachJobState=
+  typeset local arr_JobList=
+  typeset local str_StatusColour="${dis_Reset}"
+  typeset local str_StatusColour=""
+
+  # Due to the fact that directories may contain "spaces" so "cd" there first
+  # =========================================================================
+  cd "${dir_Job}"
+  int_Count=1
+
+  file_Cache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
+  echo "#$$" > ${file_Cache}
+  for str_State in ${@} ; do
+    printf "${dis_Reset}"
+#	        if [[ -r "${str_EachJobState}/${str_EachJob}" ]] ; then
+ #            str_ID=" "
+  #         else
+   #          str_ID="!"
+    #       fi
+	#   	[[ -r "${str_EachJobState}/${str_EachJob}".pause ]] && str_ID="P"
+
+    [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
+    [[ "$(ls ${str_State}/* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
+  	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v pause$ | gawk \
+      -v state=${str_State} \
+      -v linenum=${int_Count} \
+      -v dir_Log=${dir_Log} \
+	  -v file_Cache=${file_Cache} \
+	  -v Colour=${str_StatusColour} \
+	  -v int_ScreenWidth=${int_ScreenWidth} \
+      -v int_MaxShown=${int_MaxShown} 'BEGIN {
+       FS = "_"
+    }
+    linenum <= int_MaxShown {
+      #system("[[ grep str_Owner "$0" ]] && printf \"P|\" || printf \" |\"")
+      printf Colour"%4s", linenum
+	  system("[[ -r "$0".pause ]] && printf \"P|\" || printf \" |\"")
+
+      if ( $2 != "" ) {
+        printf "%7s|", $2   
+      }
+      else {
+        printf "%7s|", $3
+      }
+# printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
+	  printf "%10s|%10s|%10s|%10s|",$4,$5,$6,$7
+      system("tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null")
+      system("echo arr_States["linenum"]="state" >> "file_Cache)
+      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
+
+      linenum++
+    }
+    END {
+      system("echo int_Count="linenum" >> "file_Cache )
+    }'
+	. ${file_Cache}
+	[[ -r "${file_Cache}" ]] && rm "${file_Cache}"
+  done
 }
 
 fn_ShowTasks()
