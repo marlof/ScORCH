@@ -104,8 +104,8 @@ fn_CheckTask()
 }
 
 EOF
-
 }
+readonly -f fn_JobHeader
 
 fn_JobFooter()
 {
@@ -144,6 +144,7 @@ EOF
   chmod 754 "${file_Job}"
 
 }
+readonly -f fn_JobFooter
 
 fn_NewJob()
 {
@@ -156,6 +157,7 @@ fn_NewJob()
 
   rm "${file_Request}"
 }
+readonly -f fn_NewJob
 
 fn_GetRequest()
 {
@@ -193,6 +195,7 @@ fn_GetRequest()
     #cat "${file_Request}"
   fi
 }
+readonly -f fn_GetRequest
 
 fn_ProcessRequest()
 {
@@ -208,7 +211,6 @@ fn_ProcessRequest()
 	  int_TaskCount=0
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
-
       fn_JobHeader "${file_Job}"
       Task "date +$s ; echo PID:\$$"
 
@@ -233,6 +235,7 @@ fn_ProcessRequest()
     done
   done
 }
+readonly -f fn_ProcessRequest
 
 fn_GetJobID()
 {
@@ -255,6 +258,7 @@ fn_GetJobID()
     exit 1
   fi
 }
+readonly -f fn_GetJobID
 
 fn_ExtractPairs()
 {
@@ -265,6 +269,7 @@ fn_ExtractPairs()
   GetVar -pattern "Type"    -name TYPE               -default ""
   GetVar -pattern "Ticket"  -name TICKET             -default ""
 }
+readonly -f fn_ExtractPairs
 
 Task()
 {
@@ -283,6 +288,7 @@ Task()
   (( int_TaskCount+=1 ))
 
 }
+readonly -f Task
 
 GetVar()
 {
@@ -349,6 +355,7 @@ GetVar()
   #fn_PressEnter
 
 }
+readonly -f GetVar
 
 fn_Transition()
 {
@@ -398,14 +405,4 @@ fn_Transition()
     done
   fi
 }
-
-#     case ${char_Choice} in
-
-#      q | Q ) fn_Audit "${file_Job}" queued
-#              fn_UpdateResumePoint "${file_Job}" 0
-
-#             mv "${file_Job}" "${dir_Queued}"  ;;
-
-#	  r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Job} ) "
-#              fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Job})
-#              mv "${file_Job}" "${dir_Queued}"  ;;
+readonly -f fn_Transition

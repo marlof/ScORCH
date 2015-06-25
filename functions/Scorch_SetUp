@@ -59,6 +59,7 @@ fn_CheckSetUp()
   str_JobPrefix="Job_"
 
 }
+readonly -f fn_CheckSetUp
 
 fn_Help()
 {
@@ -81,6 +82,7 @@ fn_Help()
   echo "    -f <dir>                      Use Functions from given directory"
   echo " "
 }
+readonly -f fn_Help
 
 fn_HouseKeeping()
 {
@@ -95,6 +97,7 @@ fn_HouseKeeping()
 
   rm "${dir_New}"/${str_JobPrefix}file
 }
+readonly -f fn_HouseKeeping
 
 fn_GetAnswer()
 {
@@ -110,6 +113,7 @@ fn_GetAnswer()
   read str_Answer
   str_Answer=${str_Answer:-"x"}
 }
+readonly -f fn_GetAnswer
 
 fn_Range()
 {
@@ -139,6 +143,7 @@ fn_Range()
     fi
   done
 }
+readonly -f fn_Range
 
 fn_CreateFile()
 {
@@ -149,12 +154,14 @@ fn_CreateFile()
   chmod 664 "${file_Name}"
   [[ "${b_Blank}" ]] && > "${file_Name}"
 }
+readonly -f fn_CreateFile
 
 fn_GetResumePoint()
 {
   typeset local file_Log="${1}"
   tail -10 "${file_Log}" | grep "Resume point:" | tail -1 | awk -F":" '{print $NF}'
 }
+readonly -f fn_GetResumePoint
 
 fn_UpdateResumePoint()
 {
@@ -167,6 +174,7 @@ fn_UpdateResumePoint()
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" && rm "${file_Job}".tmp
   echo "Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
+readonly -f fn_UpdateResumePoint
 
 fn_Audit()
 {
@@ -174,9 +182,11 @@ fn_Audit()
   typeset local str_Transition="${2}"                       # The transition being performed
   echo $(date "+%D %T") $(whoami) ${str_Transition} >> ${file_Job}
 }
+readonly -f fn_Audit
 
 fn_PressEnter()
 {
   printf "\n\n"
   read -p " Press Enter to continue "
 }
+readonly -f fn_PressEnter

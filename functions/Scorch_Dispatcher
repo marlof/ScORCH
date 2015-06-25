@@ -38,6 +38,16 @@ fn_Dispatcher()
     # Repair any missing lock file for dispatcher
     [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
 
+    # Check running jobs are really running
+    typeset local arr_RunningJobs=$(ls -rt1 "${dir_Running}")
+	if [[ "${arr_RunningJobs}" ]] ; then
+	  for file_EachJob in ${arr_RunningJobs} ; do
+	    :
+#ls -l ${dir_Running}/${file_EachJob}
+#ps -ef | grep ${file_EachJob}
+      done
+    fi
+
     # Move queued jobs to start state
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
 	if [[ "${arr_QueuedJobs}" ]] ; then
@@ -69,6 +79,7 @@ fn_Dispatcher()
   typeset int_DispatcherPID=0
   exit 0
 }
+readonly -f fn_Dispatcher
 
 fn_CheckDispatcher()
 {
@@ -82,13 +93,14 @@ fn_CheckDispatcher()
 	#echo "Dispatcher ok"
   else
     rm "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null
-    "${dir_Base}/${str_ProgramName}" -dispatcher >> ${file_DispatchLog} &
+    "${dir_Base}/${str_ProgramName}" -dispatcher -j ${dir_Job} >> ${file_DispatchLog} &
   fi
   # Make sure a dispatcher is running
   #echo "Lock dir: ${file_Lock}"
   # repair lock file or start a dispatcher  
   #echo "check this is running .... ${str_ProgramName} -dispatcher &"
 }
+readonly -f fn_CheckDispatcher
 
 fn_RunJobs()
 {
@@ -98,9 +110,10 @@ fn_RunJobs()
   for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
     echo "Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
-	sleep 1
+	sleep 0.5
   done
 }
+readonly -f fn_RunJobs
 
 fn_LockManager()
 {
@@ -112,25 +125,24 @@ fn_LockManager()
     for file_Lock in $(ls ${dir_Lock}) ; do
       printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s | "   "${int_Count}"
       printf "${file_Lock} -> $(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)\n"
-      arr_Jobs[${int_Count}]="${str_EachJob}"
+      arr_Locks[${int_Count}]="${file_Lock}"
       (( int_Count+=1 ))
     done
     fn_ShowLine "="
 
-    printf "\n ${dis_ULon}D${dis_ULOff}elete | e${dis_ULOn}X${dis_ULOff}it : "
+    printf "\n Select job number to delete | e${dis_ULOn}X${dis_ULOff}it : "
 
     read -t 10 char_Choice
-
+    [[ "${char_Choice}" = "" ]] && char_Choice="x"
     case ${char_Choice} in
 
-      # Create a new job
-      n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} ;;
-
-      # Job State transition
-      d | D ) printf "rm lock"  ;;
-	  [0-9]* ) fn_Lock ${char_Choice} ;;
+      # Lock transition
+      d | D ) printf "rm lock "  ;;
+	  [0-9]* ) echo removing ${dir_Lock}/${arr_Locks[${char_Choice}]} ; sleep 2 ; rm ${dir_Lock}/${arr_Locks[${char_Choice}]} ;;
       
       x | X ) break ;;
     esac
+	fn_RunJobs
   done
 }
+readonly -f fn_LockManager

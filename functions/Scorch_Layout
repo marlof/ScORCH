@@ -44,6 +44,7 @@ fn_SetLayout()
   int_Column7Width=10       # The Log
   cha_ColumnSep="|"
 }
+readonly -f fn_SetLayout
 
 
 fn_ShowTop()
@@ -82,6 +83,7 @@ fn_ShowTop()
   # ===================================
   unset arr_Jobs arr_States
 }
+readonly -f fn_ShowTop
 
 fn_ShowLine()
 {
@@ -101,7 +103,8 @@ fn_ShowLine()
   (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
-  }
+}
+readonly -f fn_ShowLine
 
 fn_ShowJobs()
 {
@@ -179,7 +182,6 @@ fn_ShowJobs()
         #echo ${int_LogWidth}
         tail -1 "${dir_Log}"/${str_EachJob}.log | cut -c1-${int_LogWidth} 2>/dev/null || echo "File access issue"
 
-
         # quicker way
         #printf " %${int_Column4Width}s| %${int_Column5Width}s| %${int_Column6Width}s|${dis_Reset}\n" $(echo ${str_EachJob} | cut -d"_" -f5-) | sed 's/_/ /g'
 
@@ -195,6 +197,8 @@ fn_ShowJobs()
   #echo "Back in pwd $(pwd)"
   #sleep 3
 }
+readonly -f fn_ShowJobs
+
 fn_ShowJobs2()
 {
   # Show job details for each job state past. The value passed is one or more directory names
@@ -259,6 +263,7 @@ fn_ShowJobs2()
 	[[ -r "${file_Cache}" ]] && rm "${file_Cache}"
   done
 }
+readonly -f fn_ShowJobs2
 
 fn_ShowTasks()
 {
@@ -277,24 +282,41 @@ fn_ShowTasks()
   else
     printf "\n Display tasks for which job(s)?\n\n"
 
-    fn_ShowJobs superceeded starting failed running queued pending new completed
+    fn_ShowJobs2 superceeded starting failed running queued pending new completed
     fn_ShowLine
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
-    if [ ${str_Answer} != "x" ] ; then
+    if [ "${str_Answer}" != "x" ] ; then
       for int_Answer in ${str_Answer} ; do
-        printf "\n\n${int_Answer}:  "
-        ls "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
-         printf "\n"
-        grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
+        printf "\n\n   "
+        ls -l "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+        printf "\n"
+        cat "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | gawk 'BEGIN {
+              linenum=0
+            }
+            $0 ~ "^fn_Task_" { 
+			  #print " "linenum, $2, $3, $4, NR, NF
+			  int_Last=NF-7
+			  printf "%4s : ",linenum
+			  for ( x=2 ; x<int_Last ; x++ ) {printf " "$x}
+              linenum++
+			  printf "\n"
+            }
+
+            END {
+              printf "\n\n"
+            }'
+        fn_PressEnter
+        # awk replaces 
+		#   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
       done
     else
       echo "Nothing chosen"
+      fn_PressEnter
     fi
   fi
-  
-  fn_PressEnter
 }
+readonly -f fn_ShowTasks
 
 fn_ContextMenu()
 {
@@ -340,5 +362,6 @@ fn_ContextMenu()
 
   printf "e${dis_ULOn}X${dis_ULOff}it : "
 }
+readonly -f fn_ContextMenu
 
 # End
