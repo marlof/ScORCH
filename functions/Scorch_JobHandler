@@ -88,7 +88,7 @@ fn_CheckTask()
     exit 1
   else
     #echo "Task \${int_Task} completed \$(date)"
-    echo "\$(date "+%D %T"):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
+    echo "INFO:STATUS:\$(date "+%D %T"):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
   fi
 
   # Checking if PAUSED
@@ -132,8 +132,13 @@ rm "\${LOCK}"
 
 int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
+echo "INFO:FINISH:\$(date "+%s")" >> "\${file_Log}"
 echo "\$(date "+%D %T") Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
-
+# CSV File
+# Request time, Start time, End Time
+# grep -m 1 "INFO:CREATED" \${file_Log} # Response time
+# grep -m 1 "INFO:STATUS"  \${file_Log} # Start time 
+# duration "INFO:FINISH" - "INFO:START"
 exit 0
 
 EOF
@@ -212,9 +217,9 @@ fn_ProcessRequest()
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
       fn_JobHeader "${file_Job}"
-      Task "date +$s ; echo PID:\$$"
+      Task "echo INFO:START:\$(date +%s) ; echo INFO:PID:\$$"
 
-      echo "Adding Tasks from Plugin: ${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "INFO:PLUGIN:${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
       #echo "Run SP_${SYSTEM}_${str_EachACTION}"
       eval "SP_${SYSTEM}_${str_EachACTION}"
       if [[ $? -ne 0 ]] ; then
@@ -224,7 +229,8 @@ fn_ProcessRequest()
       fi
 
       fn_JobFooter "${file_Job}"
-       echo "Job created by $(whoami) ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "INFO:CREATED:$(date +'%D %T')" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "INFO:OWNER:$(whoami)" >> "${dir_Log}"/$(basename "${file_Job}").log
       (( int_JobCount+=1 ))
 
       # If there is already another job in a failed state, mv that failed job to the superceeded directory
@@ -352,8 +358,6 @@ GetVar()
   #echo "String is ${str_Value}"
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   eval "${str_Name}=\"${str_Value}\""
-  #fn_PressEnter
-
 }
 readonly -f GetVar
 
@@ -363,7 +367,6 @@ fn_Transition()
   # ===============================
 
   typeset local str_Transition="${1}"
-
   fn_ShowTop
   printf "\n\nSelect jobs to move to $1 state\n\n"
 
@@ -376,12 +379,10 @@ fn_Transition()
     # Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs2 failed new          ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed starting queued     ; str_Target="${dir_New}"     ;;
-	
 	pause   ) fn_ShowJobs2 running starting queued    ; str_Target="${dir_Running}" ;;
 
   esac
 
-  #echo "mv x to ${str_Target}"
   fn_ShowLine
   fn_GetAnswer range
   arr_Answer=$(fn_Range ${str_Answer})
@@ -391,7 +392,6 @@ fn_Transition()
 	  typeset local file_Job="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
       typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
 
-#	  fn_Audit "${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]} "$(basename ${str_Target})"
 	  fn_Audit "${file_Job}" "$(basename ${str_Target})"
       case ${str_Transition} in 
         queue   ) fn_UpdateResumePoint "${file_Job}" 0 ; mv "${file_Job}" "${str_Target}"/. ;;

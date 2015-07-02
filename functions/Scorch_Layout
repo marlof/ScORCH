@@ -192,10 +192,7 @@ fn_ShowJobs()
       done
     fi
   done
-  #echo "Was in pwd $(pwd)"
   cd "${dir_Run}"
-  #echo "Back in pwd $(pwd)"
-  #sleep 3
 }
 readonly -f fn_ShowJobs
 
@@ -217,12 +214,6 @@ fn_ShowJobs2()
   echo "#$$" > ${file_Cache}
   for str_State in ${@} ; do
     printf "${dis_Reset}"
-#	        if [[ -r "${str_EachJobState}/${str_EachJob}" ]] ; then
- #            str_ID=" "
-  #         else
-   #          str_ID="!"
-    #       fi
-	#   	[[ -r "${str_EachJobState}/${str_EachJob}".pause ]] && str_ID="P"
 
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
