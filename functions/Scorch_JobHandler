@@ -83,7 +83,7 @@ fn_CheckTask()
   if [ \${int_RC} -ne 0 ] ; then
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
     echo "+\$(date "+%D %T") Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-    echo "Failed:Resume point:\${int_Task}" >> "\${file_Log}"
+    echo "FAILD:\$(date "+%D %T"):Resume point:\${int_Task}" >> "\${file_Log}"
     rm "\${LOCK}"
     exit 1
   else
@@ -217,7 +217,7 @@ fn_ProcessRequest()
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
       echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
       fn_JobHeader "${file_Job}"
-      Task "echo INFO:START:\$(date +%s) ; echo INFO:PID:\$$"
+      Task "echo INFO:START:\$(date '+%s') ; echo INFO:PID:\$$"
 
       echo "INFO:PLUGIN:${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
       #echo "Run SP_${SYSTEM}_${str_EachACTION}"
