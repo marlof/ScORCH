@@ -132,14 +132,17 @@ rm "\${LOCK}"
 
 int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
-echo "+\$(date "+%D %T") COMPLETED:\${int_Task}" >> "\${dir_Completed}"/\${str_JobName}echo "INFO:FINISH:\$(date "+%s")" >> "\${file_Log}"
+echo "\$(date "+%D %T") COMPLETED:\${int_Task}" >> "\${dir_Completed}"/\${str_JobName}
+echo "INFO:FINISH:\$(date "+%s")" >> "\${file_Log}"
 echo "\$(date "+%D %T") Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
 # CSV File
-# Request time, Start time, End Time
- int_Start=$(grep -m 1 "INFO:CREATED" \${file_Log}) # Response time
- int_Finish=$(grep -m 1 "INFO:START"  \${file_Log}) # Start time 
- (( int_Duration = int_Finish - $int_Start ))
- echo ${int_Duration} seconds >> "\${dir_Completed}"/\${str_JobName}
+# Request time,Response time, Start time, End Time, Job name, number of failures, who
+ int_Responded=\$(grep -m 1 "INFO:RESPONSED" \${file_Log} | cut -d: -f3)
+ str_Requested=${FROM:-${int_Responded}}
+ int_Start=\$(grep -m 1 "INFO:START" \${file_Log} | cut -d: -f3)
+ int_Finish=\$(grep -m 1 "INFO:FINISH"  \${file_Log} | cut -d: -f3) 
+ (( int_Duration = int_Finish - int_Start ))
+ echo \${str_Requested},\${int_Responded},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration} seconds,\${int_FailureCount},\${str_Owner} >> "\${dir_Completed}"/\${str_JobName}
 exit 0
 
 EOF
@@ -216,7 +219,7 @@ fn_ProcessRequest()
 
 	  int_TaskCount=0
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
-      echo "$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
+      echo "INFO:RESPONSED:$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
       fn_JobHeader "${file_Job}"
       Task "echo INFO:START:\${str_StartTime} ; echo INFO:PID:\$$"
 
@@ -230,8 +233,9 @@ fn_ProcessRequest()
       fi
 
       fn_JobFooter "${file_Job}"
-      echo "INFO:CREATED:$(date +'%D %T')" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "INFO:CREATED:$(date +'%s')" >> "${dir_Log}"/$(basename "${file_Job}").log
       echo "INFO:OWNER:$(whoami)" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "$(date +'%D %T') Job created by $(whoami) [${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
       (( int_JobCount+=1 ))
 
       # If there is already another job in a failed state, mv that failed job to the superceeded directory

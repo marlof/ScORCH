@@ -86,6 +86,7 @@ fn_AdminFunctions()
     echo " Job Owner : ${str_JobOwner}"
     fn_ShowLine "-" 
     ls -l "${file_Job}"
+	ls -l "${file_Log}"
     fn_ShowLine "-" 
 #echo Passing ${str_JobState}
     fn_ContextMenu ${str_JobState}

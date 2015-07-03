@@ -166,13 +166,13 @@ readonly -f fn_GetResumePoint
 fn_UpdateResumePoint()
 {
   typeset local file_Job="${1}"                             # The Job to update
-  typeset local int_ResumePoint="${2}"                      # The new start task
+  typeset local int_ResumePoint="${2:-0}"                      # The new start task
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
 
   (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
   cat "${file_Job}" | sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ > "${file_Job}".tmp
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" && rm "${file_Job}".tmp
-  echo "Resuming from task ${int_ResumePoint}" >> "${file_Log}"
+  [[ int_ResumePoint -eq 0 ]] && echo "Starting from task 0" >> "${file_Log}" || echo "Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint
 
