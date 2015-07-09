@@ -14,13 +14,12 @@
 # limitations under the License.
 #
 
-
-
 # This file contains functions to set and display layout
 # fn_SetLayout
 # fn_ShowTop
 # fn_ShowLine
 # fn_ShowJob 
+# fn_FormatTasks
 # fn_ShowTasks
 # fn_ContextMenu
 
@@ -148,7 +147,6 @@ fn_ShowJobs()
       # ===================================
       for str_EachJob in ${lis_Jobs} ; do
 	    [ ${int_Count} -gt ${int_MaxShown} ] && break
-#echo "$(ls ${str_EachJobState}/${str_EachJob})"
         if [[ -r "${str_EachJobState}/${str_EachJob}" ]] ; then
           str_ID=" "
         else
@@ -256,33 +254,15 @@ fn_ShowJobs2()
 }
 readonly -f fn_ShowJobs2
 
-fn_ShowTasks()
+fn_FormatTasks()
 {
-  # This functions simply displays the list of tasks that will be run
-  # If a value was passed assume that was the job for which to show the tasks
+  # This function is only called by fn_ShowTasks and will format the layout
+  # regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
-  typeset local int_Answer=
-
-  fn_ShowTop
-  fn_ShowLine
-
-  if [[ "${file_Job}" ]] ; then
-    ls -l "${file_Job}"
-	fn_ShowLine
-    grep "#${str_ProgramName}_Task" "${file_Job}" | rev | cut -d">" -f4- | rev | more
-  else
-    printf "\n Display tasks for which job(s)?\n\n"
-
-    fn_ShowJobs2 superceeded starting failed running queued pending new completed
-    fn_ShowLine
-    fn_GetAnswer range
-    str_Answer=$(fn_Range "${str_Answer}")
-    if [ "${str_Answer}" != "x" ] ; then
-      for int_Answer in ${str_Answer} ; do
-        printf "\n\n   "
-        ls -l "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
-        printf "\n"
-        cat "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | gawk 'BEGIN {
+  printf "\n\n   "
+  ls -l "${file_Job}"  #"${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+  printf "\n"
+  cat "${file_Job}" | gawk 'BEGIN {
               linenum=0
             }
             $0 ~ "^fn_Task_" { 
@@ -297,9 +277,34 @@ fn_ShowTasks()
             END {
               printf "\n\n"
             }'
-        fn_PressEnter
+  fn_PressEnter
+}
+readonly -f fn_FormatTasks
+
+fn_ShowTasks()
+{
+  # This functions simply displays the list of tasks that will be run
+  # If a value was passed assume that was the job for which to show the tasks
+  typeset local file_Job="${1}"
+  typeset local int_Answer=
+
+  fn_ShowTop
+  fn_ShowLine
+
+  if [[ "${file_Job}" ]] ; then
+    fn_FormatTasks "${file_Job}"
+  else
+    printf "\n Display tasks for which job(s)?\n\n"
+
+    fn_ShowJobs2 superceeded starting failed running queued pending new completed
+    fn_ShowLine
+    fn_GetAnswer range
+    str_Answer=$(fn_Range "${str_Answer}")
+    if [ "${str_Answer}" != "x" ] ; then
+      for int_Answer in ${str_Answer} ; do
         # awk replaces 
 		#   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
+		fn_FormatTasks "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
       done
     else
       echo "Nothing chosen"
@@ -323,7 +328,6 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
-#echo "Passed ${str_State}"
   printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode

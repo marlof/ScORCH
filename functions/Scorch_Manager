@@ -27,20 +27,20 @@ fn_Manager()
   while : ; do
     # Use cache file
     #printf "."
-    fn_ShowTop > "${file_ScreenCache}"
+    fn_ShowTop #> "${file_ScreenCache}"
     #printf "."
     #fn_ShowJobs superceeded failed warning #>> "${file_ScreenCache}"
 	#fn_ShowJobs completed
-	fn_ShowJobs2 superceeded failed running starting queued new completed >> ${file_ScreenCache}
+	fn_ShowJobs2 superceeded failed running starting queued new completed #>> ${file_ScreenCache}
     #printf "."
-    fn_ShowLine "=" >> "${file_ScreenCache}"
+    fn_ShowLine "=" #>> "${file_ScreenCache}"
     #printf "."
-    fn_DisplayMOTD >> "${file_ScreenCache}"
+    fn_DisplayMOTD #>> "${file_ScreenCache}"
     #printf "."
     #fn_ContextMenu >> "${file_ScreenCache}"
     #printf "."
 #	int_ScreenWidth=$(tput cols)
-    clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
+    #clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
 	fn_ContextMenu
     read -t 10 char_Choice
     #echo "."
@@ -77,15 +77,16 @@ fn_AdminFunctions()
   if [[ ${char_Choice} -lt ${int_Count} ]] ; then
     typeset str_JobState=${arr_States[${1}]}
     typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${1}]}
+	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${1}]}"
     typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
     echo "${file_Job}"
     clear
     fn_ShowTop
     fn_ShowLine
-    typeset local str_JobOwner=$(grep ^str_Owner "${file_Job}")
+    typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
     echo " Job Owner : ${str_JobOwner}"
     fn_ShowLine "-" 
-    ls -l "${file_Job}"
+    ls -l "${file_ActiveJob}"
 	ls -l "${file_Log}"
     fn_ShowLine "-" 
 #echo Passing ${str_JobState}
@@ -119,7 +120,7 @@ fn_AdminFunctions()
               fn_CheckDispatcher                ;;
 
 	  p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
-	          touch "${file_Job}".pause           ;;
+	          touch "${dir_Running}/$(basename ${file_Job})".pause           ;;
 			  
 	  u | U ) fn_Audit "${file_Job}" unqueued
               mv "${file_Job}" "${dir_New}"     ;;

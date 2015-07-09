@@ -37,7 +37,7 @@ fn_CheckSetUp()
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
-                                 dir_Queued dir_Var dir_Log dir_Lock"
+                                 dir_Queued dir_Active dir_Var dir_Log dir_Lock"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
@@ -57,7 +57,6 @@ fn_CheckSetUp()
   fi
 
   str_JobPrefix="Job_"
-
 }
 readonly -f fn_CheckSetUp
 
@@ -89,11 +88,11 @@ fn_HouseKeeping()
   # Cleanup of dir_deleted dir_completed
   echo "Housekeeping...."
 
-  typeset local int_MaxJobs=30
+  typeset local     int_MaxJobs=30
   typeset local int_DaysDeleted=10
 
   find "${dir_Deleted}"/${str_JobPrefix}*    -mtime +${int_DaysDeleted}
-  find "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted}
+  find "${dir_Completed}"/${str_JobPrefix}*  -mtime +${int_DaysDeleted}
 
   rm "${dir_New}"/${str_JobPrefix}file
 }
@@ -125,7 +124,7 @@ fn_Range()
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
       typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
-      typeset local int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+      typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
 
       if [ ${int_First} -lt ${int_Last} ] ; then
         while [[ ${int_First} -le ${int_Last} ]] ; do

@@ -38,15 +38,16 @@ fn_Dispatcher()
     # Repair any missing lock file for dispatcher
     [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
 
+    fn_CheckRunning
     # Check running jobs are really running
-    typeset local arr_RunningJobs=$(ls -rt1 "${dir_Running}")
-	if [[ "${arr_RunningJobs}" ]] ; then
-	  for file_EachJob in ${arr_RunningJobs} ; do
+#    typeset local arr_RunningJobs=$(ls -rt1 "${dir_Running}")
+#	if [[ "${arr_RunningJobs}" ]] ; then
+#	  for file_EachJob in ${arr_RunningJobs} ; do
 	    :
 #ls -l ${dir_Running}/${file_EachJob}
 #ps -ef | grep ${file_EachJob}
-      done
-    fi
+#      done
+#    fi
 
     # Move queued jobs to start state
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
@@ -59,6 +60,7 @@ fn_Dispatcher()
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(date +"%D %T") Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
+		  #[[ -f "${dir_Queued}"/${file_EachJob}.pause ]] && mv "${dir_Queued}"/${file_EachJob}.pause "${dir_Running}"
 		  int_DispatchCount=0
           sleep 1
         else
@@ -80,6 +82,22 @@ fn_Dispatcher()
   exit 0
 }
 readonly -f fn_Dispatcher
+
+fn_CheckRunning()
+{
+  # Check running jobs are really running
+  typeset local arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
+  if [[ "${arr_RunningJobs}" ]] ; then
+    for file_EachJob in ${arr_RunningJobs} ; do
+	  if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
+        mv ${dir_Running}/${file_EachJob} ${dir_Failed}/.
+        echo "ORPHANED:$(date "+%D %T"):Resume point:unknown" >> "${dir_Log}/${file_EachJob}.log"
+
+      fi
+    done
+  fi
+}
+readonly -f fn_CheckRunning
 
 fn_CheckDispatcher()
 {

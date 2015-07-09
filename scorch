@@ -25,24 +25,26 @@
 # dir  the variable defines a directory
 # file the variable defines a filename
 #
+# Ideas not yet implementes........
 # <hn>_ext_<var name>     A variable that has been derived from running an external script or
 #                         command that might change
 # <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
 # <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a 
 #                         scorch job
 # <hn>_Job_<var name>     Variables that are used when the job is running. Used to protect
-#                         GLOBAL variable polution
+#                         GLOBAL variable pollution
 # =============================================================================================
 # History
 # 1.0		marc		First running demo
 # 1.1		marc		Reversed and improved fn_RunJobs
-# 1.2       marc        Improved fn_ShowJobs, pause feature
+# 1.2       marc        Improved fn_ShowJobs2, pause feature
 # 1.3       marc        Improved task list, began lock manager and task manager
+# 1.4       marc        Further improvements to task list
 # Determine the program name and the running directory
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
-typeset            dir_Orig="$(pwd)/${dir_Run}"
-typeset str_ProgramVersion="1.3"
+typeset           dir_Orig="$(pwd)/${dir_Run}"
+typeset str_ProgramVersion="1.4"
 
 fn_BaseDir()
 {
@@ -57,13 +59,13 @@ typeset dir_Base=$(fn_BaseDir "${dir_Run}")
 
 # Directory definitions
 # =====================
-typeset dir_Etc=${dir_Base}/etc
-typeset dir_Var=${dir_Base}/var
-typeset dir_Log=${dir_Var}/log
-typeset dir_Lock=${dir_Var}/locks
-typeset dir_Tmp=${dir_Base}/tmp
-typeset dir_Plugins=${dir_Base}/plugins
-typeset str_Plugins=$(basename "${dir_Plugins}")
+typeset       dir_Etc=${dir_Base}/etc
+typeset       dir_Var=${dir_Base}/var
+typeset       dir_Log=${dir_Var}/log
+typeset      dir_Lock=${dir_Var}/locks
+typeset       dir_Tmp=${dir_Base}/tmp
+typeset   dir_Plugins=${dir_Base}/plugins
+typeset   str_Plugins=$(basename "${dir_Plugins}")
 typeset dir_Functions=${dir_Base}/functions
 typeset str_Functions=$(basename "${dir_Functions}")
 
@@ -80,7 +82,8 @@ typeset    dir_Starting=${dir_Job}/starting
 typeset      dir_Queued=${dir_Job}/queued
 typeset dir_Superceeded=${dir_Job}/superceeded
 typeset     dir_Deleted=${dir_Job}/deleted 
-typeset    dir_Archived=${dir_Job}/archived 
+typeset    dir_Archived=${dir_Job}/archived
+typeset      dir_Active=${dir_Job}/active 
 typeset      file_JobId=${dir_Var}/jobid
 
 fn_ResetJobDefinitions()
@@ -93,7 +96,8 @@ fn_ResetJobDefinitions()
        dir_Queued=${dir_Job}/queued
   dir_Superceeded=${dir_Job}/superceeded
       dir_Deleted=${dir_Job}/deleted 
-     dir_Archived=${dir_Job}/archived 
+     dir_Archived=${dir_Job}/archived
+	   dir_Active=${dir_Job}/active
        file_JobId=${dir_Var}/jobid
 }
 
@@ -105,7 +109,7 @@ typeset      file_JobLock=${dir_Lock}/JobLock
 typeset  file_DispatchLog=${dir_Log}/dispatch.log
 
 # Layout Option
-typeset     int_MaxShown=15
+typeset     int_MaxShown=30
 
 # Job states
 # ==========
@@ -126,9 +130,9 @@ fn_LoadFunctions()
   #   -post post search
   #typeset local dir_Directory="$(basename ${1})"
   typeset local dir_Directory="${1}"
-  typeset local str_Search="${2}"
-  typeset local b_Display="${3}"
-  typeset local b_Errors=
+  typeset local    str_Search="${2}"
+  typeset local     b_Display="${3}"
+  typeset local      b_Errors=
   [[ ${b_Display} ]] || printf "\nLoading ${dir_Directory}\n"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
@@ -184,6 +188,7 @@ fi
 
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
 fn_CheckSetUp
+fn_CheckDispatcher
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
 if [[ ${file_Template} ]] ; then
   [[ ! -r "${file_Template}" ]] &&  echo "Error: Cannot read template file ${file_Request}" && exit 1
