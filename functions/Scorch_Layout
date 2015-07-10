@@ -216,10 +216,11 @@ fn_ShowJobs2()
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
   	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v pause$ | gawk \
+    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | gawk \
       -v state=${str_State} \
       -v linenum=${int_Count} \
       -v dir_Log=${dir_Log} \
+	  -v dir_Active=${dir_Active} \
 	  -v file_Cache=${file_Cache} \
 	  -v Colour=${str_StatusColour} \
 	  -v int_ScreenWidth=${int_ScreenWidth} \
@@ -229,7 +230,7 @@ fn_ShowJobs2()
     linenum <= int_MaxShown {
       #system("[[ grep str_Owner "$0" ]] && printf \"P|\" || printf \" |\"")
       printf Colour"%4s", linenum
-	  system("[[ -r "$0".pause ]] && printf \"P|\" || printf \" |\"")
+      system("[[ -r "dir_Active"/$(basename "$0").pause ]] && printf \"P|\" || printf \" |\"")
 
       if ( $2 != "" ) {
         printf "%7s|", $2   
@@ -238,7 +239,7 @@ fn_ShowJobs2()
         printf "%7s|", $3
       }
 # printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
-	  printf "%10s|%10s|%10s|%10s|",$4,$5,$6,$7
+      printf "%10s|%10s|%10s|%10s|",$4,$5,$6,$7
       system("tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null")
       system("echo arr_States["linenum"]="state" >> "file_Cache)
       system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
@@ -248,8 +249,8 @@ fn_ShowJobs2()
     END {
       system("echo int_Count="linenum" >> "file_Cache )
     }'
-	. ${file_Cache}
-	[[ -r "${file_Cache}" ]] && rm "${file_Cache}"
+    . ${file_Cache}
+    [[ -r "${file_Cache}" ]] && rm "${file_Cache}"
   done
 }
 readonly -f fn_ShowJobs2
@@ -353,9 +354,9 @@ fn_ContextMenu()
   [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ] && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
   [[ "${b_NewJobs}" ]]     && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
-  [[ "${arr_Jobs[1]}" ]] || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
+  [[ "${arr_Jobs[1]}" ]]   || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
 
-  printf "e${dis_ULOn}X${dis_ULOff}it : "
+  printf "${dis_ULOn}L${dis_ULOff}og | e${dis_ULOn}X${dis_ULOff}it : "
 }
 readonly -f fn_ContextMenu
 

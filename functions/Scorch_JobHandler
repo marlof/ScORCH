@@ -68,6 +68,7 @@ dir_Running="${dir_Running}"
 dir_Failed="${dir_Failed}"
 dir_Completed="${dir_Completed}"
 dir_Starting="${dir_Starting}"
+dir_Pause="${dir_Active}"
 file_Log="${dir_Var}/log/\${str_JobName}.log"
 LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
 
@@ -93,9 +94,9 @@ fn_CheckTask()
   fi
 
   # Checking if PAUSED
-  if [ -f "\${dir_Running}"/\${str_JobName}".pause" ] ; then
+  if [ -f "\${dir_Pause}"/\${str_JobName}".pause" ] ; then
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-	rm "\${dir_Running}"/\${str_JobName}".pause"
+	rm "\${dir_Pause}"/\${str_JobName}".pause"
     echo "+\$(date "+%D %T") Paused After Task:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
 	(( int_Task+=1 ))
     echo "Paused:Resume point:\${int_Task}" >> "\${file_Log}"
@@ -220,14 +221,29 @@ fn_ProcessRequest()
 	  int_TaskCount=0
       file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
       echo "INFO:RESPONSED:$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
+	  if type -t SP_${SYSTEM}_${str_EachACTION} ; then
+        fn_Call="SP_${SYSTEM}_${str_EachACTION}"
+      else
+		str_Call="SP_${str_EachACTION}"
+		if type -t ${str_Call} ; then
+		  printf "\n\nBest practice is to use SYSTEM.."
+		else
+          printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${str_Call}"
+		  fn_PressEnter
+		  return 0
+        fi
+      fi
       fn_JobHeader "${file_Job}"
       Task "echo INFO:START:\${str_StartTime} ; echo INFO:PID:\$$"
 
-      echo "INFO:PLUGIN:${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
+      #echo "INFO:PLUGIN:${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
+echo "INFO:PLUGIN:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
       #echo "Run SP_${SYSTEM}_${str_EachACTION}"
-      eval "SP_${SYSTEM}_${str_EachACTION}"
+#      eval "SP_${SYSTEM}_${str_EachACTION}"
+      eval "${str_Call}"
       if [[ $? -ne 0 ]] ; then
         echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+		mv ${file_Job} ${dir_Failed}/.
 		fn_PressEnter
         exit 1
       fi
@@ -292,13 +308,12 @@ Task()
   typeset local str_Task1=${1}
   typeset local str_OR=${2}
   typeset local str_Task2=${3}
-  typeset local str_AltTask2=
+  typeset local str_AltTask=
 
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> ${file_Job}
   printf "fn_Task_${int_TaskCount}(){ ${str_Task1}\t>> \"\${file_Log}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 
   (( int_TaskCount+=1 ))
-  str_OR=""
 }
 readonly -f Task
 
@@ -385,7 +400,7 @@ fn_Transition()
     # Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs2 failed new          ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed starting queued     ; str_Target="${dir_New}"     ;;
-	pause   ) fn_ShowJobs2 running starting queued    ; str_Target="${dir_Running}" ;;
+	pause   ) fn_ShowJobs2 running starting queued    ; str_Target="${dir_Active}}" ;;
 
   esac
 
@@ -404,7 +419,7 @@ fn_Transition()
 		unqueue ) mv "${file_Job}" "${str_Target}"/. ;;
         delete  ) mv "${file_Job}" "${str_Target}"/. ;;
         resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"  ; mv "${file_Job}" "${str_Target}"/.    ;;
-		pause   ) touch "${dir_Running}"/$(basename ${file_Job}).pause ;;
+		pause   ) touch "${dir_Active}"/$(basename ${file_Job}).pause ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
       
