@@ -40,11 +40,18 @@
 # 1.2       marc        Improved fn_ShowJobs2, pause feature
 # 1.3       marc        Improved task list, began lock manager and task manager
 # 1.4       marc        Further improvements to task list
+# 1.5       marc        Jobs now use symbolic links
+# 1.6       marc        Audit handling
+#                       Failed job audit tracking
+#                       Enterprise Feature (Developer:Debug)
 # Determine the program name and the running directory
+typeset str_ProgramVersion="1.6"
+
+typeset    str_ProgramName=$(basename "$0")
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset           dir_Orig="$(pwd)/${dir_Run}"
-typeset str_ProgramVersion="1.5"
+typeset         fn_LogDate="date +%y%m%d-%H%M%S"
 
 fn_BaseDir()
 {
@@ -73,6 +80,7 @@ typeset str_Functions=$(basename "${dir_Functions}")
 # ===============
 typeset         dir_Job=${dir_Base}/jobs
 typeset       int_Count=1
+typeset        file_CSV=${dir_Log}/jobs.csv
 
 typeset         dir_New=${dir_Job}/new
 typeset     dir_Running=${dir_Job}/running
@@ -83,6 +91,7 @@ typeset      dir_Queued=${dir_Job}/queued
 typeset dir_Superceeded=${dir_Job}/superceeded
 typeset     dir_Deleted=${dir_Job}/deleted 
 typeset    dir_Archived=${dir_Job}/archived
+typeset     dir_Pending=${dir_Job}/pending
 typeset      dir_Active=${dir_Job}/active 
 typeset      file_JobId=${dir_Var}/jobid
 
@@ -109,7 +118,7 @@ typeset      file_JobLock=${dir_Lock}/JobLock
 typeset  file_DispatchLog=${dir_Log}/dispatch.log
 
 # Layout Option
-typeset     int_MaxShown=30
+typeset      int_MaxShown=30
 
 # Job states
 # ==========
@@ -133,6 +142,7 @@ fn_LoadFunctions()
   typeset local    str_Search="${2}"
   typeset local     b_Display="${3}"
   typeset local      b_Errors=
+  typeset local  str_EachFile=
   [[ ${b_Display} ]] || printf "\nLoading ${dir_Directory}\n"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
@@ -187,6 +197,7 @@ if [ $# -ne 0 ] ; then
 fi
 
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
+[[ ! -z $ENTERPRISE ]] && fn_LoadFunctions "${dir_Functions}" "ScorchE_"
 fn_CheckSetUp
 fn_CheckDispatcher
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
@@ -195,6 +206,7 @@ if [[ ${file_Template} ]] ; then
   fn_NewJob "${file_Template}"
   exit 0
 fi
+fn_CreateFile ${file_CSV}
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir ${dir_Tmp} &&  exit 1
 fn_SetLayout
 [ "${b_Help}" ] && fn_Help && exit 0
@@ -204,22 +216,5 @@ fn_SetLayout
 fn_Manager
 file_Template="${dir_Tmp}"/request1
 pwd
-
-#echo "Arrays===================="
-#set | grep "^arr_"
-#echo "Strings===================="
-#set | grep "^str_"
-#echo "Booleans==================="
-#set | grep "^b_"
-#echo "Files======================"
-#set | grep "^file_"
-#echo "Dirs======================="
-#set | grep "^dir_"
-#echo "Functions=================="
-#set | grep "^fn_"
-#echo "Numbers===================="
-#set | grep "^int_"
-#echo "Arrays===================="
-#set | grep "^arr_"
 
 exit 0

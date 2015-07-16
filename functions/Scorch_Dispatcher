@@ -58,7 +58,7 @@ fn_Dispatcher()
   
         if [ ! -L "${file_QueueLock}" ] ; then
           ln -s "${file_EachJob}" "${file_QueueLock}"
-          echo "$(date +"%D %T") Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
+          echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
 		  #[[ -f "${dir_Queued}"/${file_EachJob}.pause ]] && mv "${dir_Queued}"/${file_EachJob}.pause "${dir_Running}"
 		  int_DispatchCount=0
@@ -91,7 +91,7 @@ fn_CheckRunning()
     for file_EachJob in ${arr_RunningJobs} ; do
 	  if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
         mv ${dir_Running}/${file_EachJob} ${dir_Failed}/.
-        echo "ORPHANED:$(date "+%D %T"):Resume point:unknown" >> "${dir_Log}/${file_EachJob}.log"
+        echo "$(${fn_LogDate}) Orphaned. Resume point:unknown" >> "${dir_Log}/${file_EachJob}.log"
 
       fi
     done
@@ -126,7 +126,7 @@ fn_RunJobs()
   #ls "${dir_Starting}"
   #shopt -s nullglob
   for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
-    echo "Starting $(basename "${file_EachJob}")"
+    echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 	sleep 0.5
   done
@@ -148,7 +148,7 @@ fn_LockManager()
     done
     fn_ShowLine "="
 
-    printf "\n Select job number to delete | e${dis_ULOn}X${dis_ULOff}it : "
+    printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
 
     read -t 10 char_Choice
     [[ "${char_Choice}" = "" ]] && char_Choice="x"

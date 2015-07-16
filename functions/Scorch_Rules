@@ -18,5 +18,6 @@
 
 fn_Rules()
 {
-  echo "Stubbed"
+  printf "\n\n Rules is an enterprise feature."
+  fn_PressEnter
 }

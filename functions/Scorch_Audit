@@ -1,0 +1,39 @@
+#
+# Copyright 2015 WebMarcIT Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# fn_LogWhy
+# fn_Audit
+
+fn_LogWhy()
+{
+  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+  printf "\n\n"
+  read -p " Enter a reason: " str_Answer
+  echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Job}"
+  echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Log}"
+
+}
+readonly -f fn_LogWhy
+
+fn_Audit()
+{
+  typeset local file_Job="${1}"                             # The Job to update
+  typeset local str_Transition="${2}"                       # The transition being performed
+  [[ "${str_Transition}" = "deleted" ]] && fn_LogWhy
+  echo "$(${fn_LogDate}) $(whoami) ran transition ${str_Transition}" >> ${file_Job}
+}
+readonly -f fn_Audit
+
+

@@ -23,7 +23,6 @@
 # fn_CreateFile()
 # fn_GetResumePoint()
 # fn_UpdateResumePoint()
-# fn_Audit()
 # fn_PressEnter()
 
 
@@ -35,7 +34,7 @@ fn_CheckSetUp()
   typeset b_SetUp=         # Is this the first run
 
   # This function will check that all Scorch components are set to allow a smooth run.
-  typeset local arr_Directories="dir_New dir_Starting dir_Failed dir_Deleted \
+  typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
                                  dir_Queued dir_Active dir_Var dir_Log dir_Lock"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
@@ -165,23 +164,15 @@ readonly -f fn_GetResumePoint
 fn_UpdateResumePoint()
 {
   typeset local file_Job="${1}"                             # The Job to update
-  typeset local int_ResumePoint="${2:-0}"                      # The new start task
+  typeset local int_ResumePoint="${2:-0}"                   # The new start task
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-
+  [[ "$(dirname ${file_Job})" = "${dir_Failed}" ]] && fn_LogWhy
   (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
   cat "${file_Job}" | sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ > "${file_Job}".tmp
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" && rm "${file_Job}".tmp
-  [[ int_ResumePoint -eq 0 ]] && echo "Starting from task 0" >> "${file_Log}" || echo "Resuming from task ${int_ResumePoint}" >> "${file_Log}"
+  [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint
-
-fn_Audit()
-{
-  typeset local file_Job="${1}"                             # The Job to update
-  typeset local str_Transition="${2}"                       # The transition being performed
-  echo $(date "+%D %T") $(whoami) ${str_Transition} >> ${file_Job}
-}
-readonly -f fn_Audit
 
 fn_PressEnter()
 {
@@ -189,3 +180,4 @@ fn_PressEnter()
   read -p " Press Enter to continue "
 }
 readonly -f fn_PressEnter
+

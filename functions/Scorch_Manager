@@ -50,6 +50,9 @@ fn_Manager()
       # Create a new job
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Jobs};;
 
+	  # View CSV
+	  c | C ) vi "${file_CSV}" ;;
+
       # Job State transition
       d | D ) fn_Transition delete  ;;
       q | Q ) fn_Transition queue   ;;
@@ -63,7 +66,8 @@ fn_Manager()
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
 
       l | L ) fn_LockManager        ;;     
-      
+      set )   fnE_Set ;;
+	  
       x | X ) break ;;
     esac
 	fn_RunJobs
@@ -74,20 +78,28 @@ readonly -f fn_Manager
 
 fn_AdminFunctions()
 {
+  typeset local char_Choice=${1}
   if [[ ${char_Choice} -lt ${int_Count} ]] ; then
-    typeset str_JobState=${arr_States[${1}]}
-    typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${1}]}
-	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${1}]}"
+
+    typeset str_JobState=${arr_States[${char_Choice}]}
+    typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${char_Choice}]}
+	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
     typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-    echo "${file_Job}"
+ #   echo "${file_Job}"
+    while : ; do
     clear
     fn_ShowTop
-    fn_ShowLine
+    fn_ShowLine "-" "Owner"
     typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
-    echo " Job Owner : ${str_JobOwner}"
-    fn_ShowLine "-" 
+    echo " ${str_JobOwner}"
+	echo ""
+    fn_ShowLine "-" "File details"
     ls -lL "${file_ActiveJob}"
 	ls -lL "${file_Log}"
+	echo ""
+    fn_ShowLine "-" "Log Summary"
+	tail -5 "${file_Log}"
+    echo ""
     fn_ShowLine "-" 
 #echo Passing ${str_JobState}
     fn_ContextMenu ${str_JobState}
@@ -95,9 +107,12 @@ fn_AdminFunctions()
     #echo "."
 
     case ${char_Choice} in
+	
+	  # View CSV
+	  c | C ) vi "${file_CSV}" ;;
 
       # Edit job
-      e | E ) vi "${file_Job}" ;;
+      e | E ) vi "${file_ActiveJob}" ;;
 	  l | L ) vi "${file_Log}" ;;
 
       # Job State transition
@@ -129,11 +144,12 @@ fn_AdminFunctions()
       t | T ) fn_ShowTasks "${file_Job}"          ;;
 
 	  f | F ) fn_Audit "${file_Job}" "fix in progress"
-              echo "Fix in Progress: Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
+              echo "$(${fn_LogDate}) Fix in progress. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
 
-      x | X ) break ;;
+      x | X ) return 0 ;;
     esac
-    sleep .5 #Here to allow NAS to catch up
+    #sleep .5 #Here to allow NAS to catch up
+	done
   else 
     echo "Out of range"
     fn_PressEnter

@@ -1,0 +1,25 @@
+#
+# Copyright 2015 WebMarcIT Ltd
+#
+# This is the propitiatory .....
+
+fnE_Set()
+{
+  echo "Arrays===================="
+  set | grep "^arr_"
+  echo "Strings===================="
+  set | grep "^str_"
+  echo "Booleans==================="
+  set | grep "^b_"
+  echo "Files======================"
+  set | grep "^file_"
+  echo "Dirs======================="
+  set | grep "^dir_"
+  echo "Functions=================="
+  set | grep "^fn_"
+  echo "Numbers===================="
+  set | grep "^int_"
+  echo "Arrays===================="
+  set | grep "^arr_"
+  fn_PressEnter
+} 

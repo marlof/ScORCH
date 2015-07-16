@@ -69,9 +69,10 @@ dir_Failed="${dir_Failed}"
 dir_Completed="${dir_Completed}"
 dir_Starting="${dir_Starting}"
 dir_Pause="${dir_Active}"
+dir_Active="${dir_Active}"
 file_Log="${dir_Var}/log/\${str_JobName}.log"
 LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
-
+echo "AUDIT:PID:\$\$" >> "\${file_Log}" 
 [[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
 
 [[ -w "\${dir_Starting}"/\${str_JobName} ]] && mv "\${dir_Starting}"/\${str_JobName} "\${dir_Running}"/.
@@ -84,22 +85,21 @@ fn_CheckTask()
 
   if [ \${int_RC} -ne 0 ] ; then
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-    echo "+\$(date "+%D %T") Failed:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-    echo "FAILED:\$(date "+%D %T"):Resume point:\${int_Task}" >> "\${file_Log}"
+    echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+    echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
     rm "\${LOCK}"
     exit 1
   else
-    #echo "Task \${int_Task} completed \$(date)"
-    echo "INFO:STATUS:\$(date "+%D %T"):Completed:\${int_Task}/\${int_Last}" >> "\${file_Log}"
+    echo "\$(${fn_LogDate}) Completed task \${int_Task}/\${int_Last}" >> "\${file_Log}"
   fi
 
   # Checking if PAUSED
   if [ -f "\${dir_Pause}"/\${str_JobName}".pause" ] ; then
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-	rm "\${dir_Pause}"/\${str_JobName}".pause"
-    echo "+\$(date "+%D %T") Paused After Task:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+    rm "\${dir_Pause}"/\${str_JobName}".pause"
 	(( int_Task+=1 ))
-    echo "Paused:Resume point:\${int_Task}" >> "\${file_Log}"
+    echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+    echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${file_Log}"
     rm "\${LOCK}"
     exit 1
   fi
@@ -125,6 +125,9 @@ int_StartTask=\${int_ResumePoint:-1}
 int_Last=${int_TaskCount}
 
 while [ \${int_StartTask} -le \${int_Last} ] ; do
+  echo "===================" >> "\${file_Log}"
+  echo "\$(${fn_LogDate}) Starting Task[\${int_StartTask}/\${int_Last}]" >> "\${file_Log}"
+  declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
@@ -132,27 +135,29 @@ done
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}"
 
-int_FailureCount=\$(grep "^+.*Failed:" "\${dir_Completed}"/\${str_JobName} | wc -l)
+int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
-echo "\$(date "+%D %T") COMPLETED:\${int_Task}" >> "\${dir_Completed}"/\${str_JobName}
-echo "INFO:FINISH:\$(date "+%s")" >> "\${file_Log}"
-echo "\$(date "+%D %T") Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
+echo "\$(${fn_LogDate}) COMPLETED:\${int_StartTask}" >> "\${dir_Completed}"/\${str_JobName}
+echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
+echo "\$(${fn_LogDate}) Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
 # CSV File
 # Request time,Response time, Start time, End Time, Job name, number of failures, who
- int_Responded=\$(grep -m 1 "INFO:RESPONDED" \${file_Log} | cut -d: -f3)
+ int_Created=\$(grep -m 1 "Created by:" \${file_Log} | cut -d" " -f1)
  str_Requested=${FROM:-${int_Responded}}
- int_Start=\$(grep "INFO:START" \${file_Log} | tail -1 | cut -d: -f3)
- int_Finish=\$(grep "INFO:FINISH"  \${file_Log} | tail -1 | cut -d: -f3) 
+ int_Start=\$(grep  "^AUDIT:START"  \${file_Log} | tail -1 | cut -d: -f3)
+ int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3) 
  (( int_Duration = int_Finish - int_Start ))
- echo \${str_Requested},\${int_Responded},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration} seconds,\${int_FailureCount},\${str_Owner} >> "\${dir_Completed}"/\${str_JobName}
+ echo \${str_Requested},\${int_Created},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration},\${int_Last},\${int_FailureCount},\${str_Owner} >> "${file_CSV}"
+touch -h "\${dir_Completed}/\${str_JobName}" # To reflect the correct finish time in the file
 exit 0
 
 EOF
 
   echo "# Template Used" >> "${file_Job}"
+  echo "=============================" >> "${file_Job}"
   cat "${file_Request}" >> "${file_Job}"
   echo "=============================" >> "${file_Job}"
-  chmod 754 "${file_Job}"
+  chmod 770 "${file_Job}"
 }
 readonly -f fn_JobFooter
 
@@ -164,6 +169,7 @@ fn_NewJob()
 
   fn_GetRequest "${file_Template}"
   fn_ProcessRequest
+  fn_CheckDispatcher
 
   rm "${file_Request}"
 }
@@ -174,13 +180,14 @@ fn_GetRequest()
   # Receive the request from a file or interactively
   typeset local file_Template="${1:-}"
   typeset local str_Line=""
+  typeset local int_GetCount=1
 
   # global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$
-  #echo ${file_Request}
+  file_Request2=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
 
   if [ ! -z "${file_Template}" ] ; then
-    echo "$(date +'%D %T'): Processing file:${file_Template}"
+    echo "$($fn_LogDate): Processing file:${file_Template}"
     while read str_Line ; do
       echo ${str_Line} | grep ":" >> ${file_Request}
     done < "${file_Template}"
@@ -202,7 +209,6 @@ fn_GetRequest()
         printf "${str_Line}" | grep ":" >> "${file_Request}"
       fi
     done
-    #cat "${file_Request}"
   fi
 }
 readonly -f fn_GetRequest
@@ -216,42 +222,36 @@ fn_ProcessRequest()
   [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
   for str_EachACTION in ${ACTION} ; do
     for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
-      #echo "${str_EachACTION} ${str_EachENVIRONMENT}"
 
 	  int_TaskCount=0
-      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}_${RELEASE}
-      echo "INFO:RESPONSED:$(date +%s)" > "${dir_Log}"/$(basename "${file_Job}").log
-	  if type -t SP_${SYSTEM}_${str_EachACTION} ; then
+	  if type -t SP_${SYSTEM}_${str_EachACTION} >/dev/null ; then
         fn_Call="SP_${SYSTEM}_${str_EachACTION}"
       else
-		str_Call="SP_${str_EachACTION}"
-		if type -t ${str_Call} ; then
-		  printf "\n\nBest practice is to use SYSTEM.."
+		fn_Call="SP_${str_EachACTION}"
+		if type -t ${fn_Call} >/dev/null ; then
+		  printf "\n\nBest practice is to use SYSTEM..\n"
 		else
-          printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${str_Call}"
+          printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${fn_Call}\n"
 		  fn_PressEnter
 		  return 0
         fi
       fi
+      str_Call=${fn_Call#SP_}
+      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
       fn_JobHeader "${file_Job}"
-      Task "echo INFO:START:\${str_StartTime} ; echo INFO:PID:\$$"
+      Task "echo AUDIT:START:\${str_StartTime}"
 
-      #echo "INFO:PLUGIN:${SYSTEM}_${str_EachACTION}" >> "${dir_Log}"/$(basename "${file_Job}").log
-echo "INFO:PLUGIN:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
-      #echo "Run SP_${SYSTEM}_${str_EachACTION}"
-#      eval "SP_${SYSTEM}_${str_EachACTION}"
-      eval "${str_Call}"
+      echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
+      eval "${fn_Call}"
       if [[ $? -ne 0 ]] ; then
-        echo "Error in plugin ($(date +'%D %T'))" >> "${dir_Log}"/$(basename "${file_Job}").log
+        echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
 		mv ${file_Job} ${dir_Failed}/.
 		fn_PressEnter
         exit 1
       fi
 
       fn_JobFooter "${file_Job}"
-      echo "INFO:CREATED:$(date +'%s')" >> "${dir_Log}"/$(basename "${file_Job}").log
-      echo "INFO:OWNER:$(whoami)" >> "${dir_Log}"/$(basename "${file_Job}").log
-      echo "$(date +'%D %T') Job created by $(whoami) [${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+      echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
       (( int_JobCount+=1 ))
 
       # If there is already another job in a failed state, mv that failed job to the superceeded directory
@@ -289,12 +289,15 @@ readonly -f fn_GetJobID
 
 fn_ExtractPairs()
 {
-  GetVar -pattern "System"  -name SYSTEM             -default "LOCAL"
+  GetVar -pattern "System"  -name SYSTEM             -default ""
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
   GetVar -pattern "Type"    -name TYPE               -default ""
   GetVar -pattern "Ticket"  -name TICKET             -default ""
+  
+  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
+  #echo $SYSTEM and $ACTION ; sleep 4
 }
 readonly -f fn_ExtractPairs
 

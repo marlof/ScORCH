@@ -261,7 +261,7 @@ fn_FormatTasks()
   # regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
   printf "\n\n   "
-  ls -l "${file_Job}"  #"${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+  ls -lL "${file_Job}"  #"${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
   printf "\n"
   cat "${file_Job}" | gawk 'BEGIN {
               linenum=0
@@ -356,7 +356,7 @@ fn_ContextMenu()
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}" ]]   || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
 
-  printf "${dis_ULOn}L${dis_ULOff}og | e${dis_ULOn}X${dis_ULOff}it : "
+  printf "${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}C${dis_ULOff}SV | e${dis_ULOn}X${dis_ULOff}it : "
 }
 readonly -f fn_ContextMenu
 
