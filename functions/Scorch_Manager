@@ -31,15 +31,11 @@ fn_Manager()
     #printf "."
     #fn_ShowJobs superceeded failed warning #>> "${file_ScreenCache}"
 	#fn_ShowJobs completed
-	fn_ShowJobs2 superceeded failed running starting queued new completed #>> ${file_ScreenCache}
-    #printf "."
-    fn_ShowLine "=" #>> "${file_ScreenCache}"
-    #printf "."
-    fn_DisplayMOTD #>> "${file_ScreenCache}"
-    #printf "."
-    #fn_ContextMenu >> "${file_ScreenCache}"
-    #printf "."
-#	int_ScreenWidth=$(tput cols)
+	fn_ShowJobs2 superceeded failed running starting pending queued new completed #>> ${file_ScreenCache} ; printf "."
+    fn_ShowLine "=" #>> "${file_ScreenCache}" ; printf "."
+    fn_DisplayMOTD #>> "${file_ScreenCache}" ; printf "."
+    #fn_ContextMenu >> "${file_ScreenCache}" ; printf "."
+    #int_ScreenWidth=$(tput cols)
     #clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
 	fn_ContextMenu
     read -t 10 char_Choice
@@ -54,11 +50,11 @@ fn_Manager()
 	  c | C ) vi "${file_CSV}" ;;
 
       # Job State transition
-      d | D ) fn_Transition delete  ;;
-      q | Q ) fn_Transition queue   ;;
-      r | R ) fn_Transition resume  ;;
-      u | U ) fn_Transition unqueue ;;
-	  p | P ) fn_Transition pause   ;;
+      d | D )                      fn_Transition delete  ;;
+      q | Q ) fn_CheckDispatcher ; fn_Transition queue   ;;
+      r | R ) fn_CheckDispatcher ; fn_Transition resume  ;;
+      u | U )                      fn_Transition unqueue ;;
+	  p | P )                      fn_Transition pause   ;;
 
       # Misc
       m | M ) fn_EditMOTD           ;;
@@ -82,73 +78,83 @@ fn_AdminFunctions()
   if [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
     typeset str_JobState=${arr_States[${char_Choice}]}
-    typeset local file_Job="${dir_Job}"/${str_JobState}/${arr_Jobs[${char_Choice}]}
+    typeset local file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
+    typeset local file_Link="${dir_Job}/${str_JobState}/${arr_Jobs[${char_Choice}]}"
 	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
     typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
  #   echo "${file_Job}"
     while : ; do
-    clear
-    fn_ShowTop
-    fn_ShowLine "-" "Owner"
-    typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
-    echo " ${str_JobOwner}"
-	echo ""
-    fn_ShowLine "-" "File details"
-    ls -lL "${file_ActiveJob}"
-	ls -lL "${file_Log}"
-	echo ""
-    fn_ShowLine "-" "Log Summary"
-	tail -5 "${file_Log}"
-    echo ""
-    fn_ShowLine "-" 
-#echo Passing ${str_JobState}
-    fn_ContextMenu ${str_JobState}
-    read char_Choice
+      clear
+      fn_ShowTop
+      fn_ShowLine "-" "Owner"
+      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+      echo " ${str_JobOwner}"
+      echo ""
+      fn_ShowLine "-" "File details"
+      echo " State at selection : ${str_JobState}"
+      echo ""
+      ls -lL "${file_ActiveJob}"
+      ls -lL "${file_Log}"
+      echo ""
+      [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) 
+      fn_ShowLine "-" "Log Summary"
+      tail -10 "${file_Log}"
+      echo ""
+      fn_ShowLine "-" 
+      fn_ContextMenu ${str_JobState}
+      type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
+      read -t 10 char_Choice
     #echo "."
 
-    case ${char_Choice} in
+      case ${char_Choice} in
 	
-	  # View CSV
-	  c | C ) vi "${file_CSV}" ;;
+	    # View CSV
+	    c | C ) vi "${file_CSV}" ;;
 
-      # Edit job
-      e | E ) vi "${file_ActiveJob}" ;;
-	  l | L ) vi "${file_Log}" ;;
+        # Edit job
+        e | E ) vi "${file_ActiveJob}" ;;
+	    l | L ) vi "${file_Log}" ;;
 
-      # Job State transition
-      d | D ) fn_Audit "${file_Job}" deleted
-              mv "${file_Job}" "${dir_Deleted}" ;;
+        # Job State transition
+        d | D ) fn_Audit "${file_Job}" deleted
+              mv "${file_Link}" "${dir_Deleted}"
+              return 0 ;;
 
-      q | Q ) fn_Audit "${file_Job}" queued
+        q | Q ) fn_Audit "${file_Job}" queued
               fn_UpdateResumePoint "${file_Job}" 0
-              mv "${file_Job}" "${dir_Queued}"
-              fn_CheckDispatcher			    ;;
+              mv "${file_Link}" "${dir_Queued}"
+              fn_CheckDispatcher
+              return 0 ;;
 
-	  r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
+	    r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
               fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
-              mv "${file_Job}" "${dir_Queued}"
-              fn_CheckDispatcher                ;;
+              mv "${file_Link}" "${dir_Queued}"
+              fn_CheckDispatcher
+              return 0 ;;
 
-	  s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
+	    s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
               fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
-              mv "${file_Job}" "${dir_Queued}"
-              fn_CheckDispatcher                ;;
+              mv "${file_Link}" "${dir_Queued}"
+              fn_CheckDispatcher
+              return 0 ;;
 
-	  p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
-	          touch "${dir_Active}/$(basename ${file_Job})".pause           ;;
+	    p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
+	          touch "${dir_Active}/$(basename ${file_Job})".pause
+              return 0 ;;
 			  
-	  u | U ) fn_Audit "${file_Job}" unqueued
-              mv "${file_Job}" "${dir_New}"     ;;
+	    u | U ) fn_Audit "${file_Job}" unqueued
+              mv "${file_Link}" "${dir_New}"  
+              return 0 ;;
 
-      # Task View
-      t | T ) fn_ShowTasks "${file_Job}"          ;;
+        # Task View
+        t | T ) fn_ShowTasks "${file_Job}"          ;;
 
-	  f | F ) fn_Audit "${file_Job}" "fix in progress"
+	    f | F ) fn_Audit "${file_Job}" "fix in progress"
               echo "$(${fn_LogDate}) Fix in progress. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
 
-      x | X ) return 0 ;;
-    esac
-    #sleep .5 #Here to allow NAS to catch up
+        x | X ) return 0 ;;
+	    *     ) return 0 ;;
+      esac
 	done
   else 
     echo "Out of range"

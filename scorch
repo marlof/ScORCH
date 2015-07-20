@@ -48,10 +48,9 @@
 typeset str_ProgramVersion="1.6"
 
 typeset    str_ProgramName=$(basename "$0")
-typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset           dir_Orig="$(pwd)/${dir_Run}"
-typeset         fn_LogDate="date +%y%m%d-%H%M%S"
+typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
 
 fn_BaseDir()
 {
@@ -197,7 +196,12 @@ if [ $# -ne 0 ] ; then
 fi
 
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
-[[ ! -z $ENTERPRISE ]] && fn_LoadFunctions "${dir_Functions}" "ScorchE_"
+if [[ ! -z $ENTERPRISE ]] ; then
+  fn_LoadFunctions "${dir_Functions}" "ScorchE_"
+  str_License="Enterprise"
+else
+  str_License="OpenScorch"
+fi
 fn_CheckSetUp
 fn_CheckDispatcher
 [[ ${b_Dispatcher} ]] && fn_Dispatcher 
@@ -215,6 +219,7 @@ fn_SetLayout
 
 fn_Manager
 file_Template="${dir_Tmp}"/request1
+fn_HouseKeeping
 pwd
 
 exit 0

@@ -36,7 +36,7 @@ fn_CheckSetUp()
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Deleted \
                                  dir_Running dir_Superceeded dir_Completed dir_Tmp \
-                                 dir_Queued dir_Active dir_Var dir_Log dir_Lock"
+                                 dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
@@ -84,16 +84,29 @@ readonly -f fn_Help
 
 fn_HouseKeeping()
 {
-  # Cleanup of dir_deleted dir_completed
+  # Clean-up of dir_deleted dir_completed
+  # Deleted jobs left for a period of time before tar into the deleted tar
+  # Daily jobs moved to archive directory after a period of if more than MaxJobs
+  # Old Archived jobs are tar'd up after DaysDeleted
   echo "Housekeeping...."
 
   typeset local     int_MaxJobs=30
   typeset local int_DaysDeleted=10
+  typeset local  int_DaysActive=10
 
-  find "${dir_Deleted}"/${str_JobPrefix}*    -mtime +${int_DaysDeleted}
-  find "${dir_Completed}"/${str_JobPrefix}*  -mtime +${int_DaysDeleted}
+  # First remove max links from completed
+  [ $(ls ${dir_Completed}/* 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find ${dir_Completed}/* ! -newer ${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1) -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
-  rm "${dir_New}"/${str_JobPrefix}file
+  # Remove old completed links
+  find  "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo rm -f {} \; 2>/dev/null
+
+  # Remove old deleted links
+  find  "${dir_Deleted}"/${str_JobPrefix}*   -mtime +${int_DaysDeleted} -exec echo rm -f {} \; 2>/dev/null
+
+  # Archive active jobs
+  find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec tar uf ${dir_Active}/active.tar "{}" + 2>/dev/null && find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
+  
+  
 }
 readonly -f fn_HouseKeeping
 
@@ -169,7 +182,7 @@ fn_UpdateResumePoint()
   [[ "$(dirname ${file_Job})" = "${dir_Failed}" ]] && fn_LogWhy
   (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
   cat "${file_Job}" | sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ > "${file_Job}".tmp
-  [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" && rm "${file_Job}".tmp
+  [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/dev/null
   [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint

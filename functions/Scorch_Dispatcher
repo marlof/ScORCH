@@ -39,15 +39,32 @@ fn_Dispatcher()
     [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
 
     fn_CheckRunning
-    # Check running jobs are really running
-#    typeset local arr_RunningJobs=$(ls -rt1 "${dir_Running}")
-#	if [[ "${arr_RunningJobs}" ]] ; then
-#	  for file_EachJob in ${arr_RunningJobs} ; do
-	    :
-#ls -l ${dir_Running}/${file_EachJob}
-#ps -ef | grep ${file_EachJob}
-#      done
-#    fi
+
+    # Check the pending directory first for any rules that have succeeded
+    typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
+    if [[ "${arr_PendingJobs}" ]] ; then
+echo "Checking pending rules"
+      for file_EachJob in ${arr_PendingJobs} ; do
+        if [ -r "${dir_Active}/$(basename ${file_EachJob})".rules ] ; then
+		  # Check for Parent
+          arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename ${file_EachJob})".rules | cut -d: -f2)
+		  for file_EachParent in ${arr_Parents} ; do
+            str_ParentState=$(basename $(dirname $(find ${dir_Job} -type l -name ${file_EachParent})))
+            case ${str_ParentState} in
+              completed ) fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} completed. Moving job to queued state." "rules"
+			              mv ${dir_Pending}/${file_EachJob} ${dir_Queued} ;;
+              superceeded | failed )                         echo failed parent ;;
+			  running | starting | pending | queued | new  ) echo not finished ;;
+			  *       )   fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} missing. Moving job to failed state."   "rules"
+			              mv ${dir_Pending}/${file_EachJob} ${dir_Failed} ;;
+
+            esac			  
+          done
+        fi
+      done
+      # If there are any pending jobs (with valid rules) we must keep the dispatcher running
+      int_DispatchCount=0
+    fi	  
 
     # Move queued jobs to start state
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
@@ -60,7 +77,6 @@ fn_Dispatcher()
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
-		  #[[ -f "${dir_Queued}"/${file_EachJob}.pause ]] && mv "${dir_Queued}"/${file_EachJob}.pause "${dir_Running}"
 		  int_DispatchCount=0
           sleep 1
         else
@@ -128,7 +144,8 @@ fn_RunJobs()
   for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
     echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
-	sleep 0.5
+	# To ensure started in order
+	sleep 0.2
   done
 }
 readonly -f fn_RunJobs
@@ -146,21 +163,28 @@ fn_LockManager()
       arr_Locks[${int_Count}]="${file_Lock}"
       (( int_Count+=1 ))
     done
-    fn_ShowLine "="
+	if [[ ${int_Count} -lt 2 ]] ; then
+	  printf "\n\n No locks active\n\n"
+	  fn_ShowLine "="
+	  fn_PressEnter
+	  return 0
+	else
+      fn_ShowLine "="
 
-    printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
+      printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
 
-    read -t 10 char_Choice
-    [[ "${char_Choice}" = "" ]] && char_Choice="x"
-    case ${char_Choice} in
+      read -t 10 char_Choice
+      [[ "${char_Choice}" = "" ]] && char_Choice="x"
+      case ${char_Choice} in
 
-      # Lock transition
-      d | D ) printf "rm lock "  ;;
-	  [0-9]* ) echo removing ${dir_Lock}/${arr_Locks[${char_Choice}]} ; sleep 2 ; rm ${dir_Lock}/${arr_Locks[${char_Choice}]} ;;
+        # Lock transition
+        d | D ) printf "rm lock "  ;;
+        [0-9]* ) echo removing ${dir_Lock}/${arr_Locks[${char_Choice}]} ; rm ${dir_Lock}/${arr_Locks[${char_Choice}]} ; sleep 2 ;;
       
-      x | X ) break ;;
-    esac
-	fn_RunJobs
+        x | X ) return 0 ;;
+      esac
+	fi
+  #  fn_RunJobs
   done
 }
 readonly -f fn_LockManager

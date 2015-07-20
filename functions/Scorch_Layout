@@ -35,7 +35,7 @@ fn_SetLayout()
   #    |       |          |          |
   int_ScreenWidth=$(tput cols)
   int_Column1Width=4        # Selection number
-  int_Column2Width=7        # System reference number (like JIRA) or use ticket number
+  int_Column2Width=8        # System reference number (like JIRA) or use ticket number
   int_Column3Width=10       # The service 
   int_Column4Width=10       # Action preformed / Plugin name
   int_Column5Width=10       # The Environment performed on
@@ -71,10 +71,10 @@ fn_ShowTop()
   # Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   int_DispatcherPID=${int_DispatcherPID:-0}
-  printf " %${int_TitleWidth}s| %${int_Column3Width}s| %${int_Column4Width}s| " \
+  printf " %${int_TitleWidth}s|%${int_Column3Width}s|  %${int_TitleWidth}s|%${int_Column6Width}s|" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-		 "${int_DiskUsage}"
+		 "${int_DiskUsage}" "${str_License}"
   tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
@@ -229,7 +229,9 @@ fn_ShowJobs2()
     }
     linenum <= int_MaxShown {
       #system("[[ grep str_Owner "$0" ]] && printf \"P|\" || printf \" |\"")
-      printf Colour"%4s", linenum
+      printf Colour
+	  system("[[ -r "dir_Active"/$(basename "$0").rules ]] && printf \"R\" || printf \" \"")
+      printf "%3s", linenum
       system("[[ -r "dir_Active"/$(basename "$0").pause ]] && printf \"P|\" || printf \" |\"")
 
       if ( $2 != "" ) {
@@ -305,7 +307,7 @@ fn_ShowTasks()
       for int_Answer in ${str_Answer} ; do
         # awk replaces 
 		#   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
-		fn_FormatTasks "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+		fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
       done
     else
       echo "Nothing chosen"
@@ -332,7 +334,7 @@ fn_ContextMenu()
   printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode
-    printf " ${dis_ULOn}E${dis_ULOff}dit | "
+    printf " ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | "
     case ${str_State} in
       queued  ) b_QueuedJobs=1 ;;
       failed  ) b_FailedJobs=1 ;;
@@ -342,6 +344,7 @@ fn_ContextMenu()
   else
     # Generic Mode
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
+	[[ "$(ls ${dir_Lock} 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
     [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1 
     [[ "$(echo ${arr_States[@]} | grep -i running)" ]] && b_RunningJobs=1 
     [[ "$(echo ${arr_States[@]} | grep -i new)"     ]] && b_NewJobs=1 
@@ -356,7 +359,7 @@ fn_ContextMenu()
   [[ "${str_State}" ]]     || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}" ]]   || [[ "${str_State}" ]]  && printf "${dis_ULOn}T${dis_ULOff}asks | "
 
-  printf "${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}C${dis_ULOff}SV | e${dis_ULOn}X${dis_ULOff}it : "
+  printf "${dis_ULOn}C${dis_ULOff}SV | e${dis_ULOn}X${dis_ULOff}it : "
 }
 readonly -f fn_ContextMenu
 

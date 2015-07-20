@@ -19,7 +19,8 @@
 fn_LogWhy()
 {
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-  printf "\n\n"
+  printf "\n\n $(basename ${file_Job})\n\n"
+  
   read -p " Enter a reason: " str_Answer
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Job}"
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Log}"
@@ -31,8 +32,14 @@ fn_Audit()
 {
   typeset local file_Job="${1}"                             # The Job to update
   typeset local str_Transition="${2}"                       # The transition being performed
+  typeset local str_Dispatcher="${3:-}"
   [[ "${str_Transition}" = "deleted" ]] && fn_LogWhy
-  echo "$(${fn_LogDate}) $(whoami) ran transition ${str_Transition}" >> ${file_Job}
+  if [[ "${str_Dispatcher}" ]] ; then
+    echo "$(${fn_LogDate}) ${str_Transition}" >> ${dir_Active}/$(basename ${file_Job})
+    echo "$(${fn_LogDate}) ${str_Transition}" >> "${dir_Log}/$(basename ${file_Job}).log"
+  else
+    echo "$(${fn_LogDate}) $(whoami) ran transition ${str_Transition}" >> ${dir_Active}/$(basename ${file_Job})
+  fi
 }
 readonly -f fn_Audit
 
