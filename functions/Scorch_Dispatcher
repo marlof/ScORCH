@@ -53,7 +53,7 @@ echo "Checking pending rules"
             case ${str_ParentState} in
               completed ) fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} completed. Moving job to queued state." "rules"
 			              mv ${dir_Pending}/${file_EachJob} ${dir_Queued} ;;
-              superceeded | failed )                         echo failed parent ;;
+              superseded | failed )                         echo failed parent ;;
 			  running | starting | pending | queued | new  ) echo not finished ;;
 			  *       )   fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} missing. Moving job to failed state."   "rules"
 			              mv ${dir_Pending}/${file_EachJob} ${dir_Failed} ;;

@@ -299,7 +299,7 @@ fn_ShowTasks()
   else
     printf "\n Display tasks for which job(s)?\n\n"
 
-    fn_ShowJobs2 superceeded starting failed running queued pending new completed
+    fn_ShowJobs2 superseded starting failed running queued pending new completed
     fn_ShowLine
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
@@ -331,7 +331,7 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
-  printf "\n\n${dis_Reset}"
+#  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode
     printf " ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | "

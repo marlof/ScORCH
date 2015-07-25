@@ -16,8 +16,9 @@
 # functions
 #    fn_Rules
 
-fn_Rules()
+fn_ShowRules()
 {
-  printf "\n\n Rules is an enterprise feature."
-  fn_PressEnter
+  # Enterprise Feature Stubbed
+  :
+  # printf "Rules is an enterprise feature"
 }

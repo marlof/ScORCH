@@ -35,7 +35,7 @@ fn_JobHeader()
   typeset local file_Job=${1}
   echo "Creating ${file_Job}"
   #touch "${file_Job}"
-  ln -s ${dir_Active}/$(basename ${file_Job}) ${file_Job}
+  ln -s "${dir_Active}/$(basename "${file_Job}")" "${file_Job}"
   fn_CreateFile "${file_Job}" blank
   cat > "${file_Job}" << EOF
 #!/bin/bash
@@ -115,7 +115,7 @@ fn_JobFooter()
   #
   # The file to be appended to is passed as a variable
 
-  typeset local file_Job=${1}
+  typeset local file_Job="${1}"
   (( int_TaskCount-=1 ))
 
   # echo "Adding footer to ${file_Job}"
@@ -131,9 +131,10 @@ while [ \${int_StartTask} -le \${int_Last} ] ; do
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
+echo "===================" >> "\${file_Log}"
 
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
-rm "\${LOCK}"
+rm "\${LOCK}" 2>/dev/null
 
 int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
@@ -161,17 +162,21 @@ EOF
 }
 readonly -f fn_JobFooter
 
+fn_GetRequestor() { : ; } ; readonly -f fn_GetRequestor
+fn_GetSent() { : ; } ; readonly -f fn_GetSent
+
 fn_NewJob()
 {
   fn_ShowTop
   fn_ShowLine "-"
-  fn_LoadFunctions ${dir_Plugins} "SP_"
+  fn_LoadFunctions "${dir_Plugins}" "SP_"
 
   fn_GetRequest "${file_Template}"
+  fn_GetRequestor
+  fn_GetSent
   fn_ProcessRequest
   fn_CheckDispatcher
 
-  rm "${file_Request}"
 }
 readonly -f fn_NewJob
 
@@ -184,19 +189,24 @@ fn_GetRequest()
 
   # global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$
-  file_Request2=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+  file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+  fn_CreateFile ${file_Request}
 
   if [ ! -z "${file_Template}" ] ; then
     echo "$($fn_LogDate): Processing file:${file_Template}"
-    while read str_Line ; do
-      echo ${str_Line} | grep ":" >> ${file_Request}
+    while read -r str_Line ; do
+      echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
     while [[ "${str_Line}" != "." ]] ; do
-      read str_Line
-      if [[  "${str_Line}" =~ "help" ]] ; then
+      read -r str_Line
+      if [ "$(echo ${str_Line} | grep -i SYSTEM)" ] ; then
+        (( int_GetCount+=1 ))
+		file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+      fi
+      if [[  ${str_Line} =~ help ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
@@ -206,7 +216,8 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-        printf "${str_Line}" | grep ":" >> "${file_Request}"
+        [[ ${str_ULine} =~ SYSTEM ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+        echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi
     done
   fi
@@ -216,50 +227,65 @@ readonly -f fn_GetRequest
 fn_ProcessRequest()
 {
   typeset local int_JobCount=1
-  fn_GetJobID
-  fn_ExtractPairs
+  typeset local int_FileCount=1
+
+
+  for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
+    [[ -e ${str_EachFile} ]] || break
+    file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
+	echo "${str_EachFile}"
+
+    fn_GetJobID
+    fn_ExtractPairs
   
-  [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
-  for str_EachACTION in ${ACTION} ; do
-    for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
+    [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
+    for str_EachACTION in ${ACTION} ; do
+      for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
 
-	  int_TaskCount=0
-	  if type -t SP_${SYSTEM}_${str_EachACTION} >/dev/null ; then
-        fn_Call="SP_${SYSTEM}_${str_EachACTION}"
-      else
-		fn_Call="SP_${str_EachACTION}"
-		if type -t ${fn_Call} >/dev/null ; then
-		  printf "\n\nBest practice is to use SYSTEM..\n"
-		else
-          printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${fn_Call}\n"
-		  fn_PressEnter
-		  return 0
+	    int_TaskCount=0
+        if type -t SP_${SYSTEM}_${str_EachACTION} >/dev/null ; then
+          fn_Call="SP_${SYSTEM}_${str_EachACTION}"
+        else
+		  fn_Call="SP_${str_EachACTION}"
+          if type -t ${fn_Call} >/dev/null ; then
+            printf "\n\nBest practice is to use SYSTEM..\n"
+          else
+            printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${fn_Call}\n"
+            fn_PressEnter
+            return 0
+          fi
         fi
-      fi
-      str_Call=${fn_Call#SP_}
-      file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
-      fn_JobHeader "${file_Job}"
-      Task "echo AUDIT:START:\${str_StartTime}"
+        str_Call=${fn_Call#SP_}
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+        fn_JobHeader "${file_Job}"
+        Task "echo AUDIT:START:\${str_StartTime}"
 
-      echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
-      eval "${fn_Call}"
-      if [[ $? -ne 0 ]] ; then
-        echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
-		mv ${file_Job} ${dir_Failed}/.
-		fn_PressEnter
-        exit 1
-      fi
+        echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
+        eval "${fn_Call}"
+        if [[ $? -ne 0 ]] ; then
+          echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
+          mv "${file_Job}" "${dir_Failed}"/.
+          fn_PressEnter
+          exit 1
+        fi
 
-      fn_JobFooter "${file_Job}"
-      echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
-      (( int_JobCount+=1 ))
+        fn_JobFooter "${file_Job}"
+        echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+        (( int_JobCount+=1 ))
 
-      # If there is already another job in a failed state, mv that failed job to the superceeded directory
-      if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* 2>/dev/null)  ]] ; then
-        mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${ENVIRONMENT}_${str_EachACTION}_* "${dir_Superceeded}"/.
-      fi
-	  [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
+      # If there is already another job in a failed state, mv that failed job to the superseded directory
+#echo "Bash check of envs"
+#echo ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*
+#ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_*
+        if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}* 2>/dev/null)  ]] ; then
+          mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}* "${dir_Superseded}"/.
+        fi
+        [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
+      done
     done
+    (( int_FileCount++ ))
+    int_JobCount=1
+    rm "${file_Request}"
   done
 }
 readonly -f fn_ProcessRequest
@@ -289,6 +315,8 @@ readonly -f fn_GetJobID
 
 fn_ExtractPairs()
 {
+  GetVar -pattern "From"    -name FROM
+  GetVar -pattern "Sent"    -name SENT
   GetVar -pattern "System"  -name SYSTEM             -default ""
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
@@ -397,13 +425,13 @@ fn_Transition()
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs2 failed new   ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
-    resume  ) fn_ShowJobs2 failed       ; fn_CheckDispatcher ; str_Target="${dir_Queued}" ;;
+    queue   ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    resume  ) fn_ShowJobs2 failed superseded                 ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs2 failed new              ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs2 failed starting queued  ; str_Target="${dir_New}"     ;;
-	pause   ) fn_ShowJobs2 running starting queued ; str_Target="${dir_Active}}" ;;
+    delete  ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
+	pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}}" ;;
 
   esac
 
@@ -415,20 +443,20 @@ fn_Transition()
     for str_EachAnswer in ${arr_Answer} ; do
 	  typeset local file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
       typeset local file_Job="${dir_Active}/${arr_Jobs[${str_EachAnswer}]}"
-      typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+      typeset local file_Log="${dir_Log}/$(basename "${file_Job}")".log
 
-	  fn_Audit "${file_Job}" "$(basename ${str_Target})"
+	  fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in 
         queue   ) fn_UpdateResumePoint "${file_Job}" 0
-		           if [ -r "${dir_Active}/$(basename ${file_Link})".rules ] ; then
+		           if [ -r "${dir_Active}/$(basename "${file_Link}")".rules ] ; then
                      mv "${file_Link}" "${dir_Pending}"/.
                    else
                      mv "${file_Link}" "${str_Target}"/.
                    fi ;;
 		unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
         delete  ) mv "${file_Link}" "${str_Target}"/. ;;
-        resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) ))"  ; mv "${file_Link}" "${str_Target}"/.    ;;
-		pause   ) touch "${dir_Active}"/$(basename ${file_Job}).pause ;;
+        resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"  ; mv "${file_Link}" "${str_Target}"/.    ;;
+		pause   ) touch "${dir_Active}"/$(basename "${file_Job}").pause ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
       

@@ -25,7 +25,7 @@
 # dir  the variable defines a directory
 # file the variable defines a filename
 #
-# Ideas not yet implementes........
+# Ideas not yet implemented........
 # <hn>_ext_<var name>     A variable that has been derived from running an external script or
 #                         command that might change
 # <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
@@ -87,7 +87,7 @@ typeset      dir_Failed=${dir_Job}/failed
 typeset   dir_Completed=${dir_Job}/completed
 typeset    dir_Starting=${dir_Job}/starting
 typeset      dir_Queued=${dir_Job}/queued
-typeset dir_Superceeded=${dir_Job}/superceeded
+typeset  dir_Superseded=${dir_Job}/superseded
 typeset     dir_Deleted=${dir_Job}/deleted 
 typeset    dir_Archived=${dir_Job}/archived
 typeset     dir_Pending=${dir_Job}/pending
@@ -102,7 +102,7 @@ fn_ResetJobDefinitions()
     dir_Completed=${dir_Job}/completed
      dir_Starting=${dir_Job}/starting
        dir_Queued=${dir_Job}/queued
-  dir_Superceeded=${dir_Job}/superceeded
+  dir_Superseded=${dir_Job}/superseded
       dir_Deleted=${dir_Job}/deleted 
      dir_Archived=${dir_Job}/archived
 	   dir_Active=${dir_Job}/active
@@ -142,7 +142,7 @@ fn_LoadFunctions()
   typeset local     b_Display="${3}"
   typeset local      b_Errors=
   typeset local  str_EachFile=
-  [[ ${b_Display} ]] || printf "\nLoading ${dir_Directory}\n"
+  [[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
@@ -186,9 +186,9 @@ if [ $# -ne 0 ] ; then
       -new        ) b_New=1 ;;
       -file       ) shift ; file_Template="$1" ;;
 	  -s          ) b_Start=1 ;;
-	  -p          ) shift ; dir_Plugins="$(fn_BaseDir ${1})"   ;;
+	  -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
 # Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
-	  -j          ) shift ; dir_Job="$(fn_BaseDir ${1})" ; fn_ResetJobDefinitions ;;
+	  -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
       -install    ) b_Install=1 ;;
     esac
     shift
@@ -210,8 +210,8 @@ if [[ ${file_Template} ]] ; then
   fn_NewJob "${file_Template}"
   exit 0
 fi
-fn_CreateFile ${file_CSV}
-[[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir ${dir_Tmp} &&  exit 1
+fn_CreateFile "${file_CSV}"
+[[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir "${dir_Tmp}" &&  exit 1
 fn_SetLayout
 [ "${b_Help}" ] && fn_Help && exit 0
 

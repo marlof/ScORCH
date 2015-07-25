@@ -23,22 +23,23 @@
 fn_Manager()
 {
   typeset local char_Choice=
-  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
+#  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
   while : ; do
     # Use cache file
     #printf "."
     fn_ShowTop #> "${file_ScreenCache}"
     #printf "."
-    #fn_ShowJobs superceeded failed warning #>> "${file_ScreenCache}"
+    #fn_ShowJobs superseded failed warning #>> "${file_ScreenCache}"
 	#fn_ShowJobs completed
-	fn_ShowJobs2 superceeded failed running starting pending queued new completed #>> ${file_ScreenCache} ; printf "."
+	fn_ShowJobs2 superseded failed running starting pending queued new completed #>> ${file_ScreenCache} ; printf "."
     fn_ShowLine "=" #>> "${file_ScreenCache}" ; printf "."
     fn_DisplayMOTD #>> "${file_ScreenCache}" ; printf "."
     #fn_ContextMenu >> "${file_ScreenCache}" ; printf "."
     #int_ScreenWidth=$(tput cols)
     #clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
+    printf "\n${dis_Reset}"
 	fn_ContextMenu
-    read -t 10 char_Choice
+    read -t 20 char_Choice
     #echo "."
 
     case ${char_Choice} in
@@ -62,13 +63,14 @@ fn_Manager()
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
 
       l | L ) fn_LockManager        ;;     
+
       set )   fnE_Set ;;
 	  
       x | X ) break ;;
     esac
 	fn_RunJobs
   done
-  rm "${file_ScreenCache}"
+#  rm "${file_ScreenCache}"
 }
 readonly -f fn_Manager
 
@@ -96,13 +98,14 @@ fn_AdminFunctions()
       ls -lL "${file_ActiveJob}"
       ls -lL "${file_Log}"
       echo ""
-      [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) 
+	  fn_ShowRules
       fn_ShowLine "-" "Log Summary"
       tail -10 "${file_Log}"
       echo ""
       fn_ShowLine "-" 
-      fn_ContextMenu ${str_JobState}
+      printf "\n${dis_Reset}"
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
+      fn_ContextMenu ${str_JobState}
       read -t 10 char_Choice
     #echo "."
 
@@ -151,6 +154,8 @@ fn_AdminFunctions()
 
 	    f | F ) fn_Audit "${file_Job}" "fix in progress"
               echo "$(${fn_LogDate}) Fix in progress. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
+
+        a | A ) fnE_AmendRules        ;;
 
         x | X ) return 0 ;;
 	    *     ) return 0 ;;

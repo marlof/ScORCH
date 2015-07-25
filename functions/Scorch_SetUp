@@ -35,7 +35,7 @@ fn_CheckSetUp()
 
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Deleted \
-                                 dir_Running dir_Superceeded dir_Completed dir_Tmp \
+                                 dir_Running dir_Superseded dir_Completed dir_Tmp \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${arr_Directories} ; do
@@ -90,9 +90,12 @@ fn_HouseKeeping()
   # Old Archived jobs are tar'd up after DaysDeleted
   echo "Housekeeping...."
 
-  typeset local     int_MaxJobs=30
+  typeset local     int_MaxJobs=${int_MaxShown}
   typeset local int_DaysDeleted=10
-  typeset local  int_DaysActive=10
+  typeset local  int_DaysActive=20
+  
+  # Need to add one for the head/tail to be valid
+  (( int_MaxJobs +=1 ))
 
   # First remove max links from completed
   [ $(ls ${dir_Completed}/* 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find ${dir_Completed}/* ! -newer ${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1) -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
@@ -105,8 +108,6 @@ fn_HouseKeeping()
 
   # Archive active jobs
   find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec tar uf ${dir_Active}/active.tar "{}" + 2>/dev/null && find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
-  
-  
 }
 readonly -f fn_HouseKeeping
 
@@ -114,7 +115,6 @@ fn_GetAnswer()
 {
   # Library function to get an answer or range of answers
   # =====================================================
-
   typeset local b_Range=${1:-""}
 
   printf "\n e${dis_ULOn}X${dis_ULOff}it.\n\n"

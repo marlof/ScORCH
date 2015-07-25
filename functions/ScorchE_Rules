@@ -3,14 +3,54 @@
 #
 # This is the propitiatory .....
 
-fnE_Rules()
+fn_ShowRules()
 {
-  
+  # typeset local file_Job="${1}"
+  echo ""
+  [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) 
+}
+
+fnE_Rules()
+{  
   fn_PressEnter
 } 
 
 fnE_RulesMenu()
 {
-  printf "\n\n Rules menu : "
-  printf "${dis_ULOn}A${dis_ULOff}dd rule | "
+ # printf "\n\n Rules menu "
+  printf " ${dis_ULOn}A${dis_ULOff}mend rules |"
+}
+
+fnE_AmendRules()
+{
+  fn_ShowTop
+  fn_ShowLine "-" "File details"
+  echo ""
+  ls -lL "${file_ActiveJob}"
+  ls -lL "${file_Log}"
+  echo ""
+  fn_ShowRules
+  fn_ShowLine "-" 
+
+  printf "\n\n "
+  printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rule  | e${dis_ULOn}X${dis_ULOff}it : "
+
+  read -t 60 char_Choice
+
+    case ${char_Choice} in
+
+	  a | A ) fn_ShowJobs2 running starting pending queued new
+               fn_ShowLine
+               fn_GetAnswer
+			   echo "PARENT:${arr_Jobs[${str_Answer}]}" > ${file_ActiveJob}.rules ;;
+	
+	  d | D ) rm ${file_ActiveJob}.rules 
+	          # if link to active job in pending mv job to queued 
+			  ;; 
+
+      # Edit job
+      x | X ) return 0 ;;
+      *     ) return 0 ;;
+    esac
+
 }
