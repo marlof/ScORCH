@@ -8,6 +8,7 @@ Repeatable
 Brilliant in it's simplicity
 
 Standard Features
+
                       Add Jobs
                       
                       Plugins Engine
@@ -17,6 +18,7 @@ Standard Features
                       Notification / Communication Engine
                       
 Enterprise features
+
                       Authenication / Security  Module
 
                       Alternative Paths
