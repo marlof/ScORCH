@@ -16,7 +16,8 @@ Standard Features
                       
                       Notification / Communication Engine
                       
-Enterprise features : Authenication / Security  Module
+Enterprise features
+                      Authenication / Security  Module
 
                       Alternative Paths
                       
