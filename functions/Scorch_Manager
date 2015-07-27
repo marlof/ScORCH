@@ -125,17 +125,23 @@ fn_AdminFunctions()
 
         q | Q ) fn_Audit "${file_Job}" queued
               fn_UpdateResumePoint "${file_Job}" 0
-              mv "${file_Link}" "${dir_Queued}"
+              if [ -r "${dir_Active}/$(basename ${file_Job})".rules ] ; then
+                mv "${file_Link}" "${dir_Pending}"
+              else
+                mv "${file_Link}" "${dir_Queued}"
+              fi
               fn_CheckDispatcher
               return 0 ;;
 
 	    r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
+              fn_LogWhy
               fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
               mv "${file_Link}" "${dir_Queued}"
               fn_CheckDispatcher
               return 0 ;;
 
 	    s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
+              fn_LogWhy
               fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
               mv "${file_Link}" "${dir_Queued}"
               fn_CheckDispatcher
@@ -143,6 +149,7 @@ fn_AdminFunctions()
 
 	    p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
 	          touch "${dir_Active}/$(basename ${file_Job})".pause
+              fn_LogWhy
               return 0 ;;
 			  
 	    u | U ) fn_Audit "${file_Job}" unqueued

@@ -43,23 +43,33 @@ fn_Dispatcher()
     # Check the pending directory first for any rules that have succeeded
     typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
     if [[ "${arr_PendingJobs}" ]] ; then
-echo "Checking pending rules"
+#echo "Checking pending rules"
       for file_EachJob in ${arr_PendingJobs} ; do
         if [ -r "${dir_Active}/$(basename ${file_EachJob})".rules ] ; then
-		  # Check for Parent
+          # Check for Parent
           arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename ${file_EachJob})".rules | cut -d: -f2)
-		  for file_EachParent in ${arr_Parents} ; do
+          typeset local b_ParentComplete=0
+          for file_EachParent in ${arr_Parents} ; do
+            if [[ "${file_EachParent}" = "${file_EachJob}" ]] ; then
+               fn_Audit "${file_EachJob}" "Cyclic dependency. Failing job" "rules"
+               mv ${dir_Pending}/${file_EachJob} ${dir_Failed}
+            fi
+            #fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules"
             str_ParentState=$(basename $(dirname $(find ${dir_Job} -type l -name ${file_EachParent})))
+
             case ${str_ParentState} in
-              completed ) fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} completed. Moving job to queued state." "rules"
-			              mv ${dir_Pending}/${file_EachJob} ${dir_Queued} ;;
-              superseded | failed )                         echo failed parent ;;
-			  running | starting | pending | queued | new  ) echo not finished ;;
-			  *       )   fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} missing. Moving job to failed state."   "rules"
+              completed ) fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules" ;;
+              superseded | failed )                          echo failed parent ; b_ParentComplete=1 ;;
+              running | starting | pending | queued | new  ) echo not finished ; b_ParentComplete=1 ;;
+              *       )   fn_Audit "${file_EachJob}" "Parent job ${str_ParentState} missing. Moving job to failed state."   "rules"
 			              mv ${dir_Pending}/${file_EachJob} ${dir_Failed} ;;
 
             esac			  
           done
+          if [[ "${b_ParentComplete}" = 0 ]] ; then
+            fn_Audit "${file_EachJob}" "All parent jobs completed. Moving job to queued state." "rules"
+            mv ${dir_Pending}/${file_EachJob} ${dir_Queued}
+          fi
         fi
       done
       # If there are any pending jobs (with valid rules) we must keep the dispatcher running

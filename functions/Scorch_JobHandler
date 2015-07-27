@@ -1,4 +1,3 @@
-#
 # Copyright 2015 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -190,7 +189,7 @@ fn_GetRequest()
   # global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$
   file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-  fn_CreateFile ${file_Request}
+  fn_CreateFile "${file_Request}"
 
   if [ ! -z "${file_Template}" ] ; then
     echo "$($fn_LogDate): Processing file:${file_Template}"
@@ -202,16 +201,16 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
-      if [ "$(echo ${str_Line} | grep -i SYSTEM)" ] ; then
+      if echo "${str_Line}" | grep -qi SYSTEM ; then
         (( int_GetCount+=1 ))
-		file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+        file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       fi
       if [[  ${str_Line} =~ help ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
-		  declare -f fn_ExtractPairs | grep "GetVar -pattern"
-		  echo "==CUSTOM============="
+          declare -f fn_ExtractPairs | grep "GetVar -pattern"
+          echo "==CUSTOM============="
           declare -f "SP_${str_Help}" | grep "GetVar "
           echo "==============="
         fi
@@ -233,7 +232,7 @@ fn_ProcessRequest()
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
-	echo "${str_EachFile}"
+    echo "${str_EachFile}"
 
     fn_GetJobID
     fn_ExtractPairs
@@ -242,12 +241,12 @@ fn_ProcessRequest()
     for str_EachACTION in ${ACTION} ; do
       for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
 
-	    int_TaskCount=0
-        if type -t SP_${SYSTEM}_${str_EachACTION} >/dev/null ; then
+        int_TaskCount=0
+        if type -t "SP_${SYSTEM}_${str_EachACTION}" >/dev/null ; then
           fn_Call="SP_${SYSTEM}_${str_EachACTION}"
         else
-		  fn_Call="SP_${str_EachACTION}"
-          if type -t ${fn_Call} >/dev/null ; then
+          fn_Call="SP_${str_EachACTION}"
+          if type -t "${fn_Call}" >/dev/null ; then
             printf "\n\nBest practice is to use SYSTEM..\n"
           else
             printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${fn_Call}\n"
@@ -277,8 +276,8 @@ fn_ProcessRequest()
 #echo "Bash check of envs"
 #echo ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*
 #ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_*
-        if [[ $(ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}* 2>/dev/null)  ]] ; then
-          mv "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}* "${dir_Superseded}"/.
+        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
+          mv "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" "${dir_Superseded}"/.
         fi
         [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
       done
@@ -341,7 +340,7 @@ Task()
   typeset local str_Task2=${3}
   typeset local str_AltTask=
 
-  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> ${file_Job}
+  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
   printf "fn_Task_${int_TaskCount}(){ ${str_Task1}\t>> \"\${file_Log}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 
   (( int_TaskCount+=1 ))
@@ -431,32 +430,32 @@ fn_Transition()
     # Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
-	pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}}" ;;
+    pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}}" ;;
 
   esac
 
   fn_ShowLine
   fn_GetAnswer range
-  arr_Answer=$(fn_Range ${str_Answer})
+  arr_Answer=$(fn_Range "${str_Answer}")
   # echo ">${arr_Answer}<"
   if [ "${arr_Answer}" != "x " ] ; then
     for str_EachAnswer in ${arr_Answer} ; do
-	  typeset local file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
+      typeset local file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
       typeset local file_Job="${dir_Active}/${arr_Jobs[${str_EachAnswer}]}"
       typeset local file_Log="${dir_Log}/$(basename "${file_Job}")".log
 
-	  fn_Audit "${file_Job}" "$(basename "${str_Target}")"
+      fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in 
         queue   ) fn_UpdateResumePoint "${file_Job}" 0
-		           if [ -r "${dir_Active}/$(basename "${file_Link}")".rules ] ; then
+                   if [ -r "${dir_Active}/$(basename "${file_Link}")".rules ] ; then
                      mv "${file_Link}" "${dir_Pending}"/.
                    else
                      mv "${file_Link}" "${str_Target}"/.
                    fi ;;
-		unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
+        unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
         delete  ) mv "${file_Link}" "${str_Target}"/. ;;
         resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"  ; mv "${file_Link}" "${str_Target}"/.    ;;
-		pause   ) touch "${dir_Active}"/$(basename "${file_Job}").pause ;;
+        pause   ) touch "${dir_Active}"/"$(basename "${file_Job}").pause" ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
       
@@ -464,3 +463,16 @@ fn_Transition()
   fi
 }
 readonly -f fn_Transition
+
+fn_CheckOwnJobs()
+{
+  if [ "$(find "${dir_Starting}/." "${dir_Queued}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
+    printf "\n\n%s\n" "You have jobs that require starting."
+	read -n 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
+	printf "\n\n"
+	[[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && echo "Not implemented yet"
+  fi
+#  grep ^str_Owner= "${dir_Queued}"/*
+  :
+}
+readonly -f fn_CheckOwnJobs

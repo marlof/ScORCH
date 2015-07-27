@@ -44,8 +44,13 @@
 # 1.6       marc        Audit handling
 #                       Failed job audit tracking
 #                       Enterprise Feature (Developer:Debug)
+# 1.7       marc        #15 log update
+#                       #16 multi job update
+#                       shell check updates
+#                       trap updates
+#                       Enterprise feature multi-parent rule enabled
 # Determine the program name and the running directory
-typeset str_ProgramVersion="1.6"
+typeset str_ProgramVersion="1.7"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
@@ -96,17 +101,17 @@ typeset      file_JobId=${dir_Var}/jobid
 
 fn_ResetJobDefinitions()
 {
-          dir_New=${dir_Job}/new
-      dir_Running=${dir_Job}/running
-       dir_Failed=${dir_Job}/failed
-    dir_Completed=${dir_Job}/completed
-     dir_Starting=${dir_Job}/starting
-       dir_Queued=${dir_Job}/queued
+         dir_New=${dir_Job}/new
+     dir_Running=${dir_Job}/running
+      dir_Failed=${dir_Job}/failed
+   dir_Completed=${dir_Job}/completed
+    dir_Starting=${dir_Job}/starting
+      dir_Queued=${dir_Job}/queued
   dir_Superseded=${dir_Job}/superseded
-      dir_Deleted=${dir_Job}/deleted 
-     dir_Archived=${dir_Job}/archived
-	   dir_Active=${dir_Job}/active
-       file_JobId=${dir_Var}/jobid
+     dir_Deleted=${dir_Job}/deleted 
+    dir_Archived=${dir_Job}/archived
+      dir_Active=${dir_Job}/active
+      file_JobId=${dir_Var}/jobid
 }
 
 # Dispatcher definitions
@@ -123,6 +128,8 @@ typeset      int_MaxShown=30
 # ==========
 #file_States=${dir_Var}/states
 #[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
+
+typeset     file_ProgLog="${dir_Log}/${str_ProgramName}.log"
 
 
 # Load Functions
@@ -218,7 +225,8 @@ fn_SetLayout
 [ "${b_New}" ] && fn_NewJob && exit 0
 
 fn_Manager
-file_Template="${dir_Tmp}"/request1
+fn_CheckOwnJobs
+#file_Template="${dir_Tmp}"/request1
 fn_HouseKeeping
 pwd
 

@@ -33,7 +33,7 @@ fnE_AmendRules()
   fn_ShowLine "-" 
 
   printf "\n\n "
-  printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rule  | e${dis_ULOn}X${dis_ULOff}it : "
+  printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
 
   read -t 60 char_Choice
 
@@ -42,7 +42,7 @@ fnE_AmendRules()
 	  a | A ) fn_ShowJobs2 running starting pending queued new
                fn_ShowLine
                fn_GetAnswer
-			   echo "PARENT:${arr_Jobs[${str_Answer}]}" > ${file_ActiveJob}.rules ;;
+			   echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
 	
 	  d | D ) rm ${file_ActiveJob}.rules 
 	          # if link to active job in pending mv job to queued 

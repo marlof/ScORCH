@@ -194,3 +194,14 @@ fn_PressEnter()
 }
 readonly -f fn_PressEnter
 
+fn_Trap()
+{
+  echo "$(${fn_LogDate}) ${1}" >> "${file_ProgLog}"
+  fn_HouseKeeping
+  exit 1
+}
+readonly -f fn_Trap
+
+trap "fn_Trap \"TERMINATED: User $(whoami) probably logged out \"" 1
+trap "fn_Trap \"TERMINATED: User $(whoami) probably ctrl-c \"" 2
+trap "fn_Trap \"TERMINATED: Probably via kill \"" 15
