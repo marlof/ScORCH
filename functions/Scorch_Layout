@@ -69,7 +69,7 @@ fn_ShowTop()
 									  }
                                       printf "[0m" }')
   # Output the program name, the dispatcher PID and the date
-  typeset int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
+  typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | awk -F"_" '{print $NF}')
   int_DispatcherPID=${int_DispatcherPID:-0}
   printf " %${int_TitleWidth}s|%${int_Column3Width}s|  %${int_TitleWidth}s|%${int_Column6Width}s|" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
@@ -316,6 +316,31 @@ fn_ShowTasks()
   fi
 }
 readonly -f fn_ShowTasks
+
+fn_JobInfo()
+{
+      clear
+      fn_ShowTop
+      fn_ShowLine "-" "Owner"
+      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+      echo " ${str_JobOwner}"
+      echo ""
+      fn_ShowLine "-" "File details"
+      echo " State at selection : ${str_JobState}"
+      echo ""
+      ls -lL "${file_ActiveJob}"
+      ls -lL "${file_Log}"
+      echo ""
+	  fn_ShowRules
+	  fn_ShowLine "-" "Template"
+	  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
+	  echo ""
+      fn_ShowLine "-" "Log Summary"
+      tail -10 "${file_Log}"
+      echo ""
+      fn_ShowLine "-" 
+      printf "\n${dis_Reset}"
+}
 
 fn_ContextMenu()
 {

@@ -20,6 +20,10 @@
 # The file contruct
 # +<date> <user> : <message>         # + Adds / changes last message
 # -<date> <user> : cleared message   # - Clears last message
+#
+# fn_DisplayMOTD
+# fn_EditMOTD
+
 file_MOTD="${dir_Etc}/motd"
 
 fn_DisplayMOTD()
@@ -38,7 +42,7 @@ fn_EditMOTD()
   # Allow authorised users to change the contents of message of the day
 
   typeset local str_MOTD
-  fn_CreateGroupFile  2>/dev/null
+  fn_CreateFile  2>/dev/null
 
   printf "\n Enter new message (or enter to blank out last message: \n "
   read str_MOTD

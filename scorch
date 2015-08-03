@@ -120,6 +120,7 @@ typeset int_DispatcherPID=0
 typeset   int_DispatchMax=10
 typeset      file_JobLock=${dir_Lock}/JobLock
 typeset  file_DispatchLog=${dir_Log}/dispatch.log
+typeset file_DispatchLock=${dir_Lock}/dispatch.lck
 
 # Layout Option
 typeset      int_MaxShown=30

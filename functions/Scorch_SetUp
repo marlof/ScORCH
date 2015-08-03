@@ -24,6 +24,7 @@
 # fn_GetResumePoint()
 # fn_UpdateResumePoint()
 # fn_PressEnter()
+# fn_Trap
 
 
 # Some global variables for setup functions

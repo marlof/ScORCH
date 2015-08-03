@@ -19,10 +19,13 @@
 # fn_JobFooter()
 # fn_NewJob()
 # fn_GetRequest()
+# fn_GetRequestor()
+# fn_GetSent()
 # fn_ProcessRequest()
 # fn_GetJobID()
 # fn_ExtractPairs()
 # fn_Transition()
+# fn_CheckOwnJobs()
 
 fn_JobHeader()
 {
@@ -153,10 +156,9 @@ exit 0
 
 EOF
 
-  echo "# Template Used" >> "${file_Job}"
-  echo "=============================" >> "${file_Job}"
+  echo "# Template Begin" >> "${file_Job}"
   cat "${file_Request}" >> "${file_Job}"
-  echo "=============================" >> "${file_Job}"
+  echo "# Template End" >> "${file_Job}"
   chmod 770 "${file_Job}"
 }
 readonly -f fn_JobFooter
@@ -228,13 +230,12 @@ fn_ProcessRequest()
   typeset local int_JobCount=1
   typeset local int_FileCount=1
 
-
+  fn_GetJobID
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     echo "${str_EachFile}"
 
-    fn_GetJobID
     fn_ExtractPairs
   
     [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
@@ -255,7 +256,15 @@ fn_ProcessRequest()
           fi
         fi
         str_Call=${fn_Call#SP_}
-        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+		[[ ! -z "${LABEL}" ]]  && str_Label=".${LABEL}" || str_Label=""
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+        if [[ ! -z "${PARENT_LIST}" ]] ; then
+          echo "Rule : ${PARENT_LIST}"
+          for str_EachRule in ${PARENT_LIST} ; do
+            echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
+          done
+        fi
+echo "checking parent ${PARENT_LIST}"
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 
@@ -273,9 +282,6 @@ fn_ProcessRequest()
         (( int_JobCount+=1 ))
 
       # If there is already another job in a failed state, mv that failed job to the superseded directory
-#echo "Bash check of envs"
-#echo ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*
-#ls "${dir_Failed}"/${str_JobPrefix}*_${SYSTEM}_${str_EachENVIRONMENT}_${str_EachACTION}_*
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
           mv "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" "${dir_Superseded}"/.
         fi
@@ -283,7 +289,6 @@ fn_ProcessRequest()
       done
     done
     (( int_FileCount++ ))
-    int_JobCount=1
     rm "${file_Request}"
   done
 }
@@ -323,10 +328,12 @@ fn_ExtractPairs()
   GetVar -pattern "Type"    -name TYPE               -default ""
   GetVar -pattern "Ticket"  -name TICKET             -default ""
   
+  #[[ ! -z $ENTERPRISE ]] && GetVar -pattern "Label"  -name LABEL             -default ""
+  #[[ ! -z $ENTERPRISE ]] && GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
+  
   [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
-  #echo $SYSTEM and $ACTION ; sleep 4
 }
-readonly -f fn_ExtractPairs
+# Enterprise features moved readonly -f fn_ExtractPairs
 
 Task()
 {

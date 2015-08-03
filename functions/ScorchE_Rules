@@ -54,3 +54,20 @@ fnE_AmendRules()
     esac
 
 }
+
+fn_ExtractPairs()
+{
+  GetVar -pattern "From"    -name FROM
+  GetVar -pattern "Sent"    -name SENT
+  GetVar -pattern "System"  -name SYSTEM             -default ""
+  GetVar -pattern "Action"  -name ACTION      -list
+  GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
+  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
+  GetVar -pattern "Type"    -name TYPE               -default ""
+  GetVar -pattern "Ticket"  -name TICKET             -default ""
+  
+  GetVar -pattern "Label"  -name LABEL             -default ""
+  GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
+  
+  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
+}

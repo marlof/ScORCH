@@ -23,5 +23,22 @@ SP_DEMO_HOSTNAME()
     Task "false"
   fi
 
+  # Prerequisite jobs can be called using "LABEL:" and "PARENT:"
+  # ============================================================
+  # System : DEMO
+  # Action : HOSTNAME
+  # Label  : ABC
+  #
+  # System : DEMO
+  # Action : RANDOM
+  # Parent : ABC
+  echo "${PARENT_LIST}" ; sleep 2
+  if [[ ! -z ${PARENT_LIST} ]] ; then
+    for str_EachParent in ${PARENT_LIST} ; do
+      Task "echo parent ${str_EachParent}"
+    done
+  fi
+  [[ ! -z ${LABEL}       ]] && Task "echo the label of the action is ${LABEL}"
+  
   Task "df -k"
 }

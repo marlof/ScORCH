@@ -86,24 +86,25 @@ fn_AdminFunctions()
     typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
  #   echo "${file_Job}"
     while : ; do
-      clear
-      fn_ShowTop
-      fn_ShowLine "-" "Owner"
-      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
-      echo " ${str_JobOwner}"
-      echo ""
-      fn_ShowLine "-" "File details"
-      echo " State at selection : ${str_JobState}"
-      echo ""
-      ls -lL "${file_ActiveJob}"
-      ls -lL "${file_Log}"
-      echo ""
-	  fn_ShowRules
-      fn_ShowLine "-" "Log Summary"
-      tail -10 "${file_Log}"
-      echo ""
-      fn_ShowLine "-" 
-      printf "\n${dis_Reset}"
+      fn_JobInfo
+#      clear
+#      fn_ShowTop
+#      fn_ShowLine "-" "Owner"
+#      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+#      echo " ${str_JobOwner}"
+#      echo ""
+#      fn_ShowLine "-" "File details"
+#      echo " State at selection : ${str_JobState}"
+#      echo ""
+#      ls -lL "${file_ActiveJob}"
+#      ls -lL "${file_Log}"
+#      echo ""#
+#	  fn_ShowRules
+#      fn_ShowLine "-" "Log Summary"
+#      tail -10 "${file_Log}"
+#      echo ""
+#      fn_ShowLine "-" 
+#      printf "\n${dis_Reset}"
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
       read -t 10 char_Choice
