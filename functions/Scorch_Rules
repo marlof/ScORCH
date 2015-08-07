@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 # functions
-#    fn_Rules
+#    fn_Rules()
 
 fn_ShowRules()
 {
   # Enterprise Feature Stubbed
   :
-  # printf "Rules is an enterprise feature"
+  # printf "Rules are an enterprise feature"
 }

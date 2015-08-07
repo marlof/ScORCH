@@ -49,6 +49,7 @@
 #                       shell check updates
 #                       trap updates
 #                       Enterprise feature multi-parent rule enabled
+# 1.8 150805 marc       Improvement to manager layout with dynamic column width
 # Determine the program name and the running directory
 typeset str_ProgramVersion="1.7"
 
@@ -160,10 +161,10 @@ fn_LoadFunctions()
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
 		if [[ $? = 0 ]] ; then
-		  [[ ${b_Display} ]] || printf "%10s\n" "OK"
-		else
-		  printf "%10s\n" "ERROR" && b_Errors=1
-		fi
+          [[ ${b_Display} ]] || printf "%10s\n" "OK"
+        else
+          printf "%10s\n" "ERROR" && b_Errors=1
+        fi
       else
         echo "Cannot access <${str_EachFile}>"
       fi
@@ -180,6 +181,7 @@ typeset b_Help=
 typeset b_Dispatcher=
 typeset b_New=
 typeset b_Start=
+typeset b_Background=
 typeset b_Install=
 typeset file_Template=
 
@@ -192,11 +194,12 @@ if [ $# -ne 0 ] ; then
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -dispatcher ) b_Dispatcher=1 ;;
       -new        ) b_New=1 ;;
+	  -background ) b_Background=1 ;;
       -file       ) shift ; file_Template="$1" ;;
-	  -s          ) b_Start=1 ;;
-	  -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
-# Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
-	  -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
+      -s          ) b_Start=1 ;;
+      -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
+      # Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
+      -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
       -install    ) b_Install=1 ;;
     esac
     shift
@@ -210,25 +213,38 @@ if [[ ! -z $ENTERPRISE ]] ; then
 else
   str_License="OpenScorch"
 fi
+
 fn_CheckSetUp
 fn_CheckDispatcher
-[[ ${b_Dispatcher} ]] && fn_Dispatcher 
+
+[[ ${b_Dispatcher} ]] && fn_Dispatcher
+
 if [[ ${file_Template} ]] ; then
   [[ ! -r "${file_Template}" ]] &&  echo "Error: Cannot read template file ${file_Request}" && exit 1
   fn_NewJob "${file_Template}"
   exit 0
 fi
+
 fn_CreateFile "${file_CSV}"
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir "${dir_Tmp}" &&  exit 1
-fn_SetLayout
-[ "${b_Help}" ] && fn_Help && exit 0
 
-[ "${b_New}" ] && fn_NewJob && exit 0
+if [[ "${b_Background}" ]] ; then
+  # ADD LOOP HERE FOR JOB CHECKS
+  typeset local b_Finished=1
+  echo "$(${fn_LogDate}) $(whoami) Running in background to complete queued jobs"
+  while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=$(whoami)" {} \;)" ]] ; do 
+    fn_RunJobs
+	sleep 60
+  done
+  fn_RunJobs # one more try just to mop up
+else
+  fn_SetLayout
+  [ "${b_Help}" ] && fn_Help && exit 0
+  [ "${b_New}" ] && fn_NewJob && exit 0
 
-fn_Manager
-fn_CheckOwnJobs
-#file_Template="${dir_Tmp}"/request1
+  fn_Manager
+  fn_CheckOwnJobs
+fi
 fn_HouseKeeping
-pwd
 
 exit 0

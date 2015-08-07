@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 
-# fn_NewJob
+# fn_NewJob()
 # fn_JobHeader()
 # fn_CheckTask()
 # fn_JobFooter()
@@ -24,6 +24,7 @@
 # fn_ProcessRequest()
 # fn_GetJobID()
 # fn_ExtractPairs()
+# GetVar()
 # fn_Transition()
 # fn_CheckOwnJobs()
 
@@ -42,8 +43,8 @@ fn_JobHeader()
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
-    #####  ####  ####  #####   #### #    #
-   #     #     #    # #    # #     #    #
+    #####        ####  #####   #### #    #
+   #      #### #    # #    # #     #    #
    ###  #     #    # #####  #     ######
      # #     #    # #   #  #     #    #
 #####  ####  ####  #    #  #### #    #
@@ -189,7 +190,6 @@ fn_GetRequest()
   typeset local int_GetCount=1
 
   # global tmp file
-  file_Request=${dir_Tmp}/${str_ProgramName}.$$
   file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
   fn_CreateFile "${file_Request}"
 
@@ -256,15 +256,15 @@ fn_ProcessRequest()
           fi
         fi
         str_Call=${fn_Call#SP_}
-		[[ ! -z "${LABEL}" ]]  && str_Label=".${LABEL}" || str_Label=""
-        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+		[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
         if [[ ! -z "${PARENT_LIST}" ]] ; then
-          echo "Rule : ${PARENT_LIST}"
+#echo "Rule : ${PARENT_LIST}"
           for str_EachRule in ${PARENT_LIST} ; do
             echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
           done
         fi
-echo "checking parent ${PARENT_LIST}"
+#echo "checking parent ${PARENT_LIST}"
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 
@@ -447,21 +447,28 @@ fn_Transition()
   # echo ">${arr_Answer}<"
   if [ "${arr_Answer}" != "x " ] ; then
     for str_EachAnswer in ${arr_Answer} ; do
-      typeset local file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
-      typeset local file_Job="${dir_Active}/${arr_Jobs[${str_EachAnswer}]}"
-      typeset local file_Log="${dir_Log}/$(basename "${file_Job}")".log
+      typeset local  file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
+      typeset local   file_Job="${dir_Active}/${arr_Jobs[${str_EachAnswer}]}"
+      typeset local   file_Log="${dir_Log}/$(basename "${file_Job}")".log
+	  typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
 
       fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in 
         queue   ) fn_UpdateResumePoint "${file_Job}" 0
-                   if [ -r "${dir_Active}/$(basename "${file_Link}")".rules ] ; then
-                     mv "${file_Link}" "${dir_Pending}"/.
-                   else
-                     mv "${file_Link}" "${str_Target}"/.
-                   fi ;;
+                  if [ -r "${file_Rules}" ] ; then
+                    mv "${file_Link}" "${dir_Pending}"/.
+                    echo " Pending Parents[$(cat ${file_Rules} | grep "PARENT:" | wc -l )] " >> "${file_Log}"
+                  else
+                    mv "${file_Link}" "${str_Target}"/.
+                  fi ;;
         unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
-        delete  ) mv "${file_Link}" "${str_Target}"/. ;;
-        resume  ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"  ; mv "${file_Link}" "${str_Target}"/.    ;;
+        delete  ) fn_Audit "${file_Job}" deleted
+                  echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+                  mv "${file_Link}" "${str_Target}"/.
+                  return 0 ;;
+        resume  ) fn_LogWhy 
+                  fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
+                  mv "${file_Link}" "${str_Target}"/.    ;;
         pause   ) touch "${dir_Active}"/"$(basename "${file_Job}").pause" ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
@@ -473,11 +480,11 @@ readonly -f fn_Transition
 
 fn_CheckOwnJobs()
 {
-  if [ "$(find "${dir_Starting}/." "${dir_Queued}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
-    printf "\n\n%s\n" "You have jobs that require starting."
+  if [ "$(find "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
+    printf "\n\n%s\n" "You have queued jobs that have not yet been started."
 	read -n 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
 	printf "\n\n"
-	[[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && echo "Not implemented yet"
+	[[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
   fi
 #  grep ^str_Owner= "${dir_Queued}"/*
   :

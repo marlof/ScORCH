@@ -16,8 +16,8 @@
 
 
 # function included
-# fn_Manager   # Loop
-# fn_AdminFunctions
+# fn_Manager()
+# fn_AdminFunctions()
 
 
 fn_Manager()
@@ -39,7 +39,7 @@ fn_Manager()
     #clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
     printf "\n${dis_Reset}"
 	fn_ContextMenu
-    read -t 20 char_Choice
+    read -t 10 char_Choice
     #echo "."
 
     case ${char_Choice} in
@@ -48,7 +48,7 @@ fn_Manager()
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Jobs};;
 
 	  # View CSV
-	  c | C ) vi "${file_CSV}" ;;
+	  c | C ) view "${file_CSV}" ;;
 
       # Job State transition
       d | D )                      fn_Transition delete  ;;
@@ -121,6 +121,7 @@ fn_AdminFunctions()
 
         # Job State transition
         d | D ) fn_Audit "${file_Job}" deleted
+              echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
               mv "${file_Link}" "${dir_Deleted}"
               return 0 ;;
 

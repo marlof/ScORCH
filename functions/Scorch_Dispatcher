@@ -15,11 +15,12 @@
 #
 
 # This file contains functions to set and display layout
-# fn_Dispatcher
-# fn_CheckDispatcher
-# fn_RunJobs
-# fn_LockManager
-# fn_CheckRunning
+# fn_Dispatcher()
+# fn_CheckRunning()
+# fn_CheckDispatcher()
+# fn_RunJobs()
+# fn_LockManager()
+
 
 fn_Dispatcher()
 {

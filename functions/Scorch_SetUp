@@ -15,16 +15,16 @@
 #
 
 # Functions
-# fn_CheckSetup
-# fn_Help
-# fn_HouseKeeping
-# fn_GetAnswer
+# fn_CheckSetup()
+# fn_Help()
+# fn_HouseKeeping()
+# fn_GetAnswer()
 # fn_Range()
 # fn_CreateFile()
 # fn_GetResumePoint()
 # fn_UpdateResumePoint()
 # fn_PressEnter()
-# fn_Trap
+# fn_Trap()
 
 
 # Some global variables for setup functions
@@ -102,13 +102,20 @@ fn_HouseKeeping()
   [ $(ls ${dir_Completed}/* 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find ${dir_Completed}/* ! -newer ${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1) -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
-  find  "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo rm -f {} \; 2>/dev/null
+  find  "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Remove old deleted links
-  find  "${dir_Deleted}"/${str_JobPrefix}*   -mtime +${int_DaysDeleted} -exec echo rm -f {} \; 2>/dev/null
+  find  "${dir_Deleted}"/${str_JobPrefix}*   -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Archive active jobs
   find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec tar uf ${dir_Active}/active.tar "{}" + 2>/dev/null && find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
+  
+  # Clean Up cache files
+  find "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
+  find "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null
+
+  # Show jobs that have mis-behaved 
+  find "${dir_Completed}" "${dir_New}" -type f 
 }
 readonly -f fn_HouseKeeping
 
