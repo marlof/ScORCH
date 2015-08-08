@@ -50,8 +50,9 @@
 #                       trap updates
 #                       Enterprise feature multi-parent rule enabled
 # 1.8 150805 marc       Improvement to manager layout with dynamic column width
+# 1.9 150805 marc       Check for outstanding jobs on exit
 # Determine the program name and the running directory
-typeset str_ProgramVersion="1.7"
+typeset str_ProgramVersion="1.8"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
