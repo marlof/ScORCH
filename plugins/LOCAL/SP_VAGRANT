@@ -1,0 +1,9 @@
+SP_VAGRANT()
+{
+  # Set up lots of similar VMs with VAGRANT
+  GetVar -pattern "Download" -name DOWNLOAD -default "" -upper
+  [[ "${DOWNLOAD}" = TRUE ]] &&  Task "vagrant box add precise32.box http://files.vagrantup.com/precise32.box"
+  Task "vagrant init precise32"
+  Task "vagrant up"
+  Task "vagrant status"
+}
