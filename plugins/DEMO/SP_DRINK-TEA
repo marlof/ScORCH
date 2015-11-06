@@ -1,0 +1,43 @@
+SP_DRINK-TEA()
+{
+  # Use 'GetVar' to pass your own key pair values to the plugin
+  # ===========================================================
+  GetVar -pattern "Sugar" -name "SUGAR" -default 0
+  [ ${SUGAR} -gt 1 ] && str_Plural="s" || str_Plural=""
+  GetVar -pattern "Milk"  -name "MILK"  -default 1
+  GetVar -pattern "Strength" -name STRENGTH -default "medium"
+  GetVar -pattern "Size"  -name "SIZE"  -default "Cup"
+  
+  case $STRENGTH in
+      weak   ) int_Strength=3 ;;
+	  medium ) int_Strength=4 ;;
+	  strong ) int_Strength=5 ;;
+  esac
+  
+  # Use 'Task' to run a command
+  # ===========================
+  str_LowerSize=$(echo ${SIZE} | tr [:upper:] [:lower:])
+  Task "echo Before filling the kettle, run the water for a few minutes so it is nicely aerated"
+  Task "echo Boil a kettle of water and while you wait for it to boil get a ${str_LowerSize}"
+  Task "echo Pour the water directly onto the tea bag in the ${str_LowerSize}"
+  Task "echo Leave to brew for ${int_Strength} minutes"
+  [ ${MILK} -eq 1 ]  && Task "echo Add whole or semi skimmed milk"
+  [ ${SUGAR} -ge 1 ] && Task "echo Add $SUGAR teaspoon${str_Plural} of sugar"
+  Task "echo Now sit back and enjoy, rating the tea for taste"
+}
+
+# System      : DRINK
+# Action      : TEA
+# Sugar       : [NONE],n
+# Milk        : [TRUE],FALSE
+# Strength    : weak, [medium], strong
+# Size        : [cup], mug
+# 
+# 1 Before filling the kettle, run the water for a few seconds so it it nicely aeratedRun
+# 2 Boil the kettle
+# 3 Select a mug or a cup
+# 4 Pour the water directly onto the tea bag in the cup/mug 
+# 5 Leave to brew for a few minutes depending on taste [3/weak, 4/medium, 5/strong]
+# 6 Remove tea bag with a spoon giving just one gentle squeeze
+# 7 Add [whole/semi skimmed] milk to taste
+# 8 Add sugar to taste

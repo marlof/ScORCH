@@ -1,0 +1,15 @@
+SP_DEMO-GROUP()
+{
+  Task "echo first task"
+  StartGroup
+    Task "sleep 30"
+    Task "printf \${RANDOM:4}"
+  EndGroup
+  
+  Task "echo sleep 30 completed"
+  
+  StartGroup
+    Task "sleep 20"
+    Task "hostname"
+  EndGroup
+}

@@ -35,8 +35,8 @@
 #                         GLOBAL variable pollution
 # =============================================================================================
 # History
-# 1.0		marc		First running demo
-# 1.1		marc		Reversed and improved fn_RunJobs
+# 1.0	    marc        First running demo
+# 1.1	    marc        Reversed and improved fn_RunJobs
 # 1.2       marc        Improved fn_ShowJobs2, pause feature
 # 1.3       marc        Improved task list, began lock manager and task manager
 # 1.4       marc        Further improvements to task list
@@ -49,15 +49,20 @@
 #                       shell check updates
 #                       trap updates
 #                       Enterprise feature multi-parent rule enabled
-# 1.8 150805 marc       Improvement to manager layout with dynamic column width
-# 1.9 150805 marc       Check for outstanding jobs on exit
+# 1.8  150805 marc      Improvement to manager layout with dynamic column width
+# 1.9  150805 marc      Check for outstanding jobs on exit
+# 1.10 150817 marc      Removed System as a key-pair
+#      150904 marc      Updated comments
+#                       Added upper flag to GetVar
 # Determine the program name and the running directory
-typeset str_ProgramVersion="1.8"
+typeset str_ProgramVersion="1.10"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset           dir_Orig="$(pwd)/${dir_Run}"
 typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
+
+typeset         cmd_Editor=${EDITOR:-vi}
 
 fn_BaseDir()
 {
@@ -100,6 +105,12 @@ typeset    dir_Archived=${dir_Job}/archived
 typeset     dir_Pending=${dir_Job}/pending
 typeset      dir_Active=${dir_Job}/active 
 typeset      file_JobId=${dir_Var}/jobid
+
+typeset         b_Group=
+typeset    b_Background=
+typeset     int_SubTask=
+typeset     str_SubTask=
+typeset   int_DispatchSleep=13
 
 fn_ResetJobDefinitions()
 {
@@ -152,7 +163,7 @@ fn_LoadFunctions()
   typeset local     b_Display="${3}"
   typeset local      b_Errors=
   typeset local  str_EachFile=
-  [[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
+  : #[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
@@ -199,9 +210,9 @@ if [ $# -ne 0 ] ; then
       -file       ) shift ; file_Template="$1" ;;
       -s          ) b_Start=1 ;;
       -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
-      # Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
       -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
       -install    ) b_Install=1 ;;
+      # Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
     shift
   done
@@ -214,6 +225,10 @@ if [[ ! -z $ENTERPRISE ]] ; then
 else
   str_License="OpenScorch"
 fi
+
+#HEADER
+# Area reserved for OPENSCORCH
+#FOOTER
 
 fn_CheckSetUp
 fn_CheckDispatcher
