@@ -42,7 +42,7 @@ fn_EditMOTD()
   # Allow authorised users to change the contents of message of the day
 
   typeset local str_MOTD
-  fn_CreateFile  2>/dev/null
+  fn_CreateFile ${file_MOTD} 2>/dev/null
 
   printf "\n Enter new message (or enter to blank out last message: \n "
   read str_MOTD

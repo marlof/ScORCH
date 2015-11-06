@@ -23,3 +23,39 @@ fnE_Set()
   set | grep "^arr_"
   fn_PressEnter
 } 
+
+fnE_MkOpenScorch()
+{
+  typeset file_OpenScorch=${dir_Base}/openscorch.${str_ProgramVersion}
+  echo "Using ${str_ProgramName}"
+  set | grep "^dir_B"
+  set | grep scorch
+#typeset           dir_Orig="$(pwd)/${dir_Run}"
+#typeset str_ProgramVersion="1.9"
+#typeset    str_ProgramName=$(basename "$0")
+  if [[ -f ${dir_Base}/${str_ProgramName} ]] ; then
+    sed -n -e '/^#!\/bin\/bash$/,/^#HEADER$/{/^#HEADER$/d;p}' ${dir_Base}/${str_ProgramName} > ${file_OpenScorch}
+    for file_EachFunction in $(find ${dir_Functions} -name "Scorch_*") ; do
+      echo "Processing ${file_EachFunction}"
+      cat ${file_EachFunction} | grep -v "^#" >> ${file_OpenScorch}  	
+    done
+    sed -n -e '/^#FOOTER$/,//{//!p}' ${dir_Base}/${str_ProgramName} >> ${file_OpenScorch}
+    echo "Created ${file_OpenScorch} $(date) by $(whoami)"
+    ls -l     ${file_OpenScorch}
+    md5sum    ${file_OpenScorch} > ${file_OpenScorch}.md5
+    sha256sum ${file_OpenScorch} > ${file_OpenScorch}.sha256
+
+    # Enterprise version
+    file_EnterpriseScorch=${dir_Base}/escorch.${str_ProgramVersion}
+    echo "Creating EnterpriseScorch"
+    cd ${dir_Base}
+    tar cf ${file_EnterpriseScorch}.tar ${str_ProgramName} $(basename ${dir_Functions})
+    md5sum    ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.md5
+    sha256sum ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.sha256
+    
+  fi
+  
+  
+  sleep 5
+
+}

@@ -20,5 +20,5 @@ fn_ShowRules()
 {
   # Enterprise Feature Stubbed
   :
-  # printf "Rules are an enterprise feature"
+  printf "\n...Rules are an enterprise feature...\n\n"
 }

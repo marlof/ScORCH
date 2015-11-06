@@ -2,6 +2,115 @@
 # Copyright 2015 WebMarcIT Ltd
 #
 # This is the propitiatory .....
+fn_GetRequest()
+{
+  # Receive the request from a file or interactively
+  typeset local file_Template="${1:-}"
+  typeset local str_Line=""
+  typeset local int_GetCount=1
+
+  # global tmp file
+  file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+  fn_CreateFile "${file_Request}"
+
+  if [ ! -z "${file_Template}" ] ; then
+    echo "$($fn_LogDate): Processing file:${file_Template}"
+    while read -r str_Line ; do
+	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+      echo "${str_Line}" | grep ":" >> "${file_Request}"
+    done < "${file_Template}"
+  else
+    printf "\n help <plugin>    at any time for additional parameters\n\n"
+    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
+    while [[ "${str_Line}" != "." ]] ; do
+      read -r str_Line
+	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+#      if echo "${str_Line}" | grep -qi ACTION ; then
+#        (( int_GetCount+=1 ))
+#        file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+#      fi
+      if [[  ${str_ULine} =~ HELP ]] ; then
+        typeset local str_Help=${str_Line#help }
+        if [[ "${str_Line}" ]] ; then
+          echo "==SYSTEM============="
+          declare -f fn_ExtractPairs | grep "GetVar -pattern"
+          echo "==CUSTOM============="
+          declare -f "SP_${str_Help}" | grep "GetVar "
+          echo "==============="
+        fi
+      else
+	    [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
+        [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+        echo "${str_Line}" | grep ":" >> "${file_Request}"
+      fi
+    done
+  fi
+}
+readonly -f fn_GetRequest
+
+fn_ProcessRequest()
+{
+  typeset local int_JobCount=1
+  typeset local int_FileCount=1
+
+  fn_GetJobID
+  
+  for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
+    [[ -e ${str_EachFile} ]] || break
+    file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
+    echo "${str_EachFile}"
+
+    fn_ExtractPairs
+  
+    [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
+    for str_EachACTION in ${ACTION} ; do
+      for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
+
+        int_TaskCount=0
+        if type -t "SP_${str_EachACTION}" >/dev/null ; then
+          fn_Call="SP_${str_EachACTION}"
+        else
+          printf "\n\nCannot find a function called SP_${str_EachACTION} or ${fn_Call}\n"
+          fn_PressEnter
+          return 0
+        fi
+        str_Call=${fn_Call#SP_}
+		[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+        if [[ ! -z "${PARENT_LIST}" ]] ; then
+          for str_EachRule in ${PARENT_LIST} ; do
+            echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
+          done
+        fi
+        fn_JobHeader "${file_Job}"
+        Task "echo AUDIT:START:\${str_StartTime}"
+
+        echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
+        eval "${fn_Call}"
+        if [[ $? -ne 0 ]] ; then
+          echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
+          mv "${file_Job}" "${dir_Failed}"/.
+          fn_PressEnter
+          exit 1
+        fi
+
+        fn_JobFooter "${file_Job}"
+        echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+        (( int_JobCount+=1 ))
+
+        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
+           mv "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" "${dir_Superseded}"/.
+        fi
+        [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
+		
+      done
+    done
+    (( int_FileCount++ ))
+    rm "${file_Request}"
+  done
+}
+readonly -f fn_ProcessRequest
 
 fn_ShowRules()
 {
@@ -9,17 +118,20 @@ fn_ShowRules()
   echo ""
   [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) 
 }
+readonly -f fn_ShowRules
 
 fnE_Rules()
 {  
   fn_PressEnter
 } 
+readonly -f fnE_Rules
 
 fnE_RulesMenu()
 {
  # printf "\n\n Rules menu "
   printf " ${dis_ULOn}A${dis_ULOff}mend rules |"
 }
+readonly -f fnE_RulesMenu
 
 fnE_AmendRules()
 {
@@ -54,12 +166,13 @@ fnE_AmendRules()
     esac
 
 }
+readonly -f fnE_AmendRules
 
 fn_ExtractPairs()
 {
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
-  GetVar -pattern "System"  -name SYSTEM             -default ""
+#  GetVar -pattern "System"  -name SYSTEM             -default ""
   GetVar -pattern "Action"  -name ACTION      -list
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
@@ -69,5 +182,6 @@ fn_ExtractPairs()
   GetVar -pattern "Label"  -name LABEL             -default ""
   GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
   
-  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
+#  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
 }
+readonly -f fn_ExtractPairs

@@ -24,6 +24,7 @@
 # fn_ProcessRequest()
 # fn_GetJobID()
 # fn_ExtractPairs()
+# Task()
 # GetVar()
 # fn_Transition()
 # fn_CheckOwnJobs()
@@ -37,22 +38,20 @@ fn_JobHeader()
 
   typeset local file_Job=${1}
   echo "Creating ${file_Job}"
-  #touch "${file_Job}"
+  fn_CreateFile "${dir_Active}/$(basename ${file_Job})" blank
   ln -s "${dir_Active}/$(basename "${file_Job}")" "${file_Job}"
-  fn_CreateFile "${file_Job}" blank
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
-    #####        ####  #####   #### #    #
-   #      #### #    # #    # #     #    #
-   ###  #     #    # #####  #     ######
-     # #     #    # #   #  #     #    #
-#####  ####  ####  #    #  #### #    #
+##     #####        ####  #####   #### #    #
+##    #      #### #    # #    # #     #    #
+##    ###  #     #    # #####  #     ######
+##      # #     #    # #   #  #     #    #
+## #####  ####  ####  #    #  #### #    #
 
-# Created: $(date)
-# By: $(whoami)
-# Using: ${str_ProgramName}[${str_ProgramVersion}]
-#
+## Created: $(date)
+## By: $(whoami)
+## Using: ${str_ProgramName}[${str_ProgramVersion}]
 
 # Audit
 str_StartTime="\$(date +%s)"
@@ -74,7 +73,8 @@ dir_Starting="${dir_Starting}"
 dir_Pause="${dir_Active}"
 dir_Active="${dir_Active}"
 file_Log="${dir_Var}/log/\${str_JobName}.log"
-LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
+#LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
+LOCK="${file_JobLock}.${str_EachENVIRONMENT}"
 echo "AUDIT:PID:\$\$" >> "\${file_Log}" 
 [[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
 
@@ -90,7 +90,7 @@ fn_CheckTask()
     mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
     echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
     echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
-    rm "\${LOCK}"
+    rm "\${LOCK}" 2>/dev/null
     exit 1
   else
     echo "\$(${fn_LogDate}) Completed task [\${int_Task}/\${int_Last}]" >> "\${file_Log}"
@@ -103,7 +103,7 @@ fn_CheckTask()
 	(( int_Task+=1 ))
     echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
     echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${file_Log}"
-    rm "\${LOCK}"
+    rm "\${LOCK}" 2>/dev/null
     exit 1
   fi
 }
@@ -196,18 +196,21 @@ fn_GetRequest()
   if [ ! -z "${file_Template}" ] ; then
     echo "$($fn_LogDate): Processing file:${file_Template}"
     while read -r str_Line ; do
+	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
-    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
+    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n(To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
-      if echo "${str_Line}" | grep -qi SYSTEM ; then
-        (( int_GetCount+=1 ))
-        file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-      fi
-      if [[  ${str_Line} =~ help ]] ; then
+	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+	  
+	  
+	  
+	  
+      if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
@@ -217,13 +220,14 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-        [[ ${str_ULine} =~ SYSTEM ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+	    [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
+        [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
         echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi
     done
   fi
 }
-readonly -f fn_GetRequest
+#readonly -f fn_GetRequest
 
 fn_ProcessRequest()
 {
@@ -231,11 +235,12 @@ fn_ProcessRequest()
   typeset local int_FileCount=1
 
   fn_GetJobID
+  # Multi Action is enterprise feature
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     echo "${str_EachFile}"
-
+	
     fn_ExtractPairs
   
     [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
@@ -243,28 +248,16 @@ fn_ProcessRequest()
       for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
 
         int_TaskCount=0
-        if type -t "SP_${SYSTEM}_${str_EachACTION}" >/dev/null ; then
-          fn_Call="SP_${SYSTEM}_${str_EachACTION}"
-        else
+        if type -t "SP_${str_EachACTION}" >/dev/null ; then
           fn_Call="SP_${str_EachACTION}"
-          if type -t "${fn_Call}" >/dev/null ; then
-            printf "\n\nBest practice is to use SYSTEM..\n"
-          else
-            printf "\n\nCannot find a function called SP_${SYSTEM}_${str_EachACTION} or ${fn_Call}\n"
-            fn_PressEnter
-            return 0
-          fi
+        else
+          printf "\n\nCannot find a function called SP_${str_EachACTION}\n"
+          fn_PressEnter
+          return 0
         fi
         str_Call=${fn_Call#SP_}
-		[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
+        [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
-        if [[ ! -z "${PARENT_LIST}" ]] ; then
-#echo "Rule : ${PARENT_LIST}"
-          for str_EachRule in ${PARENT_LIST} ; do
-            echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
-          done
-        fi
-#echo "checking parent ${PARENT_LIST}"
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 
@@ -281,18 +274,18 @@ fn_ProcessRequest()
         echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
 
-      # If there is already another job in a failed state, mv that failed job to the superseded directory
-        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
-          mv "${dir_Failed}"/"${str_JobPrefix}*_${SYSTEM}_${str_EachACTION}_${str_EachENVIRONMENT}*" "${dir_Superseded}"/.
+        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
+           mv "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*"   "${dir_Superseded}"/.
         fi
         [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
+
       done
     done
     (( int_FileCount++ ))
     rm "${file_Request}"
   done
 }
-readonly -f fn_ProcessRequest
+# Enterprise features avaiable readonly -f fn_ProcessRequest
 
 fn_GetJobID()
 {
@@ -321,19 +314,68 @@ fn_ExtractPairs()
 {
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
-  GetVar -pattern "System"  -name SYSTEM             -default ""
-  GetVar -pattern "Action"  -name ACTION      -list
+#  GetVar -pattern "System"  -name SYSTEM             -default ""
+  GetVar -pattern "Action"  -name ACTION
   GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
   GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
   GetVar -pattern "Type"    -name TYPE               -default ""
   GetVar -pattern "Ticket"  -name TICKET             -default ""
   
-  #[[ ! -z $ENTERPRISE ]] && GetVar -pattern "Label"  -name LABEL             -default ""
-  #[[ ! -z $ENTERPRISE ]] && GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
+  # [[ ! -z $ENTERPRISE ]] && GetVar -pattern "Label"  -name LABEL             -default ""
+  # [[ ! -z $ENTERPRISE ]] && GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
   
-  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
+#  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
 }
 # Enterprise features moved readonly -f fn_ExtractPairs
+
+StartGroup()
+{
+  b_Background="&"
+  arr_PIDs=""
+  if [[ ${b_StartGroup} = "" ]] ; then
+	printf '
+	
+typeset local int_PID=
+typeset arr_PIDs=
+	
+fn_GroupWait()
+{
+  while : ; do
+    arr_PIDsRemaining=
+    for int_PID in ${arr_PIDs} ; do
+      if kill -0 ${int_PID} 2>/dev/null ; then
+        : # PID is still running
+		echo "PID <${int_PID}> is still running"
+        arr_PIDsRemaining="${arr_PIDsRemaining} ${int_PID}"  
+      elif wait ${int_PID} ; then
+        : # PID exited cleanly
+	    echo "PID <${int_PID}> completed"
+      else
+        int_PID_RC=$?
+   	    echo "PID <${int_PID}> completed with ${int_PID_RC}" >> "${file_Job}"
+      fi
+    done
+    [[ ${#arr_PIDsRemaining} -eq 0 ]] && break
+    arr_PIDs=${arr_PIDsRemaining}
+	echo "Remaining PIDs : ${#arr_PIDS}"
+    sleep 5
+  done
+}
+
+' >> "${file_Job}"
+	printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PIDs}\" >> \"\${file_Log}\"\n}\n" >> "${file_Job}"
+	b_StartGroup=1
+  fi
+  int_SubTask=0
+}
+
+EndGroup()
+{
+  printf "fn_Task_${int_TaskCount}(){ fn_GroupWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  b_Background=
+  (( int_TaskCount++ ))
+}
+
 
 Task()
 {
@@ -342,15 +384,25 @@ Task()
   # This function will Add Tasks to a scorch Job
   # ================================================================================
   int_TaskCount=${int_TaskCount:-0}
-  typeset local str_Task1=${1}
-  typeset local str_OR=${2}
-  typeset local str_Task2=${3}
+  typeset local   str_Task1=${1}
+  typeset local      str_OR=${2}
+  typeset local   str_Task2=${3}
   typeset local str_AltTask=
 
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
-  printf "fn_Task_${int_TaskCount}(){ ${str_Task1}\t>> \"\${file_Log}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
-
-  (( int_TaskCount+=1 ))
+  #[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
+  if [[ "${b_Background}" ]] ; then
+    str_GroupTask="_SubTask"
+	printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
+  arr_PIDs=\"\${arr_PIDs} \$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
+  else
+    str_GroupTask=""
+  fi
+  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  #else
+  #  printf "fn_Task_${int_TaskCount}"
+  #fi
+  (( int_TaskCount++ ))
 }
 readonly -f Task
 
@@ -380,6 +432,7 @@ GetVar()
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
+# typeset local b_Upper=
   
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -389,6 +442,7 @@ GetVar()
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
         -list    )         b_List=1           ;;
+#		-upper   )         b_Upper=1          ;;
       esac
       shift
     done
@@ -413,8 +467,9 @@ GetVar()
 
   # If a value hasnt been found or is empty, use the default if one is set
   # ======================================================================
-  #echo "String is ${str_Value}"
   [[ "${str_Value}" ]] || str_Value=${str_Default}
+#  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
+echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
 readonly -f GetVar
@@ -444,7 +499,6 @@ fn_Transition()
   fn_ShowLine
   fn_GetAnswer range
   arr_Answer=$(fn_Range "${str_Answer}")
-  # echo ">${arr_Answer}<"
   if [ "${arr_Answer}" != "x " ] ; then
     for str_EachAnswer in ${arr_Answer} ; do
       typeset local  file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
@@ -462,10 +516,8 @@ fn_Transition()
                     mv "${file_Link}" "${str_Target}"/.
                   fi ;;
         unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
-        delete  ) fn_Audit "${file_Job}" deleted
-                  echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
-                  mv "${file_Link}" "${str_Target}"/.
-                  return 0 ;;
+        delete  ) echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+                  mv "${file_Link}" "${str_Target}"/. ;;
         resume  ) fn_LogWhy 
                   fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
                   mv "${file_Link}" "${str_Target}"/.    ;;
@@ -486,7 +538,5 @@ fn_CheckOwnJobs()
 	printf "\n\n"
 	[[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
   fi
-#  grep ^str_Owner= "${dir_Queued}"/*
-  :
 }
 readonly -f fn_CheckOwnJobs

@@ -24,7 +24,6 @@ fn_LogWhy()
   read -p " Enter a reason: " str_Answer
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Job}"
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Log}"
-
 }
 readonly -f fn_LogWhy
 

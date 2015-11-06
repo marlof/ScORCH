@@ -48,7 +48,7 @@ fn_Manager()
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Jobs};;
 
 	  # View CSV
-	  c | C ) view "${file_CSV}" ;;
+	  c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
       # Job State transition
       d | D )                      fn_Transition delete  ;;
@@ -61,6 +61,7 @@ fn_Manager()
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
+	  open  ) fnE_MkOpenScorch      ;;
 
       l | L ) fn_LockManager        ;;     
 
@@ -87,24 +88,6 @@ fn_AdminFunctions()
  #   echo "${file_Job}"
     while : ; do
       fn_JobInfo
-#      clear
-#      fn_ShowTop
-#      fn_ShowLine "-" "Owner"
-#      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
-#      echo " ${str_JobOwner}"
-#      echo ""
-#      fn_ShowLine "-" "File details"
-#      echo " State at selection : ${str_JobState}"
-#      echo ""
-#      ls -lL "${file_ActiveJob}"
-#      ls -lL "${file_Log}"
-#      echo ""#
-#	  fn_ShowRules
-#      fn_ShowLine "-" "Log Summary"
-#      tail -10 "${file_Log}"
-#      echo ""
-#      fn_ShowLine "-" 
-#      printf "\n${dis_Reset}"
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
       read -t 10 char_Choice
@@ -112,12 +95,12 @@ fn_AdminFunctions()
 
       case ${char_Choice} in
 	
-	    # View CSV
-	    c | C ) vi "${file_CSV}" ;;
+        # View CSV
+        c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
         # Edit job
-        e | E ) vi "${file_ActiveJob}" ;;
-	    l | L ) vi "${file_Log}" ;;
+        e | E ) ${cmd_Editor} "${file_ActiveJob}" ;;
+        l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         # Job State transition
         d | D ) fn_Audit "${file_Job}" deleted
@@ -135,41 +118,41 @@ fn_AdminFunctions()
               fn_CheckDispatcher
               return 0 ;;
 
-	    r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
+        r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
               fn_LogWhy
               fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
               mv "${file_Link}" "${dir_Queued}"
               fn_CheckDispatcher
               return 0 ;;
 
-	    s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
+        s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
               fn_LogWhy
               fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
               mv "${file_Link}" "${dir_Queued}"
               fn_CheckDispatcher
               return 0 ;;
 
-	    p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
-	          touch "${dir_Active}/$(basename ${file_Job})".pause
+        p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
+              touch "${dir_Active}/$(basename ${file_Job})".pause
               fn_LogWhy
               return 0 ;;
-			  
-	    u | U ) fn_Audit "${file_Job}" unqueued
+  
+        u | U ) fn_Audit "${file_Job}" unqueued
               mv "${file_Link}" "${dir_New}"  
               return 0 ;;
 
         # Task View
         t | T ) fn_ShowTasks "${file_Job}"          ;;
 
-	    f | F ) fn_Audit "${file_Job}" "fix in progress"
+        f | F ) fn_Audit "${file_Job}" "fix in progress"
               echo "$(${fn_LogDate}) Fix in progress. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
 
         a | A ) fnE_AmendRules        ;;
 
         x | X ) return 0 ;;
-	    *     ) return 0 ;;
+        *     ) return 0 ;;
       esac
-	done
+    done
   else 
     echo "Out of range"
     fn_PressEnter
