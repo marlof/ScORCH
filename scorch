@@ -54,6 +54,7 @@
 # 1.10 150817 marc      Removed System as a key-pair
 #      150904 marc      Updated comments
 #                       Added upper flag to GetVar
+#                       Toggle pause flag
 # Determine the program name and the running directory
 typeset str_ProgramVersion="1.10"
 
@@ -74,6 +75,7 @@ fn_BaseDir()
 
 # The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
 typeset dir_Base=$(fn_BaseDir "${dir_Run}")
+typeset   str_OS=$(uname -o)
 
 # Directory definitions
 # =====================

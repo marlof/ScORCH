@@ -24,6 +24,8 @@
 # fn_ProcessRequest()
 # fn_GetJobID()
 # fn_ExtractPairs()
+# StartGroup
+# EndGroup
 # Task()
 # GetVar()
 # fn_Transition()
@@ -98,13 +100,18 @@ fn_CheckTask()
 
   # Checking if PAUSED
   if [ -f "\${dir_Pause}"/\${str_JobName}".pause" ] ; then
-    mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-    rm "\${dir_Pause}"/\${str_JobName}".pause"
-	(( int_Task+=1 ))
-    echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-    echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${file_Log}"
-    rm "\${LOCK}" 2>/dev/null
-    exit 1
+    if [[ \${int_Task} = \${int_Last} ]] ; then
+      echo "\$(${fn_LogDate}) Last Task already. Cannot paused from task:\${int_Task}" >> "\${file_Log}"
+      rm "\${dir_Pause}"/\${str_JobName}".pause"
+    else
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      rm "\${dir_Pause}"/\${str_JobName}".pause"
+      (( int_Task+=1 ))
+      echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+      echo "\$(${fn_LogDate}) Paused. Resume point:\${int_Task}" >> "\${file_Log}"
+      rm "\${LOCK}" 2>/dev/null
+      exit 1
+	fi
   fi
 }
 
@@ -136,12 +143,12 @@ while [ \${int_StartTask} -le \${int_Last} ] ; do
 done
 echo "===================" >> "\${file_Log}"
 
+echo "\$(${fn_LogDate}) COMPLETED:\${int_StartTask}" >> "\${dir_Running}"/\${str_JobName}
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}" 2>/dev/null
 
 int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
-echo "\$(${fn_LogDate}) COMPLETED:\${int_StartTask}" >> "\${dir_Completed}"/\${str_JobName}
 echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
 echo "\$(${fn_LogDate}) Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
 # CSV File
@@ -469,6 +476,12 @@ GetVar()
   # ======================================================================
   [[ "${str_Value}" ]] || str_Value=${str_Default}
 #  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
+#         tmp=${1:1}               # Strip off leading '/' . . .
+#          parameter=${tmp%%:*}     # Extract name.
+#          value=${tmp##*:}         # Extract value.
+#          echo "Parameter: '$parameter', value: '$value'"
+#          eval $parameter=$value
+
 echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
@@ -492,17 +505,29 @@ fn_Transition()
     # Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
-    pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}}" ;;
+    pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}" ;;
 
   esac
 
   fn_ShowLine
-  fn_GetAnswer range
+  if [ ${#arr_Jobs[@]} != 0 ] ; then
+    fn_GetAnswer range
+  else
+    printf "\n\tThere are no suitable jobs for that action\n\n"
+    fn_GetAnswer
+  fi
+
   arr_Answer=$(fn_Range "${str_Answer}")
   if [ "${arr_Answer}" != "x " ] ; then
-    for str_EachAnswer in ${arr_Answer} ; do
-      typeset local  file_Link="${dir_Job}"/${arr_States[${str_EachAnswer}]}/${arr_Jobs[${str_EachAnswer}]}
-      typeset local   file_Job="${dir_Active}/${arr_Jobs[${str_EachAnswer}]}"
+    for int_Choice in ${arr_Answer} ; do
+	  if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
+        printf "Out of range" 
+        fn_PressEnter
+        return 0
+      fi
+      
+      typeset local  file_Link="${dir_Job}"/${arr_States[${int_Choice}]}/${arr_Jobs[${int_Choice}]}
+      typeset local   file_Job="${dir_Active}/${arr_Jobs[${int_Choice}]}"
       typeset local   file_Log="${dir_Log}/$(basename "${file_Job}")".log
 	  typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
 
@@ -521,7 +546,14 @@ fn_Transition()
         resume  ) fn_LogWhy 
                   fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
                   mv "${file_Link}" "${str_Target}"/.    ;;
-        pause   ) touch "${dir_Active}"/"$(basename "${file_Job}").pause" ;;
+        pause   ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
+                    rm "${dir_Active}"/"$(basename "${file_Job}").pause"
+                    fn_Audit "${file_Job}" "pause removed. Current task will continue"
+                  else
+                    touch "${dir_Active}"/"$(basename "${file_Job}").pause"
+                    fn_Audit "${file_Job}" "pause set. Current task will not continue"
+                  fi
+                  fn_LogWhy ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
       

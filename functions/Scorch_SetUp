@@ -56,6 +56,7 @@ fn_CheckSetUp()
     exit 1
   fi
 
+  which pgrep 2>/dev/null || pgrep=ps
   str_JobPrefix="Job_"
 }
 readonly -f fn_CheckSetUp

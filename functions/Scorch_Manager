@@ -78,7 +78,9 @@ readonly -f fn_Manager
 fn_AdminFunctions()
 {
   typeset local char_Choice=${1}
-  if [[ ${char_Choice} -lt ${int_Count} ]] ; then
+  if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
+
+  #if [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
     typeset str_JobState=${arr_States[${char_Choice}]}
     typeset local file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
@@ -132,10 +134,17 @@ fn_AdminFunctions()
               fn_CheckDispatcher
               return 0 ;;
 
-        p | P ) fn_Audit "${file_Job}" "pause set. Current task will complete"
-              touch "${dir_Active}/$(basename ${file_Job})".pause
-              fn_LogWhy
-              return 0 ;;
+        p | P ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
+                  rm "${dir_Active}"/"$(basename "${file_Job}").pause"
+                  fn_Audit "${file_Job}" "pause removed. Current task will continue"
+                else
+                  touch "${dir_Active}"/"$(basename "${file_Job}").pause"
+                  fn_Audit "${file_Job}" "pause set. Current task will not complete"
+                fi
+                fn_LogWhy		
+#            fn_Audit "${file_Job}" "pause set. Current task will complete"
+#            touch "${dir_Active}/$(basename ${file_Job})".pause
+                return 0 ;;
   
         u | U ) fn_Audit "${file_Job}" unqueued
               mv "${file_Link}" "${dir_New}"  
