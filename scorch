@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,8 +55,13 @@
 #      150904 marc      Updated comments
 #                       Added upper flag to GetVar
 #                       Toggle pause flag
+# 1.11 151127 marc      Fixed issue with LOCK filename
+#                       github#20 Tail feature added
+#      151130 marc      github#13 Added tryTask option
+# 1.12 151223 marc      Added fix in progress
+#                       Cleaned up some code
 # Determine the program name and the running directory
-typeset str_ProgramVersion="1.10"
+typeset str_ProgramVersion="1.11"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
@@ -98,15 +103,16 @@ typeset        file_CSV=${dir_Log}/jobs.csv
 typeset         dir_New=${dir_Job}/new
 typeset     dir_Running=${dir_Job}/running
 typeset      dir_Failed=${dir_Job}/failed
+typeset      dir_Fixing=${dir_Job}/fixing
 typeset   dir_Completed=${dir_Job}/completed
 typeset    dir_Starting=${dir_Job}/starting
 typeset      dir_Queued=${dir_Job}/queued
 typeset  dir_Superseded=${dir_Job}/superseded
-typeset     dir_Deleted=${dir_Job}/deleted 
+typeset     dir_Deleted=${dir_Job}/deleted
 typeset    dir_Archived=${dir_Job}/archived
 typeset     dir_Pending=${dir_Job}/pending
-typeset      dir_Active=${dir_Job}/active 
-typeset      file_JobId=${dir_Var}/jobid
+typeset      dir_Active=${dir_Job}/active
+#typeset      file_JobID=${dir_Var}/jobid
 
 typeset         b_Group=
 typeset    b_Background=
@@ -126,7 +132,7 @@ fn_ResetJobDefinitions()
      dir_Deleted=${dir_Job}/deleted 
     dir_Archived=${dir_Job}/archived
       dir_Active=${dir_Job}/active
-      file_JobId=${dir_Var}/jobid
+#      file_JobID=${dir_Var}/jobid
 }
 
 # Dispatcher definitions
@@ -138,6 +144,7 @@ typeset  file_DispatchLog=${dir_Log}/dispatch.log
 typeset file_DispatchLock=${dir_Lock}/dispatch.lck
 
 # Layout Option
+# =============
 typeset      int_MaxShown=30
 
 # Job states
@@ -145,7 +152,9 @@ typeset      int_MaxShown=30
 #file_States=${dir_Var}/states
 #[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
 
-typeset     file_ProgLog="${dir_Log}/${str_ProgramName}.log"
+# Program Log
+# ===========
+typeset      file_ProgLog="${dir_Log}/${str_ProgramName}.log"
 
 
 # Load Functions
@@ -165,7 +174,7 @@ fn_LoadFunctions()
   typeset local     b_Display="${3}"
   typeset local      b_Errors=
   typeset local  str_EachFile=
-  : #[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
+  #[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
@@ -200,7 +209,7 @@ typeset b_Install=
 typeset file_Template=
 
 # Check for argument list
-# scorch can be run in several ways (create, file, dispatcher)
+# scorch can be run in several modes (install, new, file, dispatcher, manager and background)
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
@@ -225,11 +234,13 @@ if [[ ! -z $ENTERPRISE ]] ; then
   fn_LoadFunctions "${dir_Functions}" "ScorchE_"
   str_License="Enterprise"
 else
+  printf "\n\n Open Source License. Check out www.autoscorch.com for enterprise license details.\n\n Please wait..."
+  sleep 5
   str_License="OpenScorch"
 fi
 
 #HEADER
-# Area reserved for OPENSCORCH
+# Area reserved for loading OPENSCORCH - Do not remove
 #FOOTER
 
 fn_CheckSetUp

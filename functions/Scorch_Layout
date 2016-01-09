@@ -1,5 +1,5 @@
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,16 +36,23 @@ fn_SetLayout()
   #    |       |          |          |
   int_ScreenWidth=$(tput cols)
   dir_Check="${dir_New} ${dir_Completed} ${dir_Failed} ${dir_Running}"
+
   int_Column1Width=4        # Selection number
+
   int_Column2Width=8        # System reference number (like JIRA) or use ticket number
+
   #int_Column3Width=${int_Column3Width:-10}       # The Action / Plugin
   (( int_Column3Width=$(find ${dir_Check} -type l | awk -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
+
   #int_Column4Width=10       # The Environment performed on
   (( int_Column4Width=$(find ${dir_Check} -type l | awk -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
+
   #int_Column5Width=10       # The Version / Release being actioned
   (( int_Column5Width=$(find ${dir_Check} -type l | awk -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
-#  int_Column6Width=10       # Available
+
+  #int_Column6Width=10       # Available
   (( int_Column6Width=$(find ${dir_Check} -type l | awk -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
+
   int_Column7Width=10       # The Log
   cha_ColumnSep="|"
 }
@@ -153,9 +160,9 @@ fn_ShowJobs2()
     linenum <= int_MaxShown {
       #system("[[ grep str_Owner "$0" ]] && printf \"P|\" || printf \" |\"")
       printf Colour
-	  system("[[ -r "dir_Active"/$(basename "$0").rules ]] && printf \"R\" || printf \" \"")
+	  system("test -r "dir_Active"/$(basename "$0").rules && printf \"R\"  || printf \" \"")
       printf "%3s", linenum
-      system("[[ -r "dir_Active"/$(basename "$0").pause ]] && printf \"P|\" || printf \" |\"")
+      system("test -r "dir_Active"/$(basename "$0").pause && printf \"P|\" || printf \" |\"")
 
       if ( $2 != "" ) {
         printf "%7s|", $2   
@@ -167,7 +174,7 @@ fn_ShowJobs2()
                    - int_Column4Width  - int_Column5Width
 # printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
       printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
-      system("tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | cut -c1-"int_LogWidth)
+      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
       system("echo arr_States["linenum"]="state" >> "file_Cache)
       system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
 
@@ -225,13 +232,20 @@ fn_ShowTasks()
   else
     printf "\n Display tasks for which job(s)?\n\n"
 
-    fn_ShowJobs2 superseded starting failed running queued pending new completed
+    fn_ShowJobs2 superseded starting failed fixing running queued pending new completed
     fn_ShowLine
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
+
     if [ "${str_Answer}" != "x" ] ; then
       for int_Answer in ${str_Answer} ; do
-        # awk replaces 
+      if [[ ${int_Answer} -le 0 ]] || [[ ${int_Answer} -ge ${int_Count} ]] ; then
+        printf "Out of range" 
+        fn_PressEnter
+        return 0
+      fi
+
+	  # awk replaces 
 		#   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
 		fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
       done
@@ -247,12 +261,14 @@ fn_JobInfo()
 {
       clear
       fn_ShowTop
-      fn_ShowLine "-" "Owner"
+      fn_ShowLine "-" "Job Details"
       typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
       echo " ${str_JobOwner}"
-      echo ""
-      fn_ShowLine "-" "File details"
       echo " State at selection : ${str_JobState}"
+	  basename ${file_ActiveJob}
+	  #pgrep -a ${$(basename ${file_ActiveJob})::15}
+	  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+	  
       echo ""
       ls -lL "${file_ActiveJob}"
       ls -lL "${file_Log}"
@@ -285,10 +301,11 @@ fn_ContextMenu()
 #  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode
-    printf " ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | "
+    printf " ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
     case ${str_State} in
       queued  ) b_QueuedJobs=1 ;;
       failed  ) b_FailedJobs=1 ;;
+	  fixing  ) b_FailedJobs=1 ;;
       new     ) b_NewJobs=1 ;;
       running ) b_RunningJobs=1 ;;
     esac
@@ -296,10 +313,11 @@ fn_ContextMenu()
     # Generic Mode
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
 	[[ "$(ls ${dir_Lock} 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
-    [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1 
-    [[ "$(echo ${arr_States[@]} | grep -i running)" ]] && b_RunningJobs=1 
-    [[ "$(echo ${arr_States[@]} | grep -i new)"     ]] && b_NewJobs=1 
-    [[ "$(echo ${arr_States[@]} | grep -i failed)"  ]] && b_FailedJobs=1 
+    [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i running)" ]] && b_RunningJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i new)"     ]] && b_NewJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i failed)"  ]] && b_FailedJobs=1 && b_NewJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i fixing)"  ]] && b_FailedJobs=1 && b_NewJobs=1
   fi
   
   [[ "${b_QueuedJobs}" ]]                              && printf "${dis_ULOn}U${dis_ULOff}nqueue | "

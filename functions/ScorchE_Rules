@@ -1,5 +1,5 @@
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # This is the propitiatory .....
 fn_GetRequest()
@@ -22,7 +22,8 @@ fn_GetRequest()
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
-    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n\n"
+    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
+
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
 	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
@@ -64,20 +65,20 @@ fn_ProcessRequest()
     fn_ExtractPairs
   
     [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
-    for str_EachACTION in ${ACTION} ; do
-      for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
+    for ACTION in ${ACTION_LIST} ; do
+      for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
         int_TaskCount=0
-        if type -t "SP_${str_EachACTION}" >/dev/null ; then
-          fn_Call="SP_${str_EachACTION}"
+        if type -t "SP_${ACTION}" >/dev/null ; then
+          fn_Call="SP_${ACTION}"
         else
-          printf "\n\nCannot find a function called SP_${str_EachACTION} or ${fn_Call}\n"
+          printf "\n\nCannot find a function called SP_${ACTION} or ${fn_Call}\n"
           fn_PressEnter
           return 0
         fi
         str_Call=${fn_Call#SP_}
-		[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
-        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+		[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
         if [[ ! -z "${PARENT_LIST}" ]] ; then
           for str_EachRule in ${PARENT_LIST} ; do
             echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
@@ -99,8 +100,8 @@ fn_ProcessRequest()
         echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
 
-        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
-           mv "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" "${dir_Superseded}"/.
+        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
+           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
         fi
         [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
 		
@@ -172,16 +173,14 @@ fn_ExtractPairs()
 {
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
-#  GetVar -pattern "System"  -name SYSTEM             -default ""
-  GetVar -pattern "Action"  -name ACTION      -list
-  GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
-  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
-  GetVar -pattern "Type"    -name TYPE               -default ""
-  GetVar -pattern "Ticket"  -name TICKET             -default ""
+  GetVar -pattern "Action"  -name ACTION_LIST      -list
+  GetVar -pattern "Release" -name RELEASE                -default "NO-REL"
+  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NO-ENV"
+  GetVar -pattern "Type"    -name TYPE                   -default ""
+  GetVar -pattern "Ticket"  -name TICKET                 -default ""
   
-  GetVar -pattern "Label"  -name LABEL             -default ""
-  GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
+  GetVar -pattern "Label"  -name LABEL                   -default ""
+  GetVar -pattern "Parent" -name PARENT_LIST -list       -default ""
   
-#  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
 }
 readonly -f fn_ExtractPairs

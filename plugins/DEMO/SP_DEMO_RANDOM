@@ -1,4 +1,4 @@
-SP_DEMO_RANDOM()
+SP_DEMO-RANDOM()
 {
   Task "hostname ; sleep 2"
   Task "printf \${RANDOM:4}"

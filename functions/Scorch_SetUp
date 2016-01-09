@@ -1,5 +1,5 @@
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# Functions
+# These functions check the layout is correct and provides common initialisation functions
 # fn_CheckSetup()
 # fn_Help()
 # fn_HouseKeeping()
@@ -35,7 +35,7 @@ fn_CheckSetUp()
   typeset b_SetUp=         # Is this the first run
 
   # This function will check that all Scorch components are set to allow a smooth run.
-  typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Deleted \
+  typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Fixing dir_Deleted \
                                  dir_Running dir_Superseded dir_Completed dir_Tmp \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
@@ -48,6 +48,9 @@ fn_CheckSetUp()
   done
   
   typeset local arr_Files="${file_DispatchLog}"
+  
+  which gawk  2>/dev/null || echo "gawk not installed. Please install gawk. Ubuntu: sudo apt-get install gawk"
+  which pgrep 2>/dev/null || echo "pgrep not installed. Please install pgrep. Ubuntu: sudo apt-get install pgrep" 
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\nThere are missing files and directories.\n"
@@ -56,7 +59,6 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  which pgrep 2>/dev/null || pgrep=ps
   str_JobPrefix="Job_"
 }
 readonly -f fn_CheckSetUp
@@ -140,12 +142,14 @@ fn_Range()
   # Library function to turn a range of numbers into a list
   # =======================================================
 
-  typeset local str_Input=$(echo $1 | tr ',' ' ')
+  typeset local str_Input=${1//,/ }
 
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
-      typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
-      typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+#      typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
+#      typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+      typeset local int_First=${int_EachItem#*-}
+      typeset local  int_Last=${int_EachItem%%-*}
 
       if [ ${int_First} -lt ${int_Last} ] ; then
         while [[ ${int_First} -le ${int_Last} ]] ; do

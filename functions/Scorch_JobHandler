@@ -1,4 +1,5 @@
-# Copyright 2015 WebMarcIT Ltd
+#
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +14,7 @@
 # limitations under the License.
 #
 
+# These functions handle aspects or creating and processing new jobs, tasks and task groups
 # fn_NewJob()
 # fn_JobHeader()
 # fn_CheckTask()
@@ -75,8 +77,7 @@ dir_Starting="${dir_Starting}"
 dir_Pause="${dir_Active}"
 dir_Active="${dir_Active}"
 file_Log="${dir_Var}/log/\${str_JobName}.log"
-#LOCK="${file_JobLock}.${SYSTEM}_${str_EachENVIRONMENT}"
-LOCK="${file_JobLock}.${str_EachENVIRONMENT}"
+LOCK="${file_JobLock}.${ACTION}_${ENVIRONMENT}"
 echo "AUDIT:PID:\$\$" >> "\${file_Log}" 
 [[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
 
@@ -209,7 +210,7 @@ fn_GetRequest()
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
-    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n(To quit type CANCEL)\n\n"
+    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
 	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
@@ -251,20 +252,20 @@ fn_ProcessRequest()
     fn_ExtractPairs
   
     [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
-    for str_EachACTION in ${ACTION} ; do
-      for str_EachENVIRONMENT in ${ENVIRONMENT} ; do
+    for ACTION in ${ACTION_LIST} ; do
+      for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
         int_TaskCount=0
-        if type -t "SP_${str_EachACTION}" >/dev/null ; then
-          fn_Call="SP_${str_EachACTION}"
+        if type -t "SP_${ACTION}" >/dev/null ; then
+          fn_Call="SP_${ACTION}"
         else
-          printf "\n\nCannot find a function called SP_${str_EachACTION}\n"
+          printf "\n\nCannot find a function called SP_${ACTION}\n"
           fn_PressEnter
           return 0
         fi
         str_Call=${fn_Call#SP_}
-        [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${str_EachACTION}"
-        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${str_EachENVIRONMENT}_${RELEASE}
+        [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
+        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 
@@ -281,8 +282,8 @@ fn_ProcessRequest()
         echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
 
-        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*" 2>/dev/null)  ]] ; then
-           mv "${dir_Failed}"/"${str_JobPrefix}*_${str_EachACTION}_${str_EachENVIRONMENT}*"   "${dir_Superseded}"/.
+        if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
+           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*"   "${dir_Superseded}"/.
         fi
         [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." 
 
@@ -321,17 +322,11 @@ fn_ExtractPairs()
 {
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
-#  GetVar -pattern "System"  -name SYSTEM             -default ""
-  GetVar -pattern "Action"  -name ACTION
-  GetVar -pattern "Release" -name RELEASE            -default "NO-REL"
-  GetVar -pattern "Enviro"  -name ENVIRONMENT -list  -default "NO-ENV"
-  GetVar -pattern "Type"    -name TYPE               -default ""
-  GetVar -pattern "Ticket"  -name TICKET             -default ""
-  
-  # [[ ! -z $ENTERPRISE ]] && GetVar -pattern "Label"  -name LABEL             -default ""
-  # [[ ! -z $ENTERPRISE ]] && GetVar -pattern "Parent" -name PARENT_LIST -list -default ""
-  
-#  [[ "${SYSTEM}" = "" ]] && SYSTEM=$(echo $ACTION | cut -d"_" -f1) && ACTION=$(echo $ACTION | cut -d"_" -f2)
+  GetVar -pattern "Action"  -name ACTION_LIST
+  GetVar -pattern "Release" -name RELEASE                -default "NO-REL"
+  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NO-ENV"
+  GetVar -pattern "Type"    -name TYPE                   -default ""
+  GetVar -pattern "Ticket"  -name TICKET                 -default ""  
 }
 # Enterprise features moved readonly -f fn_ExtractPairs
 
@@ -381,8 +376,14 @@ EndGroup()
   printf "fn_Task_${int_TaskCount}(){ fn_GroupWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   b_Background=
   (( int_TaskCount++ ))
+  int_SubTask=0
 }
 
+tryTask()
+{
+  # To make things simple if there was just one parameter passed, use Task "command" OR true
+  Task "$*" OR true
+}
 
 Task()
 {
@@ -398,14 +399,21 @@ Task()
 
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
   #[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
-  if [[ "${b_Background}" ]] ; then
+
+ if [[ "${b_Background}" ]] ; then
+    # The task is part of a group
+    ((  int_SubTask++ ))
     str_GroupTask="_SubTask"
-	printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
-  arr_PIDs=\"\${arr_PIDs} \$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
+    printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
+    arr_PIDs=\"\${arr_PIDs} \$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
+    str_LogExtension=".${int_SubTask}"
   else
+    # The task is a standard Task
     str_GroupTask=""
+    str_LogExtension=""
+
   fi
-  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   #else
   #  printf "fn_Task_${int_TaskCount}"
   #fi
@@ -458,12 +466,15 @@ GetVar()
   # Awk is a pain if the items are in a list so handle lists separately
   # ===================================================================
   if [ "${b_List}" ] ; then
-    #echo "ListPattern : ${str_Pattern} Name: ${str_Name}"
+    # Lists can be passed as a space, comma or ampersand separated list 
+	# i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
     str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
+    # If the item is not a list, get rid of any spaces and tabs with gsub
+	# ===================================================================
     str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
@@ -477,15 +488,47 @@ GetVar()
   [[ "${str_Value}" ]] || str_Value=${str_Default}
 #  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
 #         tmp=${1:1}               # Strip off leading '/' . . .
-#          parameter=${tmp%%:*}     # Extract name.
-#          value=${tmp##*:}         # Extract value.
-#          echo "Parameter: '$parameter', value: '$value'"
-#          eval $parameter=$value
+#          str_Name=${tmp%%:*}     # Extract name.
+#          str_Value=${tmp##*:}         # Extract value.
+#          eval $str_Name=${str_Value}
 
 echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
 readonly -f GetVar
+
+NGetVar()
+{
+  typeset local str_Pattern=
+  typeset local str_Name=
+  typeset local str_Value=
+  typeset local str_Default=
+  typeset local b_IgnoreCase=1
+  typeset local b_List=
+#  typeset local b_Upper=" -i "
+  
+  if [ $# -ne 0 ] ; then
+    while [ $# -gt 0 ] ; do
+      case "${1}" in
+        -pattern ) shift ; str_Pattern="${1}" ;;
+        -name    ) shift ; str_Name="${1}"    ;;
+        -default ) shift ; str_Default="${1}" ;;
+        -c       )         b_IgnoreCase=0     ;;
+        -list    )         b_List=1           ;;
+#		-upper   )         b_Upper=           ;;
+      esac
+      shift
+    done
+  fi
+
+  grep -i "${str_Pattern}" ${file_Request}
+  _tmp=$(grep -i "^ *${str_Pattern} *:" ${file_Request})
+  echo "TMP is <${_tmp}>"
+  Nstr_Name=${_tmp%%:*}
+  Nstr_Value=${_tmp##*:}
+  echo ${Nstr_Name}"=\"${Nstr_Value}\""
+  sleep 5
+}
 
 fn_Transition()
 {
@@ -499,11 +542,11 @@ fn_Transition()
   case ${str_Transition} in
 
     # Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
-    resume  ) fn_ShowJobs2 failed superseded                 ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    queue   ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    resume  ) fn_ShowJobs2 failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
 
     # Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs2 failed superseded new             ; str_Target="${dir_Deleted}" ;;
+    delete  ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
     pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}" ;;
 
@@ -532,7 +575,7 @@ fn_Transition()
 	  typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
 
       fn_Audit "${file_Job}" "$(basename "${str_Target}")"
-      case ${str_Transition} in 
+      case ${str_Transition} in
         queue   ) fn_UpdateResumePoint "${file_Job}" 0
                   if [ -r "${file_Rules}" ] ; then
                     mv "${file_Link}" "${dir_Pending}"/.
@@ -543,7 +586,7 @@ fn_Transition()
         unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
         delete  ) echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
                   mv "${file_Link}" "${str_Target}"/. ;;
-        resume  ) fn_LogWhy 
+        resume  ) fn_LogWhy
                   fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
                   mv "${file_Link}" "${str_Target}"/.    ;;
         pause   ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
@@ -556,7 +599,7 @@ fn_Transition()
                   fn_LogWhy ;;
        # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
       esac
-      
+
     done
   fi
 }

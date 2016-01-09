@@ -1,5 +1,5 @@
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@
 
 fn_Dispatcher()
 {
-  # echo $$
- # typeset local file_DispatchLock="${dir_Lock}/${str_ProgramName}.lck"
   typeset local int_DispatchCount=0
   
 #  fn_CreateFile ${file_DispatchLog}
@@ -92,11 +90,11 @@ fn_Dispatcher()
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
 	if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
-        str_QueueLock=$(echo "${file_EachJob}" | awk -F"_" '{print $4"_"$6}')
+        str_QueueLock=$(echo "${file_EachJob}" | awk -F"_" '{print $4"_"$5}')
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
   
         if [ ! -L "${file_QueueLock}" ] ; then
-#echo "making 1 ln"
+echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"

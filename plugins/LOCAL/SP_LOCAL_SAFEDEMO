@@ -1,4 +1,4 @@
-SP_LOCAL_SAFEDEMO()
+SP_LOCAL-SAFEDEMO()
 {
   GetVar -pattern "Pause" -name "PAUSE" -default "60"
   GetVar -pattern "Fail"  -name "FAIL"  -default "0"
@@ -7,5 +7,4 @@ SP_LOCAL_SAFEDEMO()
   if [ ${FAIL} -ne 0 ] ; then
     Task "false"
   fi
-
 }

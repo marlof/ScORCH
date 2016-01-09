@@ -1,5 +1,5 @@
 #
-# Copyright 2015 WebMarcIT Ltd
+# Copyright 2016 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-
-# function included
+# These functions manage the manager/view screen
 # fn_Manager()
 # fn_AdminFunctions()
 
@@ -23,24 +22,14 @@
 fn_Manager()
 {
   typeset local char_Choice=
-#  file_ScreenCache=$(mktemp "${dir_Tmp}"/cache.XXXXX)
   while : ; do
-    # Use cache file
-    #printf "."
-    fn_ShowTop #> "${file_ScreenCache}"
-    #printf "."
-    #fn_ShowJobs superseded failed warning #>> "${file_ScreenCache}"
-	#fn_ShowJobs completed
-	fn_ShowJobs2 superseded failed running starting pending queued new completed #>> ${file_ScreenCache} ; printf "."
-    fn_ShowLine "=" #>> "${file_ScreenCache}" ; printf "."
-    fn_DisplayMOTD #>> "${file_ScreenCache}" ; printf "."
-    #fn_ContextMenu >> "${file_ScreenCache}" ; printf "."
-    #int_ScreenWidth=$(tput cols)
-    #clear ; cat "${file_ScreenCache}" | cut -c 1-${int_ScreenWidth}
+    fn_ShowTop
+	fn_ShowJobs2 superseded failed fixing running starting pending queued new completed
+    fn_ShowLine "="
+    fn_DisplayMOTD
     printf "\n${dis_Reset}"
 	fn_ContextMenu
     read -t 10 char_Choice
-    #echo "."
 
     case ${char_Choice} in
 
@@ -71,7 +60,6 @@ fn_Manager()
     esac
 	fn_RunJobs
   done
-#  rm "${file_ScreenCache}"
 }
 readonly -f fn_Manager
 
@@ -87,13 +75,11 @@ fn_AdminFunctions()
     typeset local file_Link="${dir_Job}/${str_JobState}/${arr_Jobs[${char_Choice}]}"
 	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
     typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
- #   echo "${file_Job}"
     while : ; do
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
       read -t 10 char_Choice
-    #echo "."
 
       case ${char_Choice} in
 	
@@ -105,35 +91,41 @@ fn_AdminFunctions()
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         # Job State transition
+		
+        # Delete Job(s)
         d | D ) fn_Audit "${file_Job}" deleted
-              echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
-              mv "${file_Link}" "${dir_Deleted}"
-              return 0 ;;
+                echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+                mv "${file_Link}" "${dir_Deleted}"
+                return 0 ;;
 
+        # Queue Job(s)
         q | Q ) fn_Audit "${file_Job}" queued
-              fn_UpdateResumePoint "${file_Job}" 0
-              if [ -r "${dir_Active}/$(basename ${file_Job})".rules ] ; then
-                mv "${file_Link}" "${dir_Pending}"
-              else
-                mv "${file_Link}" "${dir_Queued}"
-              fi
-              fn_CheckDispatcher
-              return 0 ;;
+                fn_UpdateResumePoint "${file_Job}" 0
+                if [ -r "${dir_Active}/$(basename ${file_Job})".rules ] ; then
+                  mv "${file_Link}" "${dir_Pending}"
+                else
+                  mv "${file_Link}" "${dir_Queued}"
+                fi
+                fn_CheckDispatcher
+                return 0 ;;
 
+        # Resume Job(s)
         r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
-              fn_LogWhy
-              fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
-              mv "${file_Link}" "${dir_Queued}"
-              fn_CheckDispatcher
-              return 0 ;;
+                fn_LogWhy
+                fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
+                mv "${file_Link}" "${dir_Queued}"
+                fn_CheckDispatcher
+                return 0 ;;
 
+        # Start Job(s)
         s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
-              fn_LogWhy
-              fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
-              mv "${file_Link}" "${dir_Queued}"
-              fn_CheckDispatcher
-              return 0 ;;
+                fn_LogWhy
+                fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
+                mv "${file_Link}" "${dir_Queued}"
+                fn_CheckDispatcher
+                return 0 ;;
 
+        # Pause Job(s)
         p | P ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
                   rm "${dir_Active}"/"$(basename "${file_Job}").pause"
                   fn_Audit "${file_Job}" "pause removed. Current task will continue"
@@ -142,21 +134,28 @@ fn_AdminFunctions()
                   fn_Audit "${file_Job}" "pause set. Current task will not complete"
                 fi
                 fn_LogWhy		
-#            fn_Audit "${file_Job}" "pause set. Current task will complete"
-#            touch "${dir_Active}/$(basename ${file_Job})".pause
                 return 0 ;;
-  
+
+        # Unqueue Job(s) back to New State
         u | U ) fn_Audit "${file_Job}" unqueued
-              mv "${file_Link}" "${dir_New}"  
-              return 0 ;;
+                mv "${file_Link}" "${dir_New}"  
+                return 0 ;;
 
         # Task View
         t | T ) fn_ShowTasks "${file_Job}"          ;;
 
-        f | F ) fn_Audit "${file_Job}" "fix in progress"
-              echo "$(${fn_LogDate}) Fix in progress. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}" ;;
+        # Mark Job as Fix in Progress (FIP)
+        f | F ) echo " "
+                read -p " You may provide a keyword or tracking id: " str_Reply
+				[[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
+		        fn_Audit "${file_Job}" "fix in progress"
+                mv "${file_Link}" "${dir_Fixing}"
+                echo "$(${fn_LogDate}) Fix in progress${str_Reply}. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}"
+                return 0 ;;
 
+        # Amend Job rules
         a | A ) fnE_AmendRules        ;;
+		tail  ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
 
         x | X ) return 0 ;;
         *     ) return 0 ;;
@@ -166,5 +165,6 @@ fn_AdminFunctions()
     echo "Out of range"
     fn_PressEnter
   fi
+  fn_SetLayout
 }
 readonly -f fn_AdminFunctions
