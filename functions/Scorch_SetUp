@@ -48,9 +48,16 @@ fn_CheckSetUp()
   done
   
   typeset local arr_Files="${file_DispatchLog}"
+  printf "\n\n"
+#  which gawk  2>/dev/null || printf "\n\tgawk not installed. Please install gawk. Ubuntu: sudo apt-get install gawk\n"
+#  which pgrep 2>/dev/null || printf "\n\tpgrep not installed. Please install pgrep. Ubuntu: sudo apt-get install pgrep\n" 
   
-  which gawk  2>/dev/null || echo "gawk not installed. Please install gawk. Ubuntu: sudo apt-get install gawk"
-  which pgrep 2>/dev/null || echo "pgrep not installed. Please install pgrep. Ubuntu: sudo apt-get install pgrep" 
+  arr_Commands="gawk pgrep"
+  str_Install="sudo apt-get install"
+  for str_Command in ${arr_Commands} ; do
+    printf "\tChecking for ${str_Command}:\t"
+	which ${str_Command} 2>/dev/null || printf "not found. ${str_Install} ${str_Command}\n"
+  done
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\nThere are missing files and directories.\n"

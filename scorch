@@ -60,14 +60,17 @@
 #      151130 marc      github#13 Added tryTask option
 # 1.12 151223 marc      Added fix in progress
 #                       Cleaned up some code
+# 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
+# 1.14 160126 marc		Indicate Job Ownwer
 # Determine the program name and the running directory
-typeset str_ProgramVersion="1.11"
+typeset str_ProgramVersion="1.14"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset           dir_Orig="$(pwd)/${dir_Run}"
 typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
 
+# User EDITOR preference
 typeset         cmd_Editor=${EDITOR:-vi}
 
 fn_BaseDir()
@@ -145,7 +148,8 @@ typeset file_DispatchLock=${dir_Lock}/dispatch.lck
 
 # Layout Option
 # =============
-typeset      int_MaxShown=30
+typeset      int_MaxShown=${SHOWMAX:-30}
+typeset       int_Refresh=${REFRESH:-10}
 
 # Job states
 # ==========

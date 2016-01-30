@@ -36,6 +36,7 @@ fn_DisplayMOTD()
     [ "${str_MOTD}" ] && printf "\n Message:\t${str_MOTD}" 
   fi
 }
+readonly -f fn_DisplayMOTD
 
 fn_EditMOTD()
 {
@@ -51,6 +52,6 @@ fn_EditMOTD()
     echo "-$(date +'%D %T') $(whoami): cleared message+" >> "${file_MOTD}"
   else
     echo "+$(date +'%D %T') $(whoami): ${str_MOTD}" >> "${file_MOTD}"
-  fi
-  
+  fi 
 }
+readonly -f fn_EditMOTD

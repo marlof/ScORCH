@@ -1,5 +1,7 @@
 SP_DEMO-RANDOM()
 {
-  Task "hostname ; sleep 2"
+  Task "hostname"
+  pauseTask 34
   Task "printf \${RANDOM:4}"
+  pauseTask 
 }

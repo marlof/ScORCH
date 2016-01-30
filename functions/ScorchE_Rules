@@ -184,3 +184,19 @@ fn_ExtractPairs()
   
 }
 readonly -f fn_ExtractPairs
+
+fn_CheckAuth()
+{
+  # This function is stubbed for future enhancements
+  # The idea is that users will need to be allowed to use scorch as a reporting tool
+  # or be allowed access to certain systems/plugin directories
+
+  #  #Username  : [ full | <blank> ] : [ all | <comma seperated list of plugin dirs>]  
+  #     marc:full:all
+  #     root::all
+  #     user::demo
+
+  echo "Authority given - stubbed"
+}
+readonly -f fn_CheckAuth
+

@@ -32,6 +32,7 @@
 # GetVar()
 # fn_Transition()
 # fn_CheckOwnJobs()
+# fn_CheckOwner()
 
 fn_JobHeader()
 {
@@ -80,6 +81,8 @@ file_Log="${dir_Var}/log/\${str_JobName}.log"
 LOCK="${file_JobLock}.${ACTION}_${ENVIRONMENT}"
 echo "AUDIT:PID:\$\$" >> "\${file_Log}" 
 [[ ! -f "\${dir_Starting}"/\${str_JobName} ]] && echo "This is a ${str_ProgramName} script. Do not run these scripts manually unless you know what you are doing." && exit 1
+
+# ADD TICKETING START TRANSITION/SYSTEM HERE
 
 [[ -w "\${dir_Starting}"/\${str_JobName} ]] && mv "\${dir_Starting}"/\${str_JobName} "\${dir_Running}"/.
 
@@ -161,6 +164,9 @@ echo "\$(${fn_LogDate}) Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "
  (( int_Duration = int_Finish - int_Start ))
  echo \${str_Requested},\${int_Created},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration},\${int_Last},\${int_FailureCount},\${str_Owner} >> "${file_CSV}"
 touch -h "\${dir_Completed}/\${str_JobName}" # To reflect the correct finish time in the file
+
+# ADD TICKETING CLOSE/SYSTEM HERE
+
 exit 0
 
 EOF
@@ -186,7 +192,6 @@ fn_NewJob()
   fn_GetSent
   fn_ProcessRequest
   fn_CheckDispatcher
-
 }
 readonly -f fn_NewJob
 
@@ -235,7 +240,7 @@ fn_GetRequest()
     done
   fi
 }
-#readonly -f fn_GetRequest
+#Enterprise feature available readonly -f fn_GetRequest
 
 fn_ProcessRequest()
 {
@@ -293,7 +298,7 @@ fn_ProcessRequest()
     rm "${file_Request}"
   done
 }
-# Enterprise features avaiable readonly -f fn_ProcessRequest
+# Enterprise features available readonly -f fn_ProcessRequest
 
 fn_GetJobID()
 {
@@ -328,7 +333,7 @@ fn_ExtractPairs()
   GetVar -pattern "Type"    -name TYPE                   -default ""
   GetVar -pattern "Ticket"  -name TICKET                 -default ""  
 }
-# Enterprise features moved readonly -f fn_ExtractPairs
+# Enterprise feature available readonly -f fn_ExtractPairs
 
 StartGroup()
 {
@@ -379,12 +384,6 @@ EndGroup()
   int_SubTask=0
 }
 
-tryTask()
-{
-  # To make things simple if there was just one parameter passed, use Task "command" OR true
-  Task "$*" OR true
-}
-
 Task()
 {
   # Exception to the naming convention is Task. This is used in plugins by the users
@@ -420,6 +419,20 @@ Task()
   (( int_TaskCount++ ))
 }
 readonly -f Task
+
+
+tryTask()
+{
+  # To make things simple if there was just one parameter passed, use Task "command" OR true
+  Task "$*" OR true
+}
+
+pauseTask()
+{
+  # Expection to the naming convention is TaskPause. This is used in plugins by users
+  int_Sleep=${1:-10}
+  Task "printf \"Sleeping for ${int_Sleep} seconds\" ; sleep ${int_Sleep}" 
+}
 
 GetVar()
 {
@@ -492,7 +505,7 @@ GetVar()
 #          str_Value=${tmp##*:}         # Extract value.
 #          eval $str_Name=${str_Value}
 
-echo "${str_Name}=\"${str_Value}\""
+# echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
 readonly -f GetVar
@@ -576,20 +589,25 @@ fn_Transition()
 
       fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in
-        queue   ) fn_UpdateResumePoint "${file_Job}" 0
+        queue   ) fn_CheckOwner "${file_Job}"
+                  fn_UpdateResumePoint "${file_Job}" 0
                   if [ -r "${file_Rules}" ] ; then
                     mv "${file_Link}" "${dir_Pending}"/.
                     echo " Pending Parents[$(cat ${file_Rules} | grep "PARENT:" | wc -l )] " >> "${file_Log}"
                   else
                     mv "${file_Link}" "${str_Target}"/.
                   fi ;;
-        unqueue ) mv "${file_Link}" "${str_Target}"/. ;;
-        delete  ) echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+        unqueue ) fn_CheckOwner "${file_Job}"
                   mv "${file_Link}" "${str_Target}"/. ;;
-        resume  ) fn_LogWhy
+        delete  ) fn_CheckOwner "${file_Job}"
+                  echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+                  mv "${file_Link}" "${str_Target}"/. ;;
+        resume  ) fn_CheckOwner "${file_Job}"
+                  fn_LogWhy
                   fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
                   mv "${file_Link}" "${str_Target}"/.    ;;
-        pause   ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
+        pause   ) fn_CheckOwner "${file_Job}"
+                  if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
                     rm "${dir_Active}"/"$(basename "${file_Job}").pause"
                     fn_Audit "${file_Job}" "pause removed. Current task will continue"
                   else
@@ -597,9 +615,10 @@ fn_Transition()
                     fn_Audit "${file_Job}" "pause set. Current task will not continue"
                   fi
                   fn_LogWhy ;;
-       # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
-      esac
 
+       # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
+    
+      esac
     done
   fi
 }
@@ -615,3 +634,30 @@ fn_CheckOwnJobs()
   fi
 }
 readonly -f fn_CheckOwnJobs
+
+fn_SetJobOwner()
+{
+  typeset local file_Job="${1}"
+  if grep "^str_Owner=" "${file_Job}" ; then
+    echo "Work in progress"
+	fn_Audit "${file_Job}" "accepted ownership of the job"
+    sed 's/^str_Owner=.*/str_Owner='$(whoami)'/g' "${file_Job}" > "${file_Job}".tmp
+	mv "${file_Job}".tmp "${file_Job}" 
+  fi
+}
+readonly -f fn_SetJobOwner
+
+fn_CheckOwner()
+{
+  typeset local file_Job="${1}"
+  if ! grep "^str_Owner=$(whoami)" "${file_Job}" ; then
+    printf "\n\nYou do not own this job\n\nCurrent owner:"
+    grep "^str_Owner=" "${file_Job}"
+    read -p "Do you wish to take ownership? [y/n]"
+    case $REPLY in
+      y | Y ) fn_SetJobOwner "${file_Job}" ;;
+	  * ) break ;;
+    esac
+  fi
+}
+readonly -f fn_CheckOwner

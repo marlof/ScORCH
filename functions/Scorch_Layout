@@ -158,8 +158,12 @@ fn_ShowJobs2()
        FS = "_"
     }
     linenum <= int_MaxShown {
-      #system("[[ grep str_Owner "$0" ]] && printf \"P|\" || printf \" |\"")
       printf Colour
+
+      # Check Owner of job
+	  #system("echo $(whoami)")
+	  #system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
+      system("[[ $(grep ^str_Owner= "dir_Active"/$(basename "$0") | cut -d= -f2-) = $(whoami) ]] && printf \"*\" || printf \" \"")
 	  system("test -r "dir_Active"/$(basename "$0").rules && printf \"R\"  || printf \" \"")
       printf "%3s", linenum
       system("test -r "dir_Active"/$(basename "$0").pause && printf \"P|\" || printf \" |\"")

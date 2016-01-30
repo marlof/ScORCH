@@ -29,7 +29,7 @@ fn_Manager()
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
 	fn_ContextMenu
-    read -t 10 char_Choice
+    read -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
 
@@ -87,19 +87,22 @@ fn_AdminFunctions()
         c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
         # Edit job
-        e | E ) ${cmd_Editor} "${file_ActiveJob}" ;;
+        e | E ) fn_CheckOwner "${file_ActiveJob}"
+                ${cmd_Editor} "${file_ActiveJob}" ;;
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         # Job State transition
 		
         # Delete Job(s)
-        d | D ) fn_Audit "${file_Job}" deleted
+        d | D ) fn_CheckOwner "${file_ActiveJob}"
+                fn_Audit "${file_Job}" deleted
                 echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
                 mv "${file_Link}" "${dir_Deleted}"
                 return 0 ;;
 
         # Queue Job(s)
-        q | Q ) fn_Audit "${file_Job}" queued
+        q | Q ) fn_CheckOwner "${file_ActiveJob}"
+                fn_Audit "${file_Job}" queued
                 fn_UpdateResumePoint "${file_Job}" 0
                 if [ -r "${dir_Active}/$(basename ${file_Job})".rules ] ; then
                   mv "${file_Link}" "${dir_Pending}"
@@ -110,14 +113,15 @@ fn_AdminFunctions()
                 return 0 ;;
 
         # Resume Job(s)
-        r | R ) fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
+        r | R ) fn_CheckOwner "${file_ActiveJob}"
+                fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
                 mv "${file_Link}" "${dir_Queued}"
                 fn_CheckDispatcher
                 return 0 ;;
 
-        # Start Job(s)
+        # Skip a task in Job(s)
         s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
@@ -126,7 +130,8 @@ fn_AdminFunctions()
                 return 0 ;;
 
         # Pause Job(s)
-        p | P ) if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
+        p | P ) fn_CheckOwner "${file_ActiveJob}"
+                if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
                   rm "${dir_Active}"/"$(basename "${file_Job}").pause"
                   fn_Audit "${file_Job}" "pause removed. Current task will continue"
                 else
@@ -137,7 +142,8 @@ fn_AdminFunctions()
                 return 0 ;;
 
         # Unqueue Job(s) back to New State
-        u | U ) fn_Audit "${file_Job}" unqueued
+        u | U ) fn_CheckOwner "${file_ActiveJob}"
+                fn_Audit "${file_Job}" unqueued
                 mv "${file_Link}" "${dir_New}"  
                 return 0 ;;
 

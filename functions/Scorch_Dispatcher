@@ -94,7 +94,7 @@ fn_Dispatcher()
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
   
         if [ ! -L "${file_QueueLock}" ] ; then
-echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
+#echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
@@ -172,7 +172,9 @@ fn_RunJobs()
   # Run owned jobs in START state
   #ls "${dir_Starting}"
   #shopt -s nullglob
-  for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
+#  for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
+  for file_EachJob in $(grep -l "str_Owner=$(whoami)" "${dir_Starting}"/* 2>/dev/null)  ; do
+
     echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
     nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 	# To ensure started in order
