@@ -49,7 +49,7 @@ fnE_MkOpenScorch()
     file_EnterpriseScorch=${dir_Base}/escorch.${str_ProgramVersion}
     echo "Creating EnterpriseScorch"
     cd ${dir_Base}
-    tar cf ${file_EnterpriseScorch}.tar ${str_ProgramName} $(basename ${dir_Functions})
+    tar cfz ${file_EnterpriseScorch}.tar.gz ${str_ProgramName} $(basename ${dir_Functions})
     md5sum    ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.md5
     sha256sum ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.sha256
     
@@ -58,4 +58,16 @@ fnE_MkOpenScorch()
   
   sleep 5
 
+}
+
+fnE_MkEscorchtar()
+{
+  echo "Version : ${str_ProgramVersion}"
+  echo "Basedir : ${dir_Base}"
+  echo "Program : ${str_ProgramName}"
+  echo "Function: ${dir_Functions}"
+  tar cf ${dir_Base}/escorch.${str_ProgramVersion}.tar ${dir_Base}/${str_ProgramName} ${dir_Functions} ${dir_Plugins}/DEMO
+#  md5sum ${dir_Base}/escorch.${str_ProgramVersion}.tar > 
+  
+  sleep 5
 }

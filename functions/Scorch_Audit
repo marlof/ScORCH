@@ -22,7 +22,6 @@ fn_LogWhy()
 {
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   printf "\n\n $(basename ${file_Job})\n\n"
-  
   read -p " Enter a reason: " str_Answer
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Job}"
   echo "$(${fn_LogDate}) $(whoami) REASON: ${str_Answer}" >> "${file_Log}"
@@ -43,5 +42,3 @@ fn_Audit()
   fi
 }
 readonly -f fn_Audit
-
-

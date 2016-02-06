@@ -62,6 +62,7 @@
 #                       Cleaned up some code
 # 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
 # 1.14 160126 marc		Indicate Job Ownwer
+#                       pauseTask breakTask added
 # Determine the program name and the running directory
 typeset str_ProgramVersion="1.14"
 

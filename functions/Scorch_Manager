@@ -50,7 +50,10 @@ fn_Manager()
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
-	  open  ) fnE_MkOpenScorch      ;;
+	  
+	  # Releases
+	  open       ) fnE_MkOpenScorch ;;
+	  enterprise ) fnE_MkEscorchtar ;;
 
       l | L ) fn_LockManager        ;;     
 
@@ -62,6 +65,40 @@ fn_Manager()
   done
 }
 readonly -f fn_Manager
+
+fn_ViewJob()
+{
+  typeset local file_Orig="$1"
+  typeset local file_View="${file_Orig}.$$"
+  cp "${file_Orig}" "${file_View}"
+  ${cmd_Editor} "${file_View}"
+  if ! diff "${file_Orig}" "${file_View}" ; then
+    printf "\n\nWarning. Not in edit mode. Changes will not be saved.\n"
+	read -n 1 -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
+	printf "\n\n"
+	if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
+	  mv "${file_View}" /tmp/$(basename "${file_Orig}")
+      fn_Audit "${file_Orig}" "saved an edited copy of job and saved a copy in /tmp"
+    fi
+	#fn_PressEnter
+  fi
+  [ -f "${file_View}" ] && rm -f "${file_View}"
+}
+
+fn_EditJob()
+{
+  typeset local file_Orig="$1"
+  fn_CheckOwner "${file_Orig}"
+  typeset local file_Edit="${file_Orig}.$$"
+  cp "${file_Orig}" "${file_Edit}"
+  ${cmd_Editor} "${file_Edit}"
+  if ! diff "${file_Orig}" "${file_Edit}" ; then
+	  mv "${file_Edit}" "${file_Orig}"
+      fn_Audit "${file_Orig}" "edited job"
+  fi
+  [ -f "${file_Edit}" ] && rm -f "${file_Edit}"
+  
+}
 
 fn_AdminFunctions()
 {
@@ -87,8 +124,10 @@ fn_AdminFunctions()
         c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
         # Edit job
-        e | E ) fn_CheckOwner "${file_ActiveJob}"
-                ${cmd_Editor} "${file_ActiveJob}" ;;
+        v | V ) fn_ViewJob "${file_ActiveJob}" ;;
+        e | E ) fn_EditJob "${file_ActiveJob}" ;;
+		        #fn_CheckOwner "${file_ActiveJob}"
+                #${cmd_Editor} "${file_ActiveJob}" ;;
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         # Job State transition

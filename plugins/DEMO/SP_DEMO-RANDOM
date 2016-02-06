@@ -4,4 +4,6 @@ SP_DEMO-RANDOM()
   pauseTask 34
   Task "printf \${RANDOM:4}"
   pauseTask 
+  breakTask
+  Task "got here ok"
 }

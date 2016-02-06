@@ -305,7 +305,7 @@ fn_ContextMenu()
 #  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     # Specific Mode
-    printf " ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
+    printf " ${dis_ULOn}V${dis_ULOff}iew | ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
     case ${str_State} in
       queued  ) b_QueuedJobs=1 ;;
       failed  ) b_FailedJobs=1 ;;

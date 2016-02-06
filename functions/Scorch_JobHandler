@@ -29,6 +29,9 @@
 # StartGroup
 # EndGroup
 # Task()
+# tryTask()
+# pauseTask()
+# breakTask()
 # GetVar()
 # fn_Transition()
 # fn_CheckOwnJobs()
@@ -302,7 +305,7 @@ fn_ProcessRequest()
 
 fn_GetJobID()
 {
-  file_JobID="${dir_Var}"/JobID
+  file_JobID="${dir_Var}"/JobID.${str_ProgramName}
   [[ ! -f "${file_JobID}" ]] && echo "BROKEN" && fn_CreateFile "${file_JobID}"
   
   typeset local file_JobIDLock="${file_JobID}".lock
@@ -429,9 +432,15 @@ tryTask()
 
 pauseTask()
 {
-  # Expection to the naming convention is TaskPause. This is used in plugins by users
+  # Expection to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
   Task "printf \"Sleeping for ${int_Sleep} seconds\" ; sleep ${int_Sleep}" 
+}
+
+breakTask()
+{
+  # Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
+  Task "printf \"Forcing interrupt. Skip this task to continue\" ; [ 0 = 1 ]" 
 }
 
 GetVar()
