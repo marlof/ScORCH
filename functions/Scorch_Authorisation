@@ -1,32 +1,32 @@
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 
-# These functions check users are authorised to view or access 
-# fn_CheckAuth()
+## These functions check users are authorised to view or access 
+## fn_CheckAuth()
 
 fn_CheckAuth()
 {
-  # This function is stubbed for future enhancements
-  # The idea is that users will need to be allowed to use scorch as a reporting tool
-  # or be allowed access to certain systems/plugin directories
+  ## This function is stubbed for future enhancements
+  ## The idea is that users will need to be allowed to use scorch as a reporting tool
+  ## or be allowed access to certain systems/plugin directories
 
-  #  #Username  : [ full | <blank> ] : [ all | <comma seperated list of plugin dirs>]  
-  #     marc:full:all
-  #     root::all
-  #     user::demo
+  ##  #Username  : [ full | <blank> ] : [ all | <comma seperated list of plugin dirs>]  
+  ##     marc:full:all
+  ##     root::all
+  ##     user::demo
 
   echo "Authority given - stubbed"
 }

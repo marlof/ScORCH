@@ -1,4 +1,4 @@
-SP_LOCAL-SAFEDEMO()
+SP_SAFEDEMO()
 {
   GetVar -pattern "Pause" -name "PAUSE" -default "60"
   GetVar -pattern "Fail"  -name "FAIL"  -default "0"

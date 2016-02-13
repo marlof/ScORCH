@@ -1,39 +1,39 @@
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 
-# This file contains functions to set and display layout
-# fn_SetLayout()
-# fn_ShowTop()
-# fn_ShowLine()
-# fn_ShowJobs2()
-# fn_FormatTasks()
-# fn_ShowTasks()
-# fn_JobInfo()
-# fn_ContextMenu()
+## This file contains functions to set and display layout
+## fn_SetLayout()
+## fn_ShowTop()
+## fn_ShowLine()
+## fn_ShowJobs2()
+## fn_FormatTasks()
+## fn_ShowTasks()
+## fn_JobInfo()
+## fn_ContextMenu()
 
 
 fn_SetLayout()
 {
-  # Define the bounds of the screen
-  # The default screen layout is broken in columns to split up job names into
-  # meaningfull groups
-  #
-  #  C1|     C2|        C3|        C4|
-  #==========================================================
-  #    |       |          |          |
+  ## Define the bounds of the screen
+  ## The default screen layout is broken in columns to split up job names into
+  ## meaningfull groups
+  ##
+  ##  C1|     C2|        C3|        C4|
+  ##==========================================================
+  ##    |       |          |          |
   int_ScreenWidth=$(tput cols)
   dir_Check="${dir_New} ${dir_Completed} ${dir_Failed} ${dir_Running}"
 
@@ -61,27 +61,27 @@ readonly -f fn_SetLayout
 
 fn_ShowTop()
 {
-  # Display the name of the program and any interesting facts about the environment
-  # ===============================================================================
+  ## Display the name of the program and any interesting facts about the environment
+  ## ===============================================================================
   typeset local int_TitleWidth
   (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
   clear
 
-  # Check the current width of the screen
-  # =====================================
+  ## Check the current width of the screen
+  ## =====================================
   int_ScreenWidth=$(tput cols)
-  #(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
+  ##(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
   (( int_DatePut = ${int_ScreenWidth} - 21 ))
 
-  # Collect disk usage to display
-  #int_DiskUsage=$(df "${dir_Base}" |  awk 'NR==2 {sub(/%/,""); if ($5 > 44 ) print "[41m"$5"[0m" else print $5}')
+  ## Collect disk usage to display
+  ##int_DiskUsage=$(df "${dir_Base}" |  awk 'NR==2 {sub(/%/,""); if ($5 > 44 ) print "[41m"$5"[0m" else print $5}')
   int_DiskUsage=$(df "${dir_Base}" |  awk 'NR==2 {sub(/%/,""); if ($5 > 80 ) { 
                                         printf "[41m"$5"%" } 
 	                                  else { 
 	                                    printf $5"%"
 									  }
                                       printf "[0m" }')
-  # Output the program name, the dispatcher PID and the date
+  ## Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | awk -F"_" '{print $NF}')
   int_DispatcherPID=${int_DispatcherPID:-0}
   printf " %${int_TitleWidth}s|%${int_Column3Width}s|  %${int_TitleWidth}s|%${int_Column6Width}s|" \
@@ -91,27 +91,27 @@ fn_ShowTop()
   tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
-  # Reset the Array for Jobs and States
-  # ===================================
+  ## Reset the Array for Jobs and States
+  ## ===================================
   unset arr_Jobs arr_States
 }
 readonly -f fn_ShowTop
 
 fn_ShowLine()
 {
-  # Show a line of dashes unless a dirrent character is past or character and title is passed
+  ## Show a line of dashes unless a dirrent character is past or character and title is passed
   
-  # Check if parameters have been past
-  # ==================================
+  ## Check if parameters have been past
+  ## ==================================
   typeset local cha_LineChar=${1:-"-"}
   typeset local str_LineTitle=${2:-"${cha_LineChar}"}
 
-  # Find the width of the title
-  # ===========================
+  ## Find the width of the title
+  ## ===========================
   typeset local int_LineTitleWidth=$(echo ${str_LineTitle} | wc -c)
 
-  # Set the number of characters required to the correct width
-  # ==========================================================
+  ## Set the number of characters required to the correct width
+  ## ==========================================================
   (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
@@ -120,15 +120,15 @@ readonly -f fn_ShowLine
 
 fn_ShowJobs2()
 {
-  # Show job details for each job state past. The value passed is one or more directory names
-  # =========================================================================================
+  ## Show job details for each job state past. The value passed is one or more directory names
+  ## =========================================================================================
   typeset local str_EachJobState=
   typeset local arr_JobList=
   typeset local str_StatusColour="${dis_Reset}"
   typeset local str_StatusColour=""
 
-  # Due to the fact that directories may contain "spaces" so "cd" there first
-  # =========================================================================
+  ## Due to the fact that directories may contain "spaces" so "cd" there first
+  ## =========================================================================
   cd "${dir_Job}"
   int_Count=1
 
@@ -140,7 +140,7 @@ fn_ShowJobs2()
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
   	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | gawk \
+    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
       -v            state=${str_State} \
       -v          linenum=${int_Count} \
       -v          dir_Log=${dir_Log} \
@@ -160,10 +160,10 @@ fn_ShowJobs2()
     linenum <= int_MaxShown {
       printf Colour
 
-      # Check Owner of job
-	  #system("echo $(whoami)")
-	  #system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
-      system("[[ $(grep ^str_Owner= "dir_Active"/$(basename "$0") | cut -d= -f2-) = $(whoami) ]] && printf \"*\" || printf \" \"")
+      ## Check Owner of job
+	 ## system("echo $(whoami)")
+	  ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
+      system("if [[ \"$(grep ^str_Owner=$(whoami) "dir_Active"/$(basename "$0") | cut -d= -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
 	  system("test -r "dir_Active"/$(basename "$0").rules && printf \"R\"  || printf \" \"")
       printf "%3s", linenum
       system("test -r "dir_Active"/$(basename "$0").pause && printf \"P|\" || printf \" |\"")
@@ -176,7 +176,7 @@ fn_ShowJobs2()
       }
 	  int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
                    - int_Column4Width  - int_Column5Width
-# printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
+## printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
       printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
       system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
       system("echo arr_States["linenum"]="state" >> "file_Cache)
@@ -187,7 +187,7 @@ fn_ShowJobs2()
     END {
       system("echo int_Count="linenum" >> "file_Cache )
     }'
-    #. ${file_Cache}
+    ##. ${file_Cache}
     [[ -r "${file_Cache}" ]] && . ${file_Cache} && rm "${file_Cache}"
   done
 }
@@ -195,13 +195,13 @@ readonly -f fn_ShowJobs2
 
 fn_FormatTasks()
 {
-  # This function is only called by fn_ShowTasks and will format the layout
-  # regardless of whether the tasks were requested from a group call
+  ## This function is only called by fn_ShowTasks and will format the layout
+  ## regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
   printf "\n\n   "
   ls -lL "${file_Job}"  #"${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
   printf "\n"
-  cat "${file_Job}" | gawk 'BEGIN {
+  cat "${file_Job}" | ${cmd_AWK} 'BEGIN {
               linenum=1
             }
             $0 ~ "^fn_Task_[1-9]" { 
@@ -223,8 +223,8 @@ readonly -f fn_FormatTasks
 
 fn_ShowTasks()
 {
-  # This functions simply displays the list of tasks that will be run
-  # If a value was passed assume that was the job for which to show the tasks
+  ## This functions simply displays the list of tasks that will be run
+  ## If a value was passed assume that was the job for which to show the tasks
   typeset local file_Job="${1}"
   typeset local int_Answer=
 
@@ -249,8 +249,8 @@ fn_ShowTasks()
         return 0
       fi
 
-	  # awk replaces 
-		#   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
+	  ## awk replaces 
+		##   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
 		fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
       done
     else
@@ -270,7 +270,7 @@ fn_JobInfo()
       echo " ${str_JobOwner}"
       echo " State at selection : ${str_JobState}"
 	  basename ${file_ActiveJob}
-	  #pgrep -a ${$(basename ${file_ActiveJob})::15}
+	  ##pgrep -a ${$(basename ${file_ActiveJob})::15}
 	  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
 	  
       echo ""
@@ -290,11 +290,11 @@ fn_JobInfo()
 
 fn_ContextMenu()
 {
-  # A context-based menu based on the state of jobs
-  # Used in two ways....
-  #    specific mode (where a directory name is passed)
-  # and
-  #    generic mode (where is caters for all directories)
+  ## A context-based menu based on the state of jobs
+  ## Used in two ways....
+  ##    specific mode (where a directory name is passed)
+  ## and
+  ##    generic mode (where is caters for all directories)
  
   typeset local str_State=${1:-}
   
@@ -302,9 +302,9 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
-#  printf "\n\n${dis_Reset}"
+##  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
-    # Specific Mode
+    ## Specific Mode
     printf " ${dis_ULOn}V${dis_ULOff}iew | ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
     case ${str_State} in
       queued  ) b_QueuedJobs=1 ;;
@@ -314,7 +314,7 @@ fn_ContextMenu()
       running ) b_RunningJobs=1 ;;
     esac
   else
-    # Generic Mode
+    ## Generic Mode
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
 	[[ "$(ls ${dir_Lock} 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
     [[ "$(echo ${arr_States[@]} | grep -i queued)"  ]] && b_QueuedJobs=1
@@ -336,4 +336,4 @@ fn_ContextMenu()
 }
 readonly -f fn_ContextMenu
 
-# End
+## End

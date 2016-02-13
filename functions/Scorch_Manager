@@ -1,22 +1,22 @@
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 
-# These functions manage the manager/view screen
-# fn_Manager()
-# fn_AdminFunctions()
+## These functions manage the manager/view screen
+## fn_Manager()
+## fn_AdminFunctions()
 
 
 fn_Manager()
@@ -33,25 +33,25 @@ fn_Manager()
 
     case ${char_Choice} in
 
-      # Create a new job
-      n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Jobs};;
+      ## Create a new job
+      n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Job};;
 
-	  # View CSV
+	  ## View CSV
 	  c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
-      # Job State transition
+      ## Job State transition
       d | D )                      fn_Transition delete  ;;
       q | Q ) fn_CheckDispatcher ; fn_Transition queue   ;;
       r | R ) fn_CheckDispatcher ; fn_Transition resume  ;;
       u | U )                      fn_Transition unqueue ;;
 	  p | P )                      fn_Transition pause   ;;
 
-      # Misc
+      ## Misc
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
 	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
 	  
-	  # Releases
+	  ## Releases
 	  open       ) fnE_MkOpenScorch ;;
 	  enterprise ) fnE_MkEscorchtar ;;
 
@@ -105,7 +105,7 @@ fn_AdminFunctions()
   typeset local char_Choice=${1}
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
-  #if [[ ${char_Choice} -lt ${int_Count} ]] ; then
+  ##if [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
     typeset str_JobState=${arr_States[${char_Choice}]}
     typeset local file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
@@ -120,26 +120,26 @@ fn_AdminFunctions()
 
       case ${char_Choice} in
 	
-        # View CSV
+        ## View CSV
         c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
-        # Edit job
+        ## Edit job
         v | V ) fn_ViewJob "${file_ActiveJob}" ;;
         e | E ) fn_EditJob "${file_ActiveJob}" ;;
 		        #fn_CheckOwner "${file_ActiveJob}"
                 #${cmd_Editor} "${file_ActiveJob}" ;;
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
-        # Job State transition
+        ## Job State transition
 		
-        # Delete Job(s)
+        ## Delete Job(s)
         d | D ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" deleted
                 echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
                 mv "${file_Link}" "${dir_Deleted}"
                 return 0 ;;
 
-        # Queue Job(s)
+        ## Queue Job(s)
         q | Q ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" queued
                 fn_UpdateResumePoint "${file_Job}" 0
@@ -151,7 +151,7 @@ fn_AdminFunctions()
                 fn_CheckDispatcher
                 return 0 ;;
 
-        # Resume Job(s)
+        ## Resume Job(s)
         r | R ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
@@ -160,7 +160,7 @@ fn_AdminFunctions()
                 fn_CheckDispatcher
                 return 0 ;;
 
-        # Skip a task in Job(s)
+        ## Skip a task in Job(s)
         s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
@@ -168,7 +168,7 @@ fn_AdminFunctions()
                 fn_CheckDispatcher
                 return 0 ;;
 
-        # Pause Job(s)
+        ## Pause Job(s)
         p | P ) fn_CheckOwner "${file_ActiveJob}"
                 if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
                   rm "${dir_Active}"/"$(basename "${file_Job}").pause"
@@ -180,16 +180,16 @@ fn_AdminFunctions()
                 fn_LogWhy		
                 return 0 ;;
 
-        # Unqueue Job(s) back to New State
+        ## Unqueue Job(s) back to New State
         u | U ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" unqueued
                 mv "${file_Link}" "${dir_New}"  
                 return 0 ;;
 
-        # Task View
+        ## Task View
         t | T ) fn_ShowTasks "${file_Job}"          ;;
 
-        # Mark Job as Fix in Progress (FIP)
+        ## Mark Job as Fix in Progress (FIP)
         f | F ) echo " "
                 read -p " You may provide a keyword or tracking id: " str_Reply
 				[[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
@@ -198,7 +198,7 @@ fn_AdminFunctions()
                 echo "$(${fn_LogDate}) Fix in progress${str_Reply}. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}"
                 return 0 ;;
 
-        # Amend Job rules
+        ## Amend Job rules
         a | A ) fnE_AmendRules        ;;
 		tail  ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
 

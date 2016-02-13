@@ -1,105 +1,112 @@
 #!/bin/bash
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# scorch
-# 
-# VARIABLE naming convention
-# Variable names will use <prefix Hungarian Notation>_CamelCase
-# b    boolean                  TRUE,1 | FALSE,0
-# fn   function name            fn_function
-# p    pointer
-# str  string
-# dir  the variable defines a directory
-# file the variable defines a filename
-#
-# Ideas not yet implemented........
-# <hn>_ext_<var name>     A variable that has been derived from running an external script or
-#                         command that might change
-# <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
-# <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a 
-#                         scorch job
-# <hn>_Job_<var name>     Variables that are used when the job is running. Used to protect
-#                         GLOBAL variable pollution
-# =============================================================================================
-# History
-# 1.0	    marc        First running demo
-# 1.1	    marc        Reversed and improved fn_RunJobs
-# 1.2       marc        Improved fn_ShowJobs2, pause feature
-# 1.3       marc        Improved task list, began lock manager and task manager
-# 1.4       marc        Further improvements to task list
-# 1.5       marc        Jobs now use symbolic links
-# 1.6       marc        Audit handling
-#                       Failed job audit tracking
-#                       Enterprise Feature (Developer:Debug)
-# 1.7       marc        #15 log update
-#                       #16 multi job update
-#                       shell check updates
-#                       trap updates
-#                       Enterprise feature multi-parent rule enabled
-# 1.8  150805 marc      Improvement to manager layout with dynamic column width
-# 1.9  150805 marc      Check for outstanding jobs on exit
-# 1.10 150817 marc      Removed System as a key-pair
-#      150904 marc      Updated comments
-#                       Added upper flag to GetVar
-#                       Toggle pause flag
-# 1.11 151127 marc      Fixed issue with LOCK filename
-#                       github#20 Tail feature added
-#      151130 marc      github#13 Added tryTask option
-# 1.12 151223 marc      Added fix in progress
-#                       Cleaned up some code
-# 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
-# 1.14 160126 marc		Indicate Job Ownwer
-#                       pauseTask breakTask added
-# Determine the program name and the running directory
-typeset str_ProgramVersion="1.14"
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+## scorch
+## 
+## VARIABLE naming convention
+## Variable names will use <prefix Hungarian Notation>_CamelCase
+## b    boolean                  TRUE,1 | FALSE,0
+## fn   function name            fn_function
+## p    pointer
+## str  string
+## dir  the variable defines a directory
+## file the variable defines a filename
+##
+## Ideas not yet implemented........
+## <hn>_ext_<var name>     A variable that has been derived from running an external script or
+##                         command that might change
+## <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
+## <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a 
+##                         scorch job
+## <hn>_Job_<var name>     Variables that are used when the job is running. Used to protect
+##                         GLOBAL variable pollution
+## =============================================================================================
+## History
+## 1.0	     marc        First running demo
+## 1.1	     marc        Reversed and improved fn_RunJobs
+## 1.2       marc        Improved fn_ShowJobs2, pause feature
+## 1.3       marc        Improved task list, began lock manager and task manager
+## 1.4       marc        Further improvements to task list
+## 1.5       marc        Jobs now use symbolic links
+## 1.6       marc        Audit handling
+##                       Failed job audit tracking
+##                       Enterprise Feature (Developer:Debug)
+## 1.7       marc        #15 log update
+##                       #16 multi job update
+##                       shell check updates
+##                       trap updates
+##                       Enterprise feature multi-parent rule enabled
+## 1.8  150805 marc      Improvement to manager layout with dynamic column width
+## 1.9  150805 marc      Check for outstanding jobs on exit
+## 1.10 150817 marc      Removed System as a key-pair
+##      150904 marc      Updated comments
+##                       Added upper flag to GetVar
+##                       Toggle pause flag
+## 1.11 151127 marc      Fixed issue with LOCK filename
+##                       github#20 Tail feature added
+##      151130 marc      github#13 Added tryTask option
+## 1.12 151223 marc      Added fix in progress
+##                       Cleaned up some code
+## 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
+## 1.14 160126 marc		 Indicate Job Ownwer
+##                       pauseTask breakTask added
+##                       breakTask added
+## 1.15 160211 marc      Protected header comment lines from stripping when creating openscorch
+##                       GAWK and NAWK are both checked (note NAWK does not have upper/lower options)
+##                       Improved "owner" check(g|n)awk command
+##                       JobID changed to JobID.<program name>
+
+## Determine the program name and the running directory
+typeset str_ProgramVersion="1.15"
 
 typeset    str_ProgramName=$(basename "$0")
 typeset            dir_Run=$(dirname "$0")
 typeset           dir_Orig="$(pwd)/${dir_Run}"
 typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
 
-# User EDITOR preference
+## User EDITOR preference
 typeset         cmd_Editor=${EDITOR:-vi}
 
 fn_BaseDir()
 {
-  # Taking a directory name as a parameter, output the full absolute path
-  # It could be absolute or relative so check and clean out any <dir>/../<dir> additions
-  # if ${1} starts "/"
+  ## Taking a directory name as a parameter, output the full absolute path
+  ## It could be absolute or relative so check and clean out any <dir>/../<dir> additions
+  ## if ${1} starts "/"
+  [ -d "${1}" ] || return 1
   cd "${1}" && pwd || return 1
 }
 
-# The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
-typeset dir_Base=$(fn_BaseDir "${dir_Run}")
-typeset   str_OS=$(uname -o)
+## The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
+typeset        dir_Base=$(fn_BaseDir "${dir_Run}")
+typeset          str_OS=$(uname -o)
 
-# Directory definitions
-# =====================
-typeset       dir_Etc=${dir_Base}/etc
-typeset       dir_Var=${dir_Base}/var
-typeset       dir_Log=${dir_Var}/log
-typeset      dir_Lock=${dir_Var}/locks
-typeset       dir_Tmp=${dir_Base}/tmp
-typeset   dir_Plugins=${dir_Base}/plugins
-typeset   str_Plugins=$(basename "${dir_Plugins}")
-typeset dir_Functions=${dir_Base}/functions
-typeset str_Functions=$(basename "${dir_Functions}")
+## Directory definitions
+## =====================
+typeset         dir_Etc=${dir_Base}/etc
+typeset         dir_Var=${dir_Base}/var
+typeset         dir_Log=${dir_Var}/log
+typeset        dir_Lock=${dir_Var}/locks
+typeset         dir_Tmp=${dir_Base}/tmp
+typeset     dir_Plugins=${dir_Base}/plugins
+typeset     str_Plugins=$(basename "${dir_Plugins}")
+typeset   dir_Functions=${dir_Base}/functions
+typeset   str_Functions=$(basename "${dir_Functions}")
 
-# Job definitions
-# ===============
+## Job definitions
+## ===============
 typeset         dir_Job=${dir_Base}/jobs
 typeset       int_Count=1
 typeset        file_CSV=${dir_Log}/jobs.csv
@@ -116,13 +123,13 @@ typeset     dir_Deleted=${dir_Job}/deleted
 typeset    dir_Archived=${dir_Job}/archived
 typeset     dir_Pending=${dir_Job}/pending
 typeset      dir_Active=${dir_Job}/active
-#typeset      file_JobID=${dir_Var}/jobid
+##typeset      file_JobID=${dir_Var}/jobid
 
 typeset         b_Group=
 typeset    b_Background=
 typeset     int_SubTask=
 typeset     str_SubTask=
-typeset   int_DispatchSleep=13
+typeset int_DispatchSleep=13
 
 fn_ResetJobDefinitions()
 {
@@ -136,50 +143,50 @@ fn_ResetJobDefinitions()
      dir_Deleted=${dir_Job}/deleted 
     dir_Archived=${dir_Job}/archived
       dir_Active=${dir_Job}/active
-#      file_JobID=${dir_Var}/jobid
+##      file_JobID=${dir_Var}/jobid
 }
 
-# Dispatcher definitions
-# ======================
+## Dispatcher definitions
+## ======================
 typeset int_DispatcherPID=0
 typeset   int_DispatchMax=10
 typeset      file_JobLock=${dir_Lock}/JobLock
 typeset  file_DispatchLog=${dir_Log}/dispatch.log
 typeset file_DispatchLock=${dir_Lock}/dispatch.lck
 
-# Layout Option
-# =============
+## Layout Option
+## =============
 typeset      int_MaxShown=${SHOWMAX:-30}
 typeset       int_Refresh=${REFRESH:-10}
 
-# Job states
-# ==========
-#file_States=${dir_Var}/states
-#[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
+## Job states
+## ==========
+##file_States=${dir_Var}/states
+##[[ -r ${file_States} ]] || ( echo "No state file defined: \"${file_States}\"" && exit  )
 
-# Program Log
-# ===========
+## Program Log
+## ===========
 typeset      file_ProgLog="${dir_Log}/${str_ProgramName}.log"
 
 
-# Load Functions
-# ==============
+## Load Functions
+## ==============
 fn_LoadFunctions()
 {
-  # Load Functions from a directory based on a search criteria
-  # $1 Directory
-  # $2 Search string
-  #   Next
-  #   -d    dir
-  #   -pre  pre search
-  #   -post post search
-  #typeset local dir_Directory="$(basename ${1})"
+  ## Load Functions from a directory based on a search criteria
+  ## $1 Directory
+  ## $2 Search string
+  ##   Next
+  ##   -d    dir
+  ##   -pre  pre search
+  ##   -post post search
+  ##typeset local dir_Directory="$(basename ${1})"
   typeset local dir_Directory="${1}"
   typeset local    str_Search="${2}"
   typeset local     b_Display="${3}"
   typeset local      b_Errors=
   typeset local  str_EachFile=
-  #[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
+  ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     for str_EachFile in ${arr_Functions} ; do
@@ -198,7 +205,8 @@ fn_LoadFunctions()
       fi
     done
   else
-    echo "$(pwd) ${dir_Directory} could not be found"
+    :
+	##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
   [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
@@ -213,8 +221,8 @@ typeset b_Background=
 typeset b_Install=
 typeset file_Template=
 
-# Check for argument list
-# scorch can be run in several modes (install, new, file, dispatcher, manager and background)
+## Check for argument list
+## scorch can be run in several modes (install, new, file, dispatcher, manager and background)
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
@@ -222,17 +230,21 @@ if [ $# -ne 0 ] ; then
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -dispatcher ) b_Dispatcher=1 ;;
       -new        ) b_New=1 ;;
-	  -background ) b_Background=1 ;;
+      -background ) b_Background=1 ;;
       -file       ) shift ; file_Template="$1" ;;
       -s          ) b_Start=1 ;;
       -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
       -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
       -install    ) b_Install=1 ;;
-      # Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
+      ## Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
     shift
   done
 fi
+
+
+#HEADER
+#RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE
 
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
 if [[ ! -z $ENTERPRISE ]] ; then
@@ -240,11 +252,10 @@ if [[ ! -z $ENTERPRISE ]] ; then
   str_License="Enterprise"
 else
   printf "\n\n Open Source License. Check out www.autoscorch.com for enterprise license details.\n\n Please wait..."
-  sleep 5
+  sleep 2
   str_License="OpenScorch"
 fi
 
-#HEADER
 # Area reserved for loading OPENSCORCH - Do not remove
 #FOOTER
 

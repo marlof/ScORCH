@@ -1,25 +1,25 @@
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 
-# This file contains functions to set and display layout
-# fn_Dispatcher()
-# fn_CheckRunning()
-# fn_CheckDispatcher()
-# fn_RunJobs()
-# fn_LockManager()
+## This file contains functions to set and display layout
+## fn_Dispatcher()
+## fn_CheckRunning()
+## fn_CheckDispatcher()
+## fn_RunJobs()
+## fn_LockManager()
 
 
 fn_Dispatcher()
@@ -38,34 +38,34 @@ fn_Dispatcher()
   #[[ $(pgrep -f "${str_ProgramName} -dispatcher" | wc -l) -ne 1 ]] && echo "Already running" && return 0
 
   while [ ${int_DispatchCount} -lt ${int_DispatchMax} ] ; do
-    # Repair any missing lock file for dispatcher
-   # [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
+    ## Repair any missing lock file for dispatcher
+   ## [[ ! -L ${file_DispatchLock} ]] && ln -s $(whoami)_$$ "${file_DispatchLock}"
 
     fn_CheckRunning
 
-    # Check the pending directory first for any rules that have succeeded
+    ## Check the pending directory first for any rules that have succeeded
     typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
     if [[ "${arr_PendingJobs}" ]] ; then
-#echo "Checking pending rules"
+##echo "Checking pending rules"
       for file_EachJob in ${arr_PendingJobs} ; do
-#echo "file_EachJob ${file_EachJob}"
+##echo "file_EachJob ${file_EachJob}"
         if [ -r "${dir_Active}/$(basename ${file_EachJob})".rules ] ; then
-          # Check for Parent
+          ## Check for Parent
           arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename ${file_EachJob})".rules | cut -d: -f2)
-#echo "arrParents are ${arr_Parents}"
+##echo "arrParents are ${arr_Parents}"
           typeset local b_ParentComplete=0
           for file_EachParent in ${arr_Parents} ; do
             if [[ "${file_EachParent}" = "${file_EachJob}" ]] ; then
                fn_Audit "${file_EachJob}" "Cyclic dependency. Failing job" "rules"
                mv ${dir_Pending}/${file_EachJob} ${dir_Failed}
             fi
-            #fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules"
-#echo "file_EachParent ${file_EachParent}"
-#echo  "basename \$(dirname \$(find ${dir_Job} -type l -name ${file_EachParent}))"
-#set -x
+            ##fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules"
+##echo "file_EachParent ${file_EachParent}"
+##echo  "basename \$(dirname \$(find ${dir_Job} -type l -name ${file_EachParent}))"
+##set -x
             str_ParentState=$(basename $(dirname $(find ${dir_Job} -type l -name "${file_EachParent}") 2>/dev/null ) 2>/dev/null)
-#set +x
-#echo "PARENT state is ${str_ParentState}"
+##set +x
+##echo "PARENT state is ${str_ParentState}"
             case ${str_ParentState} in
               completed ) fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules" ;;
               superseded | failed )                          b_ParentComplete=1 ;;
@@ -82,11 +82,11 @@ fn_Dispatcher()
           fi
         fi
       done
-      # If there are any pending jobs (with valid rules) we must keep the dispatcher running
+      ## If there are any pending jobs (with valid rules) we must keep the dispatcher running
       int_DispatchCount=0
     fi	  
 
-    # Move queued jobs to start state
+    ## Move queued jobs to start state
 	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
 	if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
@@ -94,14 +94,14 @@ fn_Dispatcher()
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
   
         if [ ! -L "${file_QueueLock}" ] ; then
-#echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
+##echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}"/${file_EachJob} "${dir_Starting}"
 		  int_DispatchCount=0
         else
-          # Check that for every env lock file that there is a job in a non finish state
-          # (failed, completed, deleted, new)
+          ## Check that for every env lock file that there is a job in a non finish state
+          ## (failed, completed, deleted, new)
           typeset local arr_JobLocks=$(ls "${file_JobLock}"*)
           for file_EachLock in ${arr_JobLocks} ; do
             [[ "$(find ${dir_Job}/running ${dir_Job}/starting -name $(ls -l "${file_EachLock}" | awk -F" " '{print $NF}'))" ]] || rm ${file_EachLock}
@@ -121,7 +121,7 @@ readonly -f fn_Dispatcher
 
 fn_CheckRunning()
 {
-  # Check running jobs are really running
+  ## Check running jobs are really running
   typeset local arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
   if [[ "${arr_RunningJobs}" ]] ; then
     for file_EachJob in ${arr_RunningJobs} ; do
@@ -136,30 +136,30 @@ readonly -f fn_CheckRunning
 
 fn_CheckDispatcher()
 {
-  # Check Dispatcher
-#  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
+  ## Check Dispatcher
+##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   #ps -p ${int_DispatcherPID} > /dev/null 2>&1 && return 0
   [ -f "${file_DispatchLock}" ] && ( [[ "$(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')" ]] || rm ${file_DispatchLock} )
   if [ -L "${file_DispatchLock}" ] ; then
-    # Check the lock is correct
-#    echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
+    ## Check the lock is correct
+##    echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
 
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher" | head -1) -eq $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}') ]] ; then
-#	  echo "1:Dispatcher already running correctly"
+##	  echo "1:Dispatcher already running correctly"
       return 0
     else
-#       echo "2:Need to repair lock file"
+##       echo "2:Need to repair lock file"
       rm "${file_DispatchLock}" 2>/dev/null
-#      ln -s "${dir_Base}/${str_ProgramName}_$(pgrep -f "${str_ProgramName} -dispatcher")" "${file_DispatchLock}"
+##      ln -s "${dir_Base}/${str_ProgramName}_$(pgrep -f "${str_ProgramName} -dispatcher")" "${file_DispatchLock}"
     fi	
   else
-#     echo "3:No lock file - checking if running and needs repairing"
+##     echo "3:No lock file - checking if running and needs repairing"
     if [[ "$(pgrep -f "${str_ProgramName} -dispatcher")" ]] ; then
-#      echo "Dispatcher running - need to repair lock file"
+##      echo "Dispatcher running - need to repair lock file"
       ln -s "${dir_Base}/${str_ProgramName}_$(pgrep -f "${str_ProgramName} -dispatcher")" "${file_DispatchLock}"	  
       return 0
     else
-#	  echo "Initiating new instance of dispatcher"
+##	  echo "Initiating new instance of dispatcher"
       "${dir_Base}/${str_ProgramName}" -dispatcher -j ${dir_Job} >> ${file_DispatchLog} &
       ln -s "${dir_Base}/${str_ProgramName}_$!" "${file_DispatchLock}"
     fi
@@ -169,10 +169,10 @@ readonly -f fn_CheckDispatcher
 
 fn_RunJobs()
 {
-  # Run owned jobs in START state
-  #ls "${dir_Starting}"
-  #shopt -s nullglob
-#  for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
+  ## Run owned jobs in START state
+  ##ls "${dir_Starting}"
+  ##shopt -s nullglob
+##  for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
   for file_EachJob in $(grep -l "str_Owner=$(whoami)" "${dir_Starting}"/* 2>/dev/null)  ; do
 
     echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
@@ -185,7 +185,7 @@ readonly -f fn_RunJobs
 
 fn_LockManager()
 {
-  # An easier way to check locks
+  ## An easier way to check locks
   while : ; do
     fn_ShowTop
     fn_ShowLine
@@ -217,7 +217,7 @@ fn_LockManager()
         x | X ) return 0 ;;
       esac
 	fi
-  #  fn_RunJobs
+  ##  fn_RunJobs
   done
 }
 readonly -f fn_LockManager

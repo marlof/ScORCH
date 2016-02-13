@@ -1,48 +1,48 @@
-#
-# Copyright 2016 WebMarcIT Ltd
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
 
-# These functions handle aspects or creating and processing new jobs, tasks and task groups
-# fn_NewJob()
-# fn_JobHeader()
-# fn_CheckTask()
-# fn_JobFooter()
-# fn_NewJob()
-# fn_GetRequest()
-# fn_GetRequestor()
-# fn_GetSent()
-# fn_ProcessRequest()
-# fn_GetJobID()
-# fn_ExtractPairs()
-# StartGroup
-# EndGroup
-# Task()
-# tryTask()
-# pauseTask()
-# breakTask()
-# GetVar()
-# fn_Transition()
-# fn_CheckOwnJobs()
-# fn_CheckOwner()
+## These functions handle aspects or creating and processing new jobs, tasks and task groups
+## fn_NewJob()
+## fn_JobHeader()
+## fn_CheckTask()
+## fn_JobFooter()
+## fn_NewJob()
+## fn_GetRequest()
+## fn_GetRequestor()
+## fn_GetSent()
+## fn_ProcessRequest()
+## fn_GetJobID()
+## fn_ExtractPairs()
+## StartGroup
+## EndGroup
+## Task()
+## tryTask()
+## pauseTask()
+## breakTask()
+## GetVar()
+## fn_Transition()
+## fn_CheckOwnJobs()
+## fn_CheckOwner()
 
 fn_JobHeader()
 {
-  # Function to create and initialise the job file. This job file is incomplete without a Footer
-  # Tasks are added via the "Task" function which is made available to the plugin
-  #
-  # The file to be created is passed as a variable
+  ## Function to create and initialise the job file. This job file is incomplete without a Footer
+  ## Tasks are added via the "Task" function which is made available to the plugin
+  ##
+  ## The file to be created is passed as a variable
 
   typeset local file_Job=${1}
   echo "Creating ${file_Job}"
@@ -51,15 +51,15 @@ fn_JobHeader()
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
-##     #####        ####  #####   #### #    #
-##    #      #### #    # #    # #     #    #
-##    ###  #     #    # #####  #     ######
-##      # #     #    # #   #  #     #    #
-## #####  ####  ####  #    #  #### #    #
+#     #####        ####  #####   #### #    #
+#    #      #### #    # #    # #     #    #
+#    ###  #     #    # #####  #     ######
+#      # #     #    # #   #  #     #    #
+# #####  ####  ####  #    #  #### #    #
 
-## Created: $(date)
-## By: $(whoami)
-## Using: ${str_ProgramName}[${str_ProgramVersion}]
+# Created: $(date)
+# By: $(whoami)
+# Using: ${str_ProgramName}[${str_ProgramVersion}]
 
 # Audit
 str_StartTime="\$(date +%s)"
@@ -128,20 +128,21 @@ readonly -f fn_JobHeader
 
 fn_JobFooter()
 {
-  # Function to add the processing power to a job file. This requires a JobHeader to have been run
-  #
-  # The file to be appended to is passed as a variable
+  ## Function to add the processing power to a job file. This requires a JobHeader to have been run
+  ##
+  ## The file to be appended to is passed as a variable
 
   typeset local file_Job="${1}"
   (( int_TaskCount-=1 ))
 
-  # echo "Adding footer to ${file_Job}"
+  ## echo "Adding footer to ${file_Job}"
   cat >> "${file_Job}" << EOF
 
 int_StartTask=\${int_ResumePoint:-1}
 int_Last=${int_TaskCount}
 
-while [ \${int_StartTask} -le \${int_Last} ] ; do
+#while [ \${int_StartTask} -le \${int_Last} ] ; do
+while (( int_StartTask <= int_Last )) ; do
   echo "===================" >> "\${file_Log}"
   echo "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]" >> "\${file_Log}"
   declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
@@ -200,12 +201,12 @@ readonly -f fn_NewJob
 
 fn_GetRequest()
 {
-  # Receive the request from a file or interactively
+  ## Receive the request from a file or interactively
   typeset local file_Template="${1:-}"
   typeset local str_Line=""
   typeset local int_GetCount=1
 
-  # global tmp file
+  ## global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
   fn_CreateFile "${file_Request}"
 
@@ -243,7 +244,7 @@ fn_GetRequest()
     done
   fi
 }
-#Enterprise feature available readonly -f fn_GetRequest
+##Enterprise feature available readonly -f fn_GetRequest
 
 fn_ProcessRequest()
 {
@@ -301,12 +302,12 @@ fn_ProcessRequest()
     rm "${file_Request}"
   done
 }
-# Enterprise features available readonly -f fn_ProcessRequest
+## Enterprise features available readonly -f fn_ProcessRequest
 
 fn_GetJobID()
 {
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
-  [[ ! -f "${file_JobID}" ]] && echo "BROKEN" && fn_CreateFile "${file_JobID}"
+  [[ ! -f "${file_JobID}" ]] && echo "Fixing JobID file" && fn_CreateFile "${file_JobID}"
   
   typeset local file_JobIDLock="${file_JobID}".lock
 
@@ -336,7 +337,7 @@ fn_ExtractPairs()
   GetVar -pattern "Type"    -name TYPE                   -default ""
   GetVar -pattern "Ticket"  -name TICKET                 -default ""  
 }
-# Enterprise feature available readonly -f fn_ExtractPairs
+## Enterprise feature available readonly -f fn_ExtractPairs
 
 StartGroup()
 {
@@ -389,10 +390,10 @@ EndGroup()
 
 Task()
 {
-  # Exception to the naming convention is Task. This is used in plugins by the users
-  # 
-  # This function will Add Tasks to a scorch Job
-  # ================================================================================
+  ## Exception to the naming convention is Task. This is used in plugins by the users
+  ## 
+  ## This function will Add Tasks to a scorch Job
+  ## ================================================================================
   int_TaskCount=${int_TaskCount:-0}
   typeset local   str_Task1=${1}
   typeset local      str_OR=${2}
@@ -400,25 +401,25 @@ Task()
   typeset local str_AltTask=
 
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
-  #[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
+  ##[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
 
  if [[ "${b_Background}" ]] ; then
-    # The task is part of a group
+    ## The task is part of a group
     ((  int_SubTask++ ))
     str_GroupTask="_SubTask"
     printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
     arr_PIDs=\"\${arr_PIDs} \$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
     str_LogExtension=".${int_SubTask}"
   else
-    # The task is a standard Task
+    ## The task is a standard Task
     str_GroupTask=""
     str_LogExtension=""
 
   fi
   printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
-  #else
-  #  printf "fn_Task_${int_TaskCount}"
-  #fi
+  ##else
+  ##  printf "fn_Task_${int_TaskCount}"
+  ##fi
   (( int_TaskCount++ ))
 }
 readonly -f Task
@@ -426,20 +427,20 @@ readonly -f Task
 
 tryTask()
 {
-  # To make things simple if there was just one parameter passed, use Task "command" OR true
+  ## To make things simple if there was just one parameter passed, use Task "command" OR true
   Task "$*" OR true
 }
 
 pauseTask()
 {
-  # Expection to the naming convention is pauseTask. This is used in plugins by users
+  ## Expection to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
   Task "printf \"Sleeping for ${int_Sleep} seconds\" ; sleep ${int_Sleep}" 
 }
 
 breakTask()
 {
-  # Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
+  ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
   Task "printf \"Forcing interrupt. Skip this task to continue\" ; [ 0 = 1 ]" 
 }
 
@@ -469,7 +470,7 @@ GetVar()
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
-# typeset local b_Upper=
+## typeset local b_Upper=
   
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -479,24 +480,24 @@ GetVar()
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
         -list    )         b_List=1           ;;
-#		-upper   )         b_Upper=1          ;;
+##		-upper   )         b_Upper=1          ;;
       esac
       shift
     done
   fi
 
-  # Awk is a pain if the items are in a list so handle lists separately
-  # ===================================================================
+  ## Awk is a pain if the items are in a list so handle lists separately
+  ## ===================================================================
   if [ "${b_List}" ] ; then
-    # Lists can be passed as a space, comma or ampersand separated list 
-	# i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
+    ## Lists can be passed as a space, comma or ampersand separated list 
+	## i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
     str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
-    # If the item is not a list, get rid of any spaces and tabs with gsub
-	# ===================================================================
+    ## If the item is not a list, get rid of any spaces and tabs with gsub
+	## ===================================================================
     str_Value="$(awk 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
@@ -505,16 +506,16 @@ GetVar()
          print $2}'       "${file_Request}" )" 
   fi
 
-  # If a value hasnt been found or is empty, use the default if one is set
-  # ======================================================================
+  ## If a value hasnt been found or is empty, use the default if one is set
+  ## ======================================================================
   [[ "${str_Value}" ]] || str_Value=${str_Default}
-#  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
-#         tmp=${1:1}               # Strip off leading '/' . . .
-#          str_Name=${tmp%%:*}     # Extract name.
-#          str_Value=${tmp##*:}         # Extract value.
-#          eval $str_Name=${str_Value}
+##  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
+##         tmp=${1:1}               # Strip off leading '/' . . .
+##          str_Name=${tmp%%:*}     # Extract name.
+##          str_Value=${tmp##*:}         # Extract value.
+##          eval $str_Name=${str_Value}
 
-# echo "${str_Name}=\"${str_Value}\""
+## echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
 readonly -f GetVar
@@ -527,7 +528,7 @@ NGetVar()
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
-#  typeset local b_Upper=" -i "
+##  typeset local b_Upper=" -i "
   
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -537,7 +538,7 @@ NGetVar()
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
         -list    )         b_List=1           ;;
-#		-upper   )         b_Upper=           ;;
+##		-upper   )         b_Upper=           ;;
       esac
       shift
     done
@@ -554,8 +555,8 @@ NGetVar()
 
 fn_Transition()
 {
-  # Transition a job to a new state
-  # ===============================
+  ## Transition a job to a new state
+  ## ===============================
 
   typeset local str_Transition="${1}"
   fn_ShowTop
@@ -563,11 +564,11 @@ fn_Transition()
 
   case ${str_Transition} in
 
-    # Jobs requiring the dispatcher
+    ## Jobs requiring the dispatcher
     queue   ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
     resume  ) fn_ShowJobs2 failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
 
-    # Jobs not requiring the dispatcher
+    ## Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
     unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
     pause   ) fn_ShowJobs2 running starting queued           ; str_Target="${dir_Active}" ;;
@@ -625,7 +626,7 @@ fn_Transition()
                   fi
                   fn_LogWhy ;;
 
-       # Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
+       ## Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
     
       esac
     done
