@@ -60,7 +60,10 @@ fn_CheckSetUp()
   done
   
   cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
-  printf "\n\tcmd_AWK: ${cmd_AWK}"
+  printf "\n\tcmd_AWK: ${cmd_AWK}\n"
+  
+  cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
+  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="printf \n\n\n\n\n\n\n"
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories or commands.\n"

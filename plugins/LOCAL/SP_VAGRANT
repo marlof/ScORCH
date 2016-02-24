@@ -1,10 +1,11 @@
 SP_VAGRANT()
 {
   # Set up lots of similar VMs with VAGRANT
-  GetVar -pattern "Download" -name DOWNLOAD -default "" -upper
-  Task "curl https://releases.hashicorp.com/vagrant/1.7.4/vagrant_1.7.4_x86_64.rpm -S#o /tmp/vagrant.rpm"
+  GetVar -pattern "Download" -name DOWNLOAD -default "" -upper # TRUE | FALSE | NULL
+#  Task "curl https://releases.hashicorp.com/vagrant/1.7.4/vagrant_1.7.4_x86_64.rpm -S#o /tmp/vagrant.rpm"
   [[ "${DOWNLOAD}" = TRUE ]] &&  Task "vagrant box add precise32.box http://files.vagrantup.com/precise32.box"
   Task "vagrant init precise32"
   Task "vagrant up"
   Task "vagrant status"
 }
+

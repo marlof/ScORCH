@@ -176,8 +176,15 @@ fn_RunJobs()
   for file_EachJob in $(grep -l "str_Owner=$(whoami)" "${dir_Starting}"/* 2>/dev/null)  ; do
 
     echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
-    nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
-	# To ensure started in order
+	if [[ -x ${file_EachJob} ]] ; then
+      nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+    else
+      ## Fail the job as not executable
+      echo "Job not executable - running with bash"
+      fn_Audit ${file_EachJob} "Not executable - running with bash"
+      nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+    fi
+	## To ensure started in order
 	sleep 0.2
   done
 }
@@ -210,7 +217,7 @@ fn_LockManager()
       [[ "${char_Choice}" = "" ]] && char_Choice="x"
       case ${char_Choice} in
 
-        # Lock transition
+        ## Lock transition
         d | D ) printf "rm lock "  ;;
         [0-9]* ) echo removing ${dir_Lock}/${arr_Locks[${char_Choice}]} ; rm ${dir_Lock}/${arr_Locks[${char_Choice}]} ; sleep 2 ;;
       

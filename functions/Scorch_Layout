@@ -34,7 +34,9 @@ fn_SetLayout()
   ##  C1|     C2|        C3|        C4|
   ##==========================================================
   ##    |       |          |          |
-  int_ScreenWidth=$(tput cols)
+  int_ScreenWidth=$(${cmd_TPUT} cols)
+  ## echo ${int_ScreenWidth}
+  #int_ScreenWidth=${COLUMNS}
   dir_Check="${dir_New} ${dir_Completed} ${dir_Failed} ${dir_Running}"
 
   int_Column1Width=4        # Selection number
@@ -65,11 +67,13 @@ fn_ShowTop()
   ## ===============================================================================
   typeset local int_TitleWidth
   (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
-  clear
+  #clear
+  ${cmd_CLEAR}
 
   ## Check the current width of the screen
   ## =====================================
-  int_ScreenWidth=$(tput cols)
+  int_ScreenWidth=$(${cmd_TPUT} cols)
+  #int_ScreenWidth=${COLUMNS}
   ##(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
   (( int_DatePut = ${int_ScreenWidth} - 21 ))
 
@@ -88,7 +92,7 @@ fn_ShowTop()
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
 		 "${int_DiskUsage}" "${str_License}"
-  tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
+  [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
   ## Reset the Array for Jobs and States
@@ -140,6 +144,9 @@ fn_ShowJobs2()
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
   	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+#	int_ScreenWidth=$(echo ${COLUMNS})
+#    int_ScreenWidth=$(tput cols)
+#	echo $int_ScreenWidth
     ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
       -v            state=${str_State} \
       -v          linenum=${int_Count} \
@@ -263,7 +270,8 @@ readonly -f fn_ShowTasks
 
 fn_JobInfo()
 {
-      clear
+      ${cmd_CLEAR}
+      #clear
       fn_ShowTop
       fn_ShowLine "-" "Job Details"
       typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")

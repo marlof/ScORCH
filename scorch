@@ -79,6 +79,7 @@ typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
 
 ## User EDITOR preference
 typeset         cmd_Editor=${EDITOR:-vi}
+echo ${COLUMNS}
 
 fn_BaseDir()
 {

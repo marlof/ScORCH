@@ -50,8 +50,8 @@ fnE_MkOpenScorch()
     echo "Creating EnterpriseScorch"
     cd ${dir_Base}
     tar cfz ${file_EnterpriseScorch}.tar.gz ${str_ProgramName} $(basename ${dir_Functions})
-    md5sum    ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.md5
-    sha256sum ${file_EnterpriseScorch}.tar > ${file_EnterpriseScorch}.sha256
+    md5sum    ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.md5
+    sha256sum ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.sha256
     
   fi
   
