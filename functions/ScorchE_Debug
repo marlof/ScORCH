@@ -1,7 +1,9 @@
 #
 # Copyright 2016 WebMarcIT Ltd
 #
-# This is the propitiatory .....
+# Unauthorised copying of this file, via any medium is strictly prohibited
+# This is the proprietary software of WebMarcIT Ltd
+# Written by marc@webmarcit.com
 
 fnE_Set()
 {
@@ -40,7 +42,7 @@ fnE_MkOpenScorch()
       cat ${file_EachFunction} | grep -v "^##" >> ${file_OpenScorch}  	
     done
     sed -n -e '/^#FOOTER$/,//{//!p}' ${dir_Base}/${str_ProgramName} >> ${file_OpenScorch}
-    echo "Created ${file_OpenScorch} $(date) by $(whoami)"
+    echo "Created ${file_OpenScorch} $(date) by ${str_User}"
     ls -l     ${file_OpenScorch}
     md5sum    ${file_OpenScorch} > ${file_OpenScorch}.md5
     sha256sum ${file_OpenScorch} > ${file_OpenScorch}.sha256
@@ -52,10 +54,8 @@ fnE_MkOpenScorch()
     tar cfz ${file_EnterpriseScorch}.tar.gz ${str_ProgramName} $(basename ${dir_Functions})
     md5sum    ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.md5
     sha256sum ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.sha256
-    
   fi
-  
-  
+
   sleep 5
 
 }

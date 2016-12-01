@@ -37,10 +37,13 @@ fn_CheckSetUp()
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Fixing dir_Deleted \
                                  dir_Running dir_Superseded dir_Completed dir_Tmp dir_Plugins \
-                                 dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock"
+                                 dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
+  echo Failed $dir_Failed
+  echo Fixing $dir_Fixing
+ # sleep 5
   for p_Variable in ${arr_Directories} ; do
-    if [[ ! -d ${!p_Variable} ]] ; then
+    if [[ ! -d "${!p_Variable}" ]] ; then
       printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
       [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
 
@@ -63,11 +66,14 @@ fn_CheckSetUp()
   printf "\n\tcmd_AWK: ${cmd_AWK}\n"
   
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
-  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="printf \n\n\n\n\n\n\n"
+  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo"
+  
+#  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories or commands.\n"
     printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
+	sleep 2
     exit 1
   fi
 
@@ -108,29 +114,41 @@ fn_HouseKeeping()
 
   typeset local     int_MaxJobs=${int_MaxShown}
   typeset local int_DaysDeleted=10
-  typeset local  int_DaysActive=20
+  typeset local  int_DaysActive=30
   
   # Need to add one for the head/tail to be valid
   (( int_MaxJobs +=1 ))
 
   # First remove max links from completed
-  [ $(ls ${dir_Completed}/* 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find ${dir_Completed}/* ! -newer ${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1) -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
+  SAVEIFS=$IFS
+  IFS=$(echo -en "\n\b")
+
+  [ $(ls "${dir_Completed}/*" 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
-  find  "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
+  find -H "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
+  find "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Remove old deleted links
-  find  "${dir_Deleted}"/${str_JobPrefix}*   -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
-
-  # Archive active jobs
-  find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec tar uf ${dir_Active}/active.tar "{}" + 2>/dev/null && find "${dir_Active}"/${str_JobPrefix}*    -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
+  find "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
   
+  # Archive old active jobs
+  ( cd "${dir_Active}" && find ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
+  find "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
+
+  # Touch active New etc jobs (Sometimes old jobs are still being used even after a long time)
+  # Recover jobs jobs that have taking a long time to progress 
+  #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
+  arr_Recover=$( cd "${dir_New}" && find . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
+  echo ${arr_Recover}
+  for file_Recover in ${arr_Recover} ; do
+    ( cd "${dir_Active}" && tar xf active.tar ${file_Recover} )
+  done
+
+  IFS=£{SAVEIFS}
   # Clean Up cache files
   find "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
   find "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null
-
-  # Show jobs that have mis-behaved 
-  find "${dir_Completed}" "${dir_New}" -type f 
 }
 readonly -f fn_HouseKeeping
 
@@ -142,8 +160,8 @@ fn_GetAnswer()
 
   printf "\n e${dis_ULOn}X${dis_ULOff}it.\n\n"
   printf " Enter choice "
-  [[ "${b_Range}" ]] && printf "(range enabled : i.e 1-3,7,8) "
-  printf ":"
+  [[ "${b_Range}" ]] && printf "(range enabled : i.e 1-3,7,8)"
+  printf ": "
   read str_Answer
   str_Answer=${str_Answer:-"x"}
 }
@@ -158,12 +176,12 @@ fn_Range()
 
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
-#      typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
-#      typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
-      typeset local int_First=${int_EachItem#*-}
-      typeset local  int_Last=${int_EachItem%%-*}
+#     typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
+#     typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+      typeset local  int_First=${int_EachItem%%-*}
+      typeset local int_Last=${int_EachItem#*-}
 
-      if [ ${int_First} -lt ${int_Last} ] ; then
+      if [ ${int_First} -le ${int_Last} ] ; then
         while [[ ${int_First} -le ${int_Last} ]] ; do
           printf "${int_First} "
           ((int_First+=1))
@@ -181,6 +199,18 @@ fn_Range()
 }
 readonly -f fn_Range
 
+fn_RangeTUI()
+{
+  typeset local arr_Input=${1}
+  typeset local arr_Range=${2:-0}
+  typeset local int_Count=0
+  for each_Input in ${arr_Input} ; do
+    (( int_Count++ ))
+    [[ "$(echo ${arr_Range} | grep -w ${int_Count})" ]] && c_Selected=">" || c_Selected=" "
+    echo "[${c_Selected}] ${each_Input}"
+  done
+}
+
 fn_CreateFile()
 {
   typeset local file_Name="${1}"
@@ -195,7 +225,7 @@ readonly -f fn_CreateFile
 fn_GetResumePoint()
 {
   typeset local file_Log="${1}"
-  tail -10 "${file_Log}" | grep "Resume point:" | tail -1 | awk -F":" '{print $NF}'
+  tail -500 "${file_Log}" | grep "Resume point:" | tail -1 | ${cmd_AWK} -F":" '{print $NF}'
 }
 readonly -f fn_GetResumePoint
 
@@ -206,7 +236,7 @@ fn_UpdateResumePoint()
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   [[ "$(dirname ${file_Job})" = "${dir_Failed}" ]] && fn_LogWhy
   (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
-  cat "${file_Job}" | sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ > "${file_Job}".tmp
+  sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ "${file_Job}" > "${file_Job}".tmp
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/dev/null
   [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
@@ -221,12 +251,17 @@ readonly -f fn_PressEnter
 
 fn_Trap()
 {
-  echo "$(${fn_LogDate}) ${1}" >> "${file_ProgLog}"
+  echo "${fn_LogDate} ${1}" >> "${file_ProgLog}"
   fn_HouseKeeping
   exit 1
 }
+trap "fn_Trap \"TERMINATED: User ${str_User} probably logged out \"" 1
+trap "fn_Trap \"TERMINATED: User ${str_User} probably ctrl-c \"" 2
+trap "fn_Trap \"TERMINATED: Probably via kill \"" 15
 readonly -f fn_Trap
 
-trap "fn_Trap \"TERMINATED: User $(whoami) probably logged out \"" 1
-trap "fn_Trap \"TERMINATED: User $(whoami) probably ctrl-c \"" 2
-trap "fn_Trap \"TERMINATED: Probably via kill \"" 15
+fn_Select()
+{
+  typeset -a arr_Temp=
+}
+readonly fn_Select

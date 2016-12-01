@@ -24,7 +24,7 @@ fn_Manager()
   typeset local char_Choice=
   while : ; do
     fn_ShowTop
-	fn_ShowJobs2 superseded failed fixing running starting pending queued new completed
+	fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
     fn_ShowLine "="
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
@@ -34,7 +34,7 @@ fn_Manager()
     case ${char_Choice} in
 
       ## Create a new job
-      n | N ) "${dir_Base}"/${str_ProgramName} -new -p ${dir_Plugins} -j ${dir_Job};;
+      n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
 	  ## View CSV
 	  c | C ) ${cmd_Editor} "${file_CSV}" ;;
@@ -60,6 +60,7 @@ fn_Manager()
       set )   fnE_Set ;;
 	  
       x | X ) break ;;
+	      * ) fn_SetLayout ;;
     esac
 	fn_RunJobs
   done
@@ -84,6 +85,7 @@ fn_ViewJob()
   fi
   [ -f "${file_View}" ] && rm -f "${file_View}"
 }
+readonly -f fn_ViewJob
 
 fn_EditJob()
 {
@@ -97,8 +99,8 @@ fn_EditJob()
       fn_Audit "${file_Orig}" "edited job"
   fi
   [ -f "${file_Edit}" ] && rm -f "${file_Edit}"
-  
 }
+readonly -f fn_EditJob
 
 fn_AdminFunctions()
 {
@@ -116,7 +118,7 @@ fn_AdminFunctions()
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
-      read -t 10 char_Choice
+      read -t 30 char_Choice
 
       case ${char_Choice} in
 	
@@ -135,7 +137,7 @@ fn_AdminFunctions()
         ## Delete Job(s)
         d | D ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" deleted
-                echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,$(whoami)" >> "${file_CSV}"
+                echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
                 mv "${file_Link}" "${dir_Deleted}"
                 return 0 ;;
 

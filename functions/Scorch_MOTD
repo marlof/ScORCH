@@ -49,9 +49,9 @@ fn_EditMOTD()
   read str_MOTD
 
   if [ "${str_MOTD}" = "" ] ;then
-    echo "-$(date +'%D %T') $(whoami): cleared message+" >> "${file_MOTD}"
+    echo "-$(date +'%D %T') ${str_User}: cleared message+" >> "${file_MOTD}"
   else
-    echo "+$(date +'%D %T') $(whoami): ${str_MOTD}" >> "${file_MOTD}"
+    echo "+$(date +'%D %T') ${str_User}: ${str_MOTD}" >> "${file_MOTD}"
   fi 
 }
 readonly -f fn_EditMOTD

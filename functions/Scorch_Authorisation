@@ -27,6 +27,6 @@ fn_CheckAuth()
   ##     marc:full:all
   ##     root::all
   ##     user::demo
-
-  echo "Authority given - stubbed"
+  printf "\nAuthority - Enterprise feature"
+  sleep 1
 }

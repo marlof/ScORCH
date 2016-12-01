@@ -1,7 +1,10 @@
 #
 # Copyright 2016 WebMarcIT Ltd
 #
-# This is the propitiatory .....
+# Unauthorised copying of this file, via any medium is strictly prohibited
+# This is the proprietary software of WebMarcIT Ltd
+# Written by marc@webmarcit.com
+
 fn_GetRequest()
 {
   ## Receive the request from a file or interactively
@@ -97,7 +100,7 @@ fn_ProcessRequest()
         fi
 
         fn_JobFooter "${file_Job}"
-        echo "$(${fn_LogDate}) Created by:$(whoami) Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+        echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
 
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
@@ -195,7 +198,26 @@ fn_CheckAuth()
   ##     marc:full:all
   ##     root::all
   ##     user::demo
+  printf "\nChecking authority: "
+  file_Users=${dir_Etc}/users
+  if [ ! -r ${file_Users} ] ; then
+    if [ -f ${file_Users} ] ; then
+      echo "The file ${file_Users} is not readable."
+	  ls -l ${file_Users}
+	  exit 1
+    else
+      echo "The users file does not exist. Create the users file ${file_Users}"
+	  exit 1
+    fi
+  fi
 
-  echo "Authority given - stubbed"
+  grep "^${str_User}:" ${file_Users}
+  str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
+  case ${str_Authority} in
+    P | POWER ) b_Power=1 ;      str_Authority="Power User" ;;
+	R | REST* ) b_Restricted=1 ; str_Authority="View Only"  ;;
+	F | FULL  )                  str_Authority="Normal"     ;;
+	        * ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator." ; exit 1 ;;
+  esac
 }
 readonly -f fn_CheckAuth

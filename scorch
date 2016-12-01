@@ -196,7 +196,7 @@ fn_LoadFunctions()
   typeset local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
-    SAVEIFS=$IFS
+	SAVEIFS=$IFS
     IFS=$(echo -en "\n\b")
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*")
@@ -206,7 +206,7 @@ fn_LoadFunctions()
 
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
-        if [[ $? = 0 ]] ; then
+		if [[ $? = 0 ]] ; then
           [[ ${b_Display} ]] || printf "%10s\n" "OK"
         else
           printf "%10s\n" "ERROR" && b_Errors=1
@@ -215,10 +215,10 @@ fn_LoadFunctions()
         echo "Cannot access <${str_EachFile}>"
       fi
     done
-    IFS=$SAVEIFS
+	IFS=$SAVEIFS
   else
     :
-    ##echo "$(pwd) ${dir_Directory} could not be found"
+	##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
   [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
@@ -291,7 +291,7 @@ if [[ "${b_Background}" ]] ; then
   echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"
   while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do 
     fn_RunJobs
-    sleep 60
+	sleep 60
   done
   fn_RunJobs # one more try just to mop up
 else
