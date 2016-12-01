@@ -62,24 +62,26 @@
 ##                       Cleaned up some code
 ## 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
 ## 1.14 160126 marc		 Indicate Job Ownwer
-##                       pauseTask breakTask added
+##                       pauseTask added
 ##                       breakTask added
 ## 1.15 160211 marc      Protected header comment lines from stripping when creating openscorch
 ##                       GAWK and NAWK are both checked (note NAWK does not have upper/lower options)
 ##                       Improved "owner" check(g|n)awk command
 ##                       JobID changed to JobID.<program name>
+## 1.16 160713 marc      Fixed job owner reporting
+##                       Old active jobs recovered from archive
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.15"
-
-typeset    str_ProgramName=$(basename "$0")
-typeset            dir_Run=$(dirname "$0")
+typeset str_ProgramVersion="1.16"
+typeset    str_ProgramName="$(basename "$0")"
+typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
 typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
+typeset           str_User=$(whoami)
 
 ## User EDITOR preference
-typeset         cmd_Editor=${EDITOR:-vi}
-echo ${COLUMNS}
+typeset         cmd_Editor="${EDITOR:-vi}"
+echo "${COLUMNS}"
 
 fn_BaseDir()
 {
@@ -96,35 +98,34 @@ typeset          str_OS=$(uname -o)
 
 ## Directory definitions
 ## =====================
-typeset         dir_Etc=${dir_Base}/etc
-typeset         dir_Var=${dir_Base}/var
-typeset         dir_Log=${dir_Var}/log
-typeset        dir_Lock=${dir_Var}/locks
-typeset         dir_Tmp=${dir_Base}/tmp
-typeset     dir_Plugins=${dir_Base}/plugins
-typeset     str_Plugins=$(basename "${dir_Plugins}")
-typeset   dir_Functions=${dir_Base}/functions
-typeset   str_Functions=$(basename "${dir_Functions}")
+typeset         dir_Etc="${dir_Base}/etc"
+typeset         dir_Var="${dir_Base}/var"
+typeset         dir_Log="${dir_Var}/log"
+typeset        dir_Lock="${dir_Var}/locks"
+typeset         dir_Tmp="${dir_Base}/tmp"
+typeset     dir_Plugins="${dir_Base}/plugins"
+typeset     str_Plugins="$(basename "${dir_Plugins}")"
+typeset   dir_Functions="${dir_Base}/functions"
+typeset   str_Functions="$(basename "${dir_Functions}")"
 
 ## Job definitions
 ## ===============
-typeset         dir_Job=${dir_Base}/jobs
+typeset         dir_Job="${dir_Base}/jobs"
 typeset       int_Count=1
-typeset        file_CSV=${dir_Log}/jobs.csv
-
-typeset         dir_New=${dir_Job}/new
-typeset     dir_Running=${dir_Job}/running
-typeset      dir_Failed=${dir_Job}/failed
-typeset      dir_Fixing=${dir_Job}/fixing
-typeset   dir_Completed=${dir_Job}/completed
-typeset    dir_Starting=${dir_Job}/starting
-typeset      dir_Queued=${dir_Job}/queued
-typeset  dir_Superseded=${dir_Job}/superseded
-typeset     dir_Deleted=${dir_Job}/deleted
-typeset    dir_Archived=${dir_Job}/archived
-typeset     dir_Pending=${dir_Job}/pending
-typeset      dir_Active=${dir_Job}/active
-##typeset      file_JobID=${dir_Var}/jobid
+typeset        file_CSV="${dir_Log}/jobs.csv"
+typeset         dir_New="${dir_Job}/new"
+typeset     dir_Running="${dir_Job}/running"
+typeset      dir_Failed="${dir_Job}/failed"
+typeset      dir_Fixing="${dir_Job}/fixing"
+typeset   dir_Completed="${dir_Job}/completed"
+typeset    dir_Starting="${dir_Job}/starting"
+typeset      dir_Queued="${dir_Job}/queued"
+typeset  dir_Superseded="${dir_Job}/superseded"
+typeset     dir_Deleted="${dir_Job}/deleted"
+typeset    dir_Archived="${dir_Job}/archived"
+typeset     dir_Pending="${dir_Job}/pending"
+typeset      dir_Active="${dir_Job}/active"
+##typeset      file_JobID="${dir_Var}/jobid"
 
 typeset         b_Group=
 typeset    b_Background=
@@ -134,31 +135,32 @@ typeset int_DispatchSleep=13
 
 fn_ResetJobDefinitions()
 {
-         dir_New=${dir_Job}/new
-     dir_Running=${dir_Job}/running
-      dir_Failed=${dir_Job}/failed
-   dir_Completed=${dir_Job}/completed
-    dir_Starting=${dir_Job}/starting
-      dir_Queued=${dir_Job}/queued
-  dir_Superseded=${dir_Job}/superseded
-     dir_Deleted=${dir_Job}/deleted 
-    dir_Archived=${dir_Job}/archived
-      dir_Active=${dir_Job}/active
-##      file_JobID=${dir_Var}/jobid
+         dir_New="${dir_Job}/new"
+     dir_Running="${dir_Job}/running"
+      dir_Failed="${dir_Job}/failed"
+   dir_Completed="${dir_Job}/completed"
+    dir_Starting="${dir_Job}/starting"
+      dir_Queued="${dir_Job}/queued"
+  dir_Superseded="${dir_Job}/superseded"
+     dir_Deleted="${dir_Job}/deleted"
+    dir_Archived="${dir_Job}/archived"
+      dir_Active="${dir_Job}/active"
+##      file_JobID="${dir_Var}/jobid"
 }
 
 ## Dispatcher definitions
 ## ======================
 typeset int_DispatcherPID=0
 typeset   int_DispatchMax=10
-typeset      file_JobLock=${dir_Lock}/JobLock
-typeset  file_DispatchLog=${dir_Log}/dispatch.log
-typeset file_DispatchLock=${dir_Lock}/dispatch.lck
+typeset      file_JobLock="${dir_Lock}/JobLock"
+typeset  file_DispatchLog="${dir_Log}/dispatch.log"
+typeset file_DispatchLock="${dir_Lock}/dispatch.lck"
 
 ## Layout Option
 ## =============
-typeset      int_MaxShown=${SHOWMAX:-30}
-typeset       int_Refresh=${REFRESH:-10}
+typeset      int_MaxShown="${SHOWMAX:-30}"
+typeset       int_Refresh="${REFRESH:-20}"
+typeset          int_Tail="${TAIL:-25}"
 
 ## Job states
 ## ==========
@@ -169,6 +171,11 @@ typeset       int_Refresh=${REFRESH:-10}
 ## ===========
 typeset      file_ProgLog="${dir_Log}/${str_ProgramName}.log"
 
+## Authority
+## =========
+typeset str_Authority=
+typeset       b_Power=0
+typeset  b_Restricted=0
 
 ## Load Functions
 ## ==============
@@ -189,14 +196,17 @@ fn_LoadFunctions()
   typeset local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
+    SAVEIFS=$IFS
+    IFS=$(echo -en "\n\b")
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
+    arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*")
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
         [[ ${b_Display} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
 
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
-		if [[ $? = 0 ]] ; then
+        if [[ $? = 0 ]] ; then
           [[ ${b_Display} ]] || printf "%10s\n" "OK"
         else
           printf "%10s\n" "ERROR" && b_Errors=1
@@ -205,9 +215,10 @@ fn_LoadFunctions()
         echo "Cannot access <${str_EachFile}>"
       fi
     done
+    IFS=$SAVEIFS
   else
     :
-	##echo "$(pwd) ${dir_Directory} could not be found"
+    ##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
   [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
@@ -246,7 +257,6 @@ fi
 
 #HEADER
 #RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE
-
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
 if [[ ! -z $ENTERPRISE ]] ; then
   fn_LoadFunctions "${dir_Functions}" "ScorchE_"
@@ -260,6 +270,7 @@ fi
 # Area reserved for loading OPENSCORCH - Do not remove
 #FOOTER
 
+fn_CheckAuth
 fn_CheckSetUp
 fn_CheckDispatcher
 
@@ -277,10 +288,10 @@ fn_CreateFile "${file_CSV}"
 if [[ "${b_Background}" ]] ; then
   # ADD LOOP HERE FOR JOB CHECKS
   typeset local b_Finished=1
-  echo "$(${fn_LogDate}) $(whoami) Running in background to complete queued jobs"
-  while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=$(whoami)" {} \;)" ]] ; do 
+  echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"
+  while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do 
     fn_RunJobs
-	sleep 60
+    sleep 60
   done
   fn_RunJobs # one more try just to mop up
 else
