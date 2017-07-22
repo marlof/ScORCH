@@ -62,13 +62,7 @@ fn_Dispatcher()
                fn_Audit "${file_EachJob}" "Cyclic dependency. Failing job" "rules"
                mv ${dir_Pending}/${file_EachJob} ${dir_Failed}
             fi
-            ##fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules"
-##echo "file_EachParent ${file_EachParent}"
-##echo  "basename \$(dirname \$(find ${dir_Job} -type l -name ${file_EachParent}))"
-##set -x
-            str_ParentState=$(basename $(dirname $(find ${dir_Job} -type l -name "${file_EachParent}") 2>/dev/null ) 2>/dev/null)
-##set +x
-##echo "PARENT state is ${str_ParentState}"
+
             case ${str_ParentState} in
               completed ) fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules" ;;
               superseded | failed )                          b_ParentComplete=1 ;;

@@ -201,6 +201,9 @@ readonly -f fn_Range
 
 fn_RangeTUI()
 {
+  # arr_List="a b c d e f g"
+  # fn_RangeTUI "${arr_List}" "$(fn_Range "1,3,5,7")"
+  # fn_RangeTUI "${arr_List}" "$(fn_Range "1-4,7")"
   typeset local arr_Input=${1}
   typeset local arr_Range=${2:-0}
   typeset local int_Count=0
