@@ -22,9 +22,10 @@
 fn_Manager()
 {
   typeset local char_Choice=
+  tput rmam
   while : ; do
     fn_ShowTop
-	fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
+    fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
     fn_ShowLine "="
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
@@ -64,6 +65,7 @@ fn_Manager()
     esac
 	fn_RunJobs
   done
+  tput smam
 }
 readonly -f fn_Manager
 
