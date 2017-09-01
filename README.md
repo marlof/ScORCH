@@ -19,7 +19,7 @@ Standard Features
                       
 Enterprise features
 
-                      Authenication / Security  Module
+                      Authentication / Security  Module
 
                       Alternative Paths
                       
