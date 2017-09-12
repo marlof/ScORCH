@@ -37,7 +37,7 @@ fn_SetLayout()
   int_ScreenWidth=$(${cmd_TPUT} cols)
   ## echo ${int_ScreenWidth}
   #int_ScreenWidth=${COLUMNS}
-  
+
   # Purposely set one per line to cope with white space in directory names
   arr_Checks="
 ${dir_New}
@@ -83,20 +83,20 @@ fn_ShowTop()
   (( int_DatePut = ${int_ScreenWidth} - 21 ))
 
   ## Collect disk usage to display
-  ##int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 44 ) print "[41m"$5"[0m" else print $5}')
-  int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 80 ) { 
-                                        printf "[41m"$5"%" } 
-	                                  else { 
-	                                    printf $5"%"
-									  }
-                                      printf "[0m" }')
+  ##int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 44 ) print ""$5"" else print $5}')
+  int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 80 ) {
+                                        printf ""$5"%" }
+                                          else {
+                                            printf $5"%"
+                                                                          }
+                                      printf "" }')
   ## Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')
   int_DispatcherPID=${int_DispatcherPID:-0}
   printf " %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-		 "${int_DiskUsage}" "${str_License}" "${str_Authority}"
+                 "${int_DiskUsage}" "${str_License}" "${str_Authority}"
   [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
@@ -109,7 +109,7 @@ readonly -f fn_ShowTop
 fn_ShowLine()
 {
   ## Show a line of dashes unless a dirrent character is past or character and title is passed
-  
+
   ## Check if parameters have been past
   ## ==================================
   typeset local cha_LineChar=${1:-"-"}
@@ -148,8 +148,13 @@ fn_ShowJobs2()
 
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
+<<<<<<< HEAD
   	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 #	echo $int_ScreenWidth
+=======
+        [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+#       echo $int_ScreenWidth
+>>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
 #echo "$(pwd)"
 #echo "${file_Cache}"
     ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
@@ -157,15 +162,15 @@ fn_ShowJobs2()
       -v             user=${str_User} \
       -v          linenum=${int_Count} \
       -v          dir_Log="${dir_Log}" \
-	  -v       dir_Active="${dir_Active}" \
-	  -v       file_Cache="${file_Cache}" \
-	  -v           Colour=${str_StatusColour} \
-	  -v  int_ScreenWidth=${int_ScreenWidth} \
+          -v       dir_Active="${dir_Active}" \
+          -v       file_Cache="${file_Cache}" \
+          -v           Colour=${str_StatusColour} \
+          -v  int_ScreenWidth=${int_ScreenWidth} \
       -v int_Column1Width=${int_Column1Width} \
       -v int_Column2Width=${int_Column2Width} \
       -v int_Column3Width=${int_Column3Width} \
       -v int_Column4Width=${int_Column4Width} \
-	  -v int_Column5Width=${int_Column5Width} \
+          -v int_Column5Width=${int_Column5Width} \
       -v int_Column6Width=${int_Column6Width} \
       -v int_MaxShown=${int_MaxShown} 'BEGIN {
        FS = "_"
@@ -174,25 +179,34 @@ fn_ShowJobs2()
       printf Colour
 
       ## Check Owner of job
+<<<<<<< HEAD
 	  ##system("echo " user
 	  ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
 #      system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
 	  system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
+=======
+          ##system("echo " user
+          ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
+#      system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
+          system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
+>>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
       printf "%3s", linenum
       system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
 
       if ( $2 != "" ) {
-        printf "%7s|", $2   
+        printf "%7s|", $2
       }
       else {
         printf "%7s|", substr($3,1,7)
       }
-	  int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
+          int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
                    - int_Column4Width  - int_Column5Width
  ##printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
       printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
       system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
 #      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
+<<<<<<< HEAD
+=======
       system("echo arr_States["linenum"]="state" >> "file_Cache)
       system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
 
@@ -202,10 +216,109 @@ fn_ShowJobs2()
       system("echo int_Count="linenum" >> "file_Cache )
     }'
     ##. ${file_Cache}
-#	cat "${file_Cache}"
+#       cat "${file_Cache}"
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
   done
 }
+#readonly -f fn_ShowJobs2
+
+fn_DisplayTime()
+{
+
+  local int_Time=$1
+  local int_Time2=${2:-}
+  [ ! -z $int_Time2 ] && int_Time=$((int_Time2-int_Time))
+  local int_Days=$((int_Time/60/60/24))
+  local int_Hours=$((int_Time/60/60%24))
+  local int_Minutes=$((int_Time/60%60))
+  local int_Seconds=$((int_Time%60))
+
+  if [[ ${int_Days} != 0 ]] ; then
+    printf '%dd%02d:%02d:%02d\n' $int_Days $int_Hours $int_Minutes $int_Seconds
+  else
+    printf '%02d:%02d:%02d\n' $int_Hours $int_Minutes $int_Seconds
+  fi
+}
+
+fn_ShowJobs3()
+{
+  ## Show job details for each job state past. The value passed is one or more directory names
+  ## =========================================================================================
+  typeset local str_EachJobState= arr_JobList= str_StatusColour=""
+  typeset local str_StatusColour="${dis_Reset}"
+
+  ## Due to the fact that directories may contain "spaces" so "cd" there first
+  ## =========================================================================
+  cd "${dir_Job}"
+  int_Count=1
+
+  find ${@} -type l
+
+  file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
+  echo "#$$" > "${file_Cache}"
+  int_ScreenWidth=$(echo ${COLUMNS})
+  int_ScreenWidth=$(tput cols)
+  for str_State in ${@} ; do
+  #  printf "${dis_Reset}"
+
+    [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
+    [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
+        [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+#       echo $int_ScreenWidth
+#echo "$(pwd)"
+#echo "${file_Cache}"
+    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
+      -v            state=${str_State} \
+      -v             user=${str_User} \
+      -v          linenum=${int_Count} \
+      -v          dir_Log="${dir_Log}" \
+          -v       dir_Active="${dir_Active}" \
+          -v       file_Cache="${file_Cache}" \
+          -v           Colour=${str_StatusColour} \
+          -v  int_ScreenWidth=${int_ScreenWidth} \
+      -v int_Column1Width=${int_Column1Width} \
+      -v int_Column2Width=${int_Column2Width} \
+      -v int_Column3Width=${int_Column3Width} \
+      -v int_Column4Width=${int_Column4Width} \
+          -v int_Column5Width=${int_Column5Width} \
+      -v int_Column6Width=${int_Column6Width} \
+      -v int_MaxShown=${int_MaxShown} 'BEGIN {
+       FS = "_"
+    }
+    linenum <= int_MaxShown {
+      printf Colour
+
+      ## Check Owner of job
+      system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
+      printf "%3s", linenum
+      system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
+
+      if ( $2 != "" ) {
+        printf "%7s|", $2
+      }
+      else {
+        printf "%7s|", substr($3,1,7)
+      }
+      int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
+                   - int_Column4Width  - int_Column5Width
+      printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
+      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
+#      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
+>>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
+      system("echo arr_States["linenum"]="state" >> "file_Cache)
+      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
+
+      linenum++
+    }
+    END {
+      system("echo int_Count="linenum" >> "file_Cache )
+    }'
+    ##. ${file_Cache}
+#       cat "${file_Cache}"
+    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
+  done
+}
+<<<<<<< HEAD
 #readonly -f fn_ShowJobs2
 
 fn_DisplayTime()
@@ -303,6 +416,8 @@ fn_ShowJobs3()
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
   done
 }
+=======
+>>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
 readonly -f fn_ShowJobs3
 
 
@@ -317,14 +432,14 @@ fn_FormatTasks()
   cat "${file_Job}" | ${cmd_AWK} 'BEGIN {
               linenum=1
             }
-            $0 ~ "^fn_Task_[1-9]" { 
-			  #print " "linenum, $2, $3, $4, NR, NF
-			  int_Last=NF-7
-			  if ( $3 != "&" ) {
-			  printf "%4s : ",linenum
-			  for ( x=2 ; x<int_Last ; x++ ) {printf " "$x}
+            $0 ~ "^fn_Task_[1-9]" {
+                          #print " "linenum, $2, $3, $4, NR, NF
+                          int_Last=NF-7
+                          if ( $3 != "&" ) {
+                          printf "%4s : ",linenum
+                          for ( x=2 ; x<int_Last ; x++ ) {printf " "$x}
               linenum++
-			  printf "\n" }
+                          printf "\n" }
             }
 
             END {
@@ -357,14 +472,14 @@ fn_ShowTasks()
     if [ "${str_Answer}" != "x" ] ; then
       for int_Answer in ${str_Answer} ; do
       if [[ ${int_Answer} -le 0 ]] || [[ ${int_Answer} -ge ${int_Count} ]] ; then
-        printf "Out of range" 
+        printf "Out of range"
         fn_PressEnter
         return 0
       fi
 
-	  ## awk replaces 
-		##   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
-		fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
+          ## awk replaces
+                ##   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
+                fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
       done
     else
       echo "Nothing chosen"
@@ -383,22 +498,22 @@ fn_JobInfo()
       typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
       echo " ${str_JobOwner}"
       echo " State at selection : ${str_JobState}"
-	  basename ${file_ActiveJob}
-	  ##pgrep -a ${$(basename ${file_ActiveJob})::15}
-	  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
-	  
+          basename ${file_ActiveJob}
+          ##pgrep -a ${$(basename ${file_ActiveJob})::15}
+          [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+
       echo ""
       ls -lL "${file_ActiveJob}"
       ls -lL "${file_Log}"
       echo ""
-	  fn_ShowRules
-	  fn_ShowLine "-" "Template"
-	  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
-	  echo ""
+          fn_ShowRules
+          fn_ShowLine "-" "Template"
+          sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
+          echo ""
       fn_ShowLine "-" "Log Summary"
       tail -${int_Tail} "${file_Log}"
       echo ""
-      fn_ShowLine "-" 
+      fn_ShowLine "-"
       printf "\n${dis_Reset}"
 }
 
@@ -409,9 +524,9 @@ fn_ContextMenu()
   ##    specific mode (where a directory name is passed)
   ## and
   ##    generic mode (where it caters for all directories)
- 
+
   typeset local str_State=${1:-}
-  
+
   typeset local b_QueuedJobs=
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
@@ -423,22 +538,22 @@ fn_ContextMenu()
     case ${str_State} in
       queued  | pending ) b_QueuedJobs=1 ;;
       failed            ) b_FailedJobs=1 ;;
-	  fixing            ) b_FailedJobs=1 ;;
+          fixing            ) b_FailedJobs=1 ;;
       new               ) b_NewJobs=1 ;;
       running | pending ) b_RunningJobs=1 ;;
     esac
   else
     ## Generic Mode
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-	[[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
-	#echo "echo ${arr_States[@]} | grep -i queued)"
+        [[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
+        #echo "echo ${arr_States[@]} | grep -i queued)"
     [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
     [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_FailedJobs=1 && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
   fi
-  
+
   [[ "${b_QueuedJobs}" ]]                              && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
   [[ "${b_RunningJobs}" ]] || [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}" ]]                              && printf "${dis_ULOn}R${dis_ULOff}esume | "

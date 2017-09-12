@@ -15,7 +15,7 @@
 ## limitations under the License.
 ##
 ## scorch
-## 
+##
 ## VARIABLE naming convention
 ## Variable names will use <prefix Hungarian Notation>_CamelCase
 ## b    boolean                  TRUE,1 | FALSE,0
@@ -29,14 +29,14 @@
 ## <hn>_ext_<var name>     A variable that has been derived from running an external script or
 ##                         command that might change
 ## <hn>_Local_<var name>   Variable that is defined as local for the function it is used for
-## <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a 
+## <hn>_Global_<var name>  Global variable that can be used in plugins when adding tasks to a
 ##                         scorch job
 ## <hn>_Job_<var name>     Variables that are used when the job is running. Used to protect
 ##                         GLOBAL variable pollution
 ## =============================================================================================
 ## History
-## 1.0	     marc        First running demo
-## 1.1	     marc        Reversed and improved fn_RunJobs
+## 1.0       marc        First running demo
+## 1.1       marc        Reversed and improved fn_RunJobs
 ## 1.2       marc        Improved fn_ShowJobs2, pause feature
 ## 1.3       marc        Improved task list, began lock manager and task manager
 ## 1.4       marc        Further improvements to task list
@@ -61,7 +61,7 @@
 ## 1.12 151223 marc      Added fix in progress
 ##                       Cleaned up some code
 ## 1.13 160114 marc      Added preferences for SHOWMAX and REFRESH
-## 1.14 160126 marc		 Indicate Job Ownwer
+## 1.14 160126 marc              Indicate Job Ownwer
 ##                       pauseTask added
 ##                       breakTask added
 ## 1.15 160211 marc      Protected header comment lines from stripping when creating openscorch
@@ -197,7 +197,7 @@ fn_LoadFunctions()
   typeset local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
-	SAVEIFS=$IFS
+        SAVEIFS=$IFS
     IFS=$(echo -en "\n\b")
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*")
@@ -207,7 +207,7 @@ fn_LoadFunctions()
 
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
-		if [[ $? = 0 ]] ; then
+                if [[ $? = 0 ]] ; then
           [[ ${b_Display} ]] || printf "%10s\n" "OK"
         else
           printf "%10s\n" "ERROR" && b_Errors=1
@@ -216,10 +216,10 @@ fn_LoadFunctions()
         echo "Cannot access <${str_EachFile}>"
       fi
     done
-	IFS=$SAVEIFS
+        IFS=$SAVEIFS
   else
     :
-	##echo "$(pwd) ${dir_Directory} could not be found"
+        ##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
   [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
@@ -256,7 +256,7 @@ if [ $# -ne 0 ] ; then
       -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
       -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
       -install    ) b_Install=1 ;;
-      ## Not yet working	  -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
+      ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
     shift
   done
@@ -297,9 +297,9 @@ if [[ "${b_Background}" ]] ; then
   # ADD LOOP HERE FOR JOB CHECKS
   typeset local b_Finished=1
   echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"
-  while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do 
+  while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do
     fn_RunJobs
-	sleep 60
+        sleep 60
   done
   fn_RunJobs # one more try just to mop up
 else
@@ -313,4 +313,8 @@ fi
 fn_HouseKeeping
 
 tput sgr0 2 >/dev/null
+<<<<<<< HEAD
 exit 0
+=======
+exit 0
+>>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41

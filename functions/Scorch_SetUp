@@ -50,31 +50,31 @@ fn_CheckSetUp()
 
     fi
   done
-  
+
   typeset local arr_Files="${file_DispatchLog}"
   printf "\n\n"
 #  which gawk  2>/dev/null || printf "\n\tgawk not installed. Ubuntu: sudo apt-get install gawk\n"
-#  which pgrep 2>/dev/null || printf "\n\tpgrep not installed. Ubuntu: sudo apt-get install pgrep\n" 
-  
+#  which pgrep 2>/dev/null || printf "\n\tpgrep not installed. Ubuntu: sudo apt-get install pgrep\n"
+
   arr_Commands="gawk pgrep"
   str_Install="sudo apt-get install"
   for str_Command in ${arr_Commands} ; do
     printf "\tChecking for ${str_Command}:\t"
-	which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
+        which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
   done
-  
+
   cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
   printf "\n\tcmd_AWK: ${cmd_AWK}\n"
-  
+
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo"
-  
+
 #  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories or commands.\n"
     printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
-	sleep 2
+        sleep 2
     exit 1
   fi
 
@@ -84,7 +84,7 @@ readonly -f fn_CheckSetUp
 
 fn_Help()
 {
-  # Help 
+  # Help
   echo "${str_ProgramName} "
   echo " # Options"
   echo "    -p <alternative plugin dir>   Use a different plugin directory"
@@ -116,7 +116,7 @@ fn_HouseKeeping()
   typeset local     int_MaxJobs=${int_MaxShown}
   typeset local int_DaysDeleted=10
   typeset local  int_DaysActive=30
-  
+
   # Need to add one for the head/tail to be valid
   (( int_MaxJobs +=1 ))
 
@@ -132,13 +132,13 @@ fn_HouseKeeping()
 
   # Remove old deleted links
   find "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
-  
+
   # Archive old active jobs
   ( cd "${dir_Active}" && find ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
   find "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
   # Touch active New etc jobs (Sometimes old jobs are still being used even after a long time)
-  # Recover jobs jobs that have taking a long time to progress 
+  # Recover jobs jobs that have taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
   arr_Recover=$( cd "${dir_New}" && find . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
   echo ${arr_Recover}
@@ -219,7 +219,7 @@ fn_CreateFile()
 {
   typeset local file_Name="${1}"
   typeset local b_Blank="${2}"
-  touch "${file_Name}" 
+  touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
   chmod 664 "${file_Name}"
   [[ "${b_Blank}" ]] && > "${file_Name}"
