@@ -198,8 +198,14 @@ fn_CheckAuth()
   ##     marc:full:all
   ##     root::all
   ##     user::demo
-  printf "\nChecking authority: "
   file_Users=${dir_Etc}/users
+
+  if [[ ${b_Install} ]] ; then
+    printf "\n\n\tInitialising....\n\n"
+    [ ! -f ${file_Users} ] && echo "${str_User}:FULL:ALL" > ${file_Users}
+  fi
+
+  printf "\nChecking authority: "
   if [ ! -r ${file_Users} ] ; then
     if [ -f ${file_Users} ] ; then
       echo "The file ${file_Users} is not readable."

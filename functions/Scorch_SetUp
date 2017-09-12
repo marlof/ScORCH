@@ -39,6 +39,7 @@ fn_CheckSetUp()
                                  dir_Running dir_Superseded dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
+
   echo Failed $dir_Failed
   echo Fixing $dir_Fixing
  # sleep 5

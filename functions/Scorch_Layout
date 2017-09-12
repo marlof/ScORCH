@@ -208,6 +208,24 @@ fn_ShowJobs2()
 }
 #readonly -f fn_ShowJobs2
 
+fn_DisplayTime()
+{
+  
+  local int_Time=$1
+  local int_Time2=${2:-}
+  [ ! -z $int_Time2 ] && int_Time=$((int_Time2-int_Time))
+  local int_Days=$((int_Time/60/60/24))
+  local int_Hours=$((int_Time/60/60%24))
+  local int_Minutes=$((int_Time/60%60))
+  local int_Seconds=$((int_Time%60))
+
+  if [[ ${int_Days} != 0 ]] ; then
+    printf '%dd%02d:%02d:%02d\n' $int_Days $int_Hours $int_Minutes $int_Seconds
+  else
+    printf '%02d:%02d:%02d\n' $int_Hours $int_Minutes $int_Seconds
+  fi
+}
+
 fn_ShowJobs3()
 {
   ## Show job details for each job state past. The value passed is one or more directory names
