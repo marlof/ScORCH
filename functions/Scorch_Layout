@@ -148,13 +148,7 @@ fn_ShowJobs2()
 
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
-<<<<<<< HEAD
-  	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-#	echo $int_ScreenWidth
-=======
-        [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-#       echo $int_ScreenWidth
->>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
+    [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 #echo "$(pwd)"
 #echo "${file_Cache}"
     ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
@@ -179,17 +173,10 @@ fn_ShowJobs2()
       printf Colour
 
       ## Check Owner of job
-<<<<<<< HEAD
-	  ##system("echo " user
-	  ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
-#      system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
-	  system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
-=======
           ##system("echo " user
           ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
 #      system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
           system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
->>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
       printf "%3s", linenum
       system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
 
@@ -205,8 +192,6 @@ fn_ShowJobs2()
       printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
       system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
 #      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
-<<<<<<< HEAD
-=======
       system("echo arr_States["linenum"]="state" >> "file_Cache)
       system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
 
@@ -304,7 +289,6 @@ fn_ShowJobs3()
       printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
       system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
 #      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
->>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
       system("echo arr_States["linenum"]="state" >> "file_Cache)
       system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
 
@@ -318,106 +302,6 @@ fn_ShowJobs3()
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
   done
 }
-<<<<<<< HEAD
-#readonly -f fn_ShowJobs2
-
-fn_DisplayTime()
-{
-  
-  local int_Time=$1
-  local int_Time2=${2:-}
-  [ ! -z $int_Time2 ] && int_Time=$((int_Time2-int_Time))
-  local int_Days=$((int_Time/60/60/24))
-  local int_Hours=$((int_Time/60/60%24))
-  local int_Minutes=$((int_Time/60%60))
-  local int_Seconds=$((int_Time%60))
-
-  if [[ ${int_Days} != 0 ]] ; then
-    printf '%dd%02d:%02d:%02d\n' $int_Days $int_Hours $int_Minutes $int_Seconds
-  else
-    printf '%02d:%02d:%02d\n' $int_Hours $int_Minutes $int_Seconds
-  fi
-}
-
-fn_ShowJobs3()
-{
-  ## Show job details for each job state past. The value passed is one or more directory names
-  ## =========================================================================================
-  typeset local str_EachJobState= arr_JobList= str_StatusColour=""
-  typeset local str_StatusColour="${dis_Reset}"
-
-  ## Due to the fact that directories may contain "spaces" so "cd" there first
-  ## =========================================================================
-  cd "${dir_Job}"
-  int_Count=1
-
-  find ${@} -type l 
-  
-  file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
-  echo "#$$" > "${file_Cache}"
-  int_ScreenWidth=$(echo ${COLUMNS})
-  int_ScreenWidth=$(tput cols)
-  for str_State in ${@} ; do
-  #  printf "${dis_Reset}"
-
-    [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
-    [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
-  	[[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-#	echo $int_ScreenWidth
-#echo "$(pwd)"
-#echo "${file_Cache}"
-    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
-      -v            state=${str_State} \
-      -v             user=${str_User} \
-      -v          linenum=${int_Count} \
-      -v          dir_Log="${dir_Log}" \
-	  -v       dir_Active="${dir_Active}" \
-	  -v       file_Cache="${file_Cache}" \
-	  -v           Colour=${str_StatusColour} \
-	  -v  int_ScreenWidth=${int_ScreenWidth} \
-      -v int_Column1Width=${int_Column1Width} \
-      -v int_Column2Width=${int_Column2Width} \
-      -v int_Column3Width=${int_Column3Width} \
-      -v int_Column4Width=${int_Column4Width} \
-	  -v int_Column5Width=${int_Column5Width} \
-      -v int_Column6Width=${int_Column6Width} \
-      -v int_MaxShown=${int_MaxShown} 'BEGIN {
-       FS = "_"
-    }
-    linenum <= int_MaxShown {
-      printf Colour
-
-      ## Check Owner of job
-      system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
-      printf "%3s", linenum
-      system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
-
-      if ( $2 != "" ) {
-        printf "%7s|", $2   
-      }
-      else {
-        printf "%7s|", substr($3,1,7)
-      }
-      int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
-                   - int_Column4Width  - int_Column5Width
-      printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
-      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
-#      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
-      system("echo arr_States["linenum"]="state" >> "file_Cache)
-      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
-
-      linenum++
-    }
-    END {
-      system("echo int_Count="linenum" >> "file_Cache )
-    }'
-    ##. ${file_Cache}
-#	cat "${file_Cache}"
-    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
-  done
-}
-=======
->>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
 readonly -f fn_ShowJobs3
 
 

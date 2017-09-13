@@ -313,8 +313,4 @@ fi
 fn_HouseKeeping
 
 tput sgr0 2 >/dev/null
-<<<<<<< HEAD
 exit 0
-=======
-exit 0
->>>>>>> 3d84b75e3008012aab3449b82e8dff752e1bac41
