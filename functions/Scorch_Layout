@@ -156,15 +156,15 @@ fn_ShowJobs2()
       -v             user=${str_User} \
       -v          linenum=${int_Count} \
       -v          dir_Log="${dir_Log}" \
-          -v       dir_Active="${dir_Active}" \
-          -v       file_Cache="${file_Cache}" \
-          -v           Colour=${str_StatusColour} \
-          -v  int_ScreenWidth=${int_ScreenWidth} \
+      -v       dir_Active="${dir_Active}" \
+      -v       file_Cache="${file_Cache}" \
+      -v           Colour=${str_StatusColour} \
+      -v  int_ScreenWidth=${int_ScreenWidth} \
       -v int_Column1Width=${int_Column1Width} \
       -v int_Column2Width=${int_Column2Width} \
       -v int_Column3Width=${int_Column3Width} \
       -v int_Column4Width=${int_Column4Width} \
-          -v int_Column5Width=${int_Column5Width} \
+      -v int_Column5Width=${int_Column5Width} \
       -v int_Column6Width=${int_Column6Width} \
       -v int_MaxShown=${int_MaxShown} 'BEGIN {
        FS = "_"
@@ -257,15 +257,15 @@ fn_ShowJobs3()
       -v             user=${str_User} \
       -v          linenum=${int_Count} \
       -v          dir_Log="${dir_Log}" \
-          -v       dir_Active="${dir_Active}" \
-          -v       file_Cache="${file_Cache}" \
-          -v           Colour=${str_StatusColour} \
-          -v  int_ScreenWidth=${int_ScreenWidth} \
+      -v       dir_Active="${dir_Active}" \
+      -v       file_Cache="${file_Cache}" \
+      -v           Colour=${str_StatusColour} \
+      -v  int_ScreenWidth=${int_ScreenWidth} \
       -v int_Column1Width=${int_Column1Width} \
       -v int_Column2Width=${int_Column2Width} \
       -v int_Column3Width=${int_Column3Width} \
       -v int_Column4Width=${int_Column4Width} \
-          -v int_Column5Width=${int_Column5Width} \
+      -v int_Column5Width=${int_Column5Width} \
       -v int_Column6Width=${int_Column6Width} \
       -v int_MaxShown=${int_MaxShown} 'BEGIN {
        FS = "_"
@@ -428,6 +428,10 @@ fn_ContextMenu()
     esac
   else
     ## Generic Mode
+    if [[ "$hex_MD5" != "$(md5sum ${0}| cut -d" " -f1)" ]] ; then
+      printf " Update available - please restart\n\n"
+    fi
+
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
         [[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
         #echo "echo ${arr_States[@]} | grep -i queued)"
@@ -438,6 +442,7 @@ fn_ContextMenu()
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
   fi
 
+
   [[ "${b_QueuedJobs}" ]]                              && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
   [[ "${b_RunningJobs}" ]] || [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}" ]]                              && printf "${dis_ULOn}R${dis_ULOff}esume | "
@@ -447,6 +452,7 @@ fn_ContextMenu()
   [[ "${arr_Jobs[1]}" ]]   || [[ "${str_State}" ]]     && printf "${dis_ULOn}T${dis_ULOff}asks | "
 
   printf "${dis_ULOn}C${dis_ULOff}SV | e${dis_ULOn}X${dis_ULOff}it : "
+
 }
 readonly -f fn_ContextMenu
 

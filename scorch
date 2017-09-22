@@ -70,9 +70,10 @@
 ##                       JobID changed to JobID.<program name>
 ## 1.16 160713 marc      Fixed job owner reporting
 ##                       Old active jobs recovered from archive
+## 1.17 170922 marc      Added update notification to Context Menu
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.16"
+typeset str_ProgramVersion="1.17"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -126,13 +127,14 @@ typeset     dir_Deleted="${dir_Job}/deleted"
 typeset    dir_Archived="${dir_Job}/archived"
 typeset     dir_Pending="${dir_Job}/pending"
 typeset      dir_Active="${dir_Job}/active"
-##typeset      file_JobID="${dir_Var}/jobid"
+## typeset      file_JobID="${dir_Var}/jobid"
 
-typeset         b_Group=
-typeset    b_Background=
-typeset     int_SubTask=
-typeset     str_SubTask=
-typeset int_DispatchSleep=13
+typeset           b_Group=
+typeset      b_Background=
+typeset       int_SubTask=
+typeset       str_SubTask=
+typeset int_DispatchSleep=10
+typeset           hex_MD5=
 
 fn_ResetJobDefinitions()
 {

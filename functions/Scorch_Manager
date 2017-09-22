@@ -23,6 +23,7 @@ fn_Manager()
 {
   typeset local char_Choice=
   tput rmam
+  hex_MD5=$(md5sum ${0} | cut -d" " -f1)
   while : ; do
     fn_ShowTop
     fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
@@ -30,6 +31,9 @@ fn_Manager()
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
 	fn_ContextMenu
+
+
+
     read -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
