@@ -311,14 +311,26 @@ fn_FormatTasks()
   ## regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
   printf "\n\n   "
-  ls -lL "${file_Job}"  #"${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]}
+  ls -lL "${file_Job}"
+  [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+  case ${str_JobState} in
+    queued  | pending | new ) int_Task=$(grep "^int_ResumePoint=" ${file_Job} | head -1 | cut -d"=" -f2) ;;
+    failed  | fixing        ) int_Task=$(grep "Resume point:" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | awk -F":" '{print $NF}') ;;
+    running                 ) echo find in running ;;
+	completed               ) int_Task=$(grep "Completed task \[" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2- | cut -d"/" -f1) ; (( int_Task++ ));;
+  esac
+  echo "int_Task:" ${int_Task:-0}
+
   printf "\n"
-  cat "${file_Job}" | ${cmd_AWK} 'BEGIN {
+  cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} 'BEGIN {
               linenum=1
             }
             $0 ~ "^fn_Task_[1-9]" {
                           #print " "linenum, $2, $3, $4, NR, NF
                           int_Last=NF-7
+						  if ( int_Task == linenum ) { printf " >>>    "}
+						  #if ( int_Task >  linenum ) { printf "[done]  "}
+						  #if ( int_Task <  linenum ) { printf " ...    "}
                           if ( $3 != "&" ) {
                           printf "%4s : ",linenum
                           for ( x=2 ; x<int_Last ; x++ ) {printf " "$x}
@@ -428,7 +440,7 @@ fn_ContextMenu()
     esac
   else
     ## Generic Mode
-    if [[ "$hex_MD5" != "$(md5sum ${0}| cut -d" " -f1)" ]] ; then
+    if [[ "$hex_MD5" != "$(md5sum ${dir_Base}/${str_ProgramName}| cut -d" " -f1)" ]] ; then
       printf " Update available - please restart\n\n"
     fi
 

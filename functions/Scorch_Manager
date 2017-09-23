@@ -23,7 +23,7 @@ fn_Manager()
 {
   typeset local char_Choice=
   tput rmam
-  hex_MD5=$(md5sum ${0} | cut -d" " -f1)
+  hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
   while : ; do
     fn_ShowTop
     fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
