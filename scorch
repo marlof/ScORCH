@@ -72,9 +72,10 @@
 ##                       Old active jobs recovered from archive
 ## 1.17 170922 marc      Added update notification to Context Menu
 ## 1.18 171015 marc      Formatting program and output. Improved %age call for disk space
+##                       Added timer to running jobs
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.17"
+typeset str_ProgramVersion="1.18"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -303,7 +304,7 @@ if [[ "${b_Background}" ]] ; then
   echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"
   while [[ "$(find ${dir_Starting} ${dir_Pending} ${dir_Queued} -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do
     fn_RunJobs
-        sleep 60
+    sleep 60
   done
   fn_RunJobs # one more try just to mop up
 else

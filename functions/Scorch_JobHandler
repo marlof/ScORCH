@@ -278,7 +278,7 @@ fn_ProcessRequest()
     #b_Debug=1
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
     for ACTION in ${ACTION_LIST} ; do
-	echo "$ACTION is"
+	    #echo "$ACTION is"
 	
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 

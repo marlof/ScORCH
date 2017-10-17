@@ -57,7 +57,7 @@ fn_CheckSetUp()
   str_Install="sudo apt-get install"
   for str_Command in ${arr_Commands} ; do
     printf "\tChecking for ${str_Command}:\t"
-        which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
+    which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
   done
 
   cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
@@ -71,7 +71,7 @@ fn_CheckSetUp()
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories or commands.\n"
     printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
-        sleep 2
+    sleep 2
     exit 1
   fi
 
