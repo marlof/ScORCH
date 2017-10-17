@@ -39,11 +39,10 @@ fn_Dispatcher()
 
   ## Run the dispatcher loop for a predetirmed number of times
   while [ ${int_DispatchCount} -lt ${int_DispatchMax} ] ; do
-  
     ## Repair any missing lock file for dispatcher
     ## [[ ! -L ${file_DispatchLock} ]] && ln -s ${str_User}_$$ "${file_DispatchLock}"
-	
-	## Make sure all current jobs reporting a running state are actually running
+	  ## Make sure all current jobs reporting a running state are actually running
+
     fn_CheckRunning
 
     ## Check the pending directory first for any rules that have succeeded
@@ -69,7 +68,7 @@ fn_Dispatcher()
               running | starting | pending | queued | new  ) b_ParentComplete=1 ;;
               *       )   fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} missing. Moving job to failed state."   "rules"
                           b_ParentComplete=1
-			              mv "${dir_Pending}/${file_EachJob}" "${dir_Failed}" ;;
+			                    mv "${dir_Pending}/${file_EachJob}" "${dir_Failed}" ;;
 
             esac			  
           done
@@ -84,18 +83,16 @@ fn_Dispatcher()
     fi	  
 
     ## Move queued jobs to start state
-	typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
-	if [[ "${arr_QueuedJobs}" ]] ; then
+    typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
+  	if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
         str_QueueLock=$(echo "${file_EachJob}" | ${cmd_AWK} -F"_" '{print $4"_"$5}')
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
-  
         if [ ! -L "${file_QueueLock}" ] ; then
-##echo "making 1 ln           ln -s "${file_EachJob}" "${file_QueueLock}
           ln -s "${file_EachJob}" "${file_QueueLock}"
           echo "$(${fn_LogDate}) Dispatch: ${file_EachJob}" >> "${file_DispatchLog}"
           mv "${dir_Queued}/${file_EachJob}" "${dir_Starting}"
-		  int_DispatchCount=0
+          int_DispatchCount=0
         else
           ## Check that for every env lock file that there is a job in a non finish state
           ## (failed, completed, deleted, new)
@@ -107,7 +104,7 @@ fn_Dispatcher()
         sleep 1
       done
     fi
-	(( int_DispatchCount+=1 ))
+    (( int_DispatchCount+=1 ))
     sleep ${int_DispatchSleep}
   done
   rm -f "${file_DispatchLock}"
@@ -123,9 +120,9 @@ fn_CheckRunning()
   typeset local arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
   if [[ "${arr_RunningJobs}" ]] ; then
     for file_EachJob in ${arr_RunningJobs} ; do
-	  if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
+	    if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
         mv "${dir_Running}/${file_EachJob}" "${dir_Failed}/."
-        echo "$(${fn_LogDate}) Orphaned. Resume point:unknown" >> "${dir_Log}/${file_EachJob}.log"
+        echo "$(${fn_LogDate}) Orphaned. Resume point:unknown" | tee "${dir_Active}/${file_EachJob}" "${dir_Log}/${file_EachJob}.log"
       fi
     done
   fi
@@ -140,10 +137,11 @@ fn_CheckDispatcher()
   if [ -L "${file_DispatchLock}" ] ; then
     ## Check the lock is correct
     echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
-
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher" | head -1) -eq $(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}') ]] ; then
+echo This is the dispatcher      
       return 0
     else
+echo This is not the dispatcher      
       rm "${file_DispatchLock}" 2>/dev/null
     fi
   else
@@ -166,7 +164,7 @@ fn_RunJobs()
   ##for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
   for file_EachJob in $(grep -l "str_Owner=${str_User}" "${dir_Starting}"/* 2>/dev/null)  ; do
     echo "$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
-	if [[ -x "${file_EachJob}" ]] ; then
+    if [[ -x "${file_EachJob}" ]] ; then
       nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
     else
       ## Fail the job as not executable
@@ -174,8 +172,8 @@ fn_RunJobs()
       fn_Audit "${file_EachJob}" "Not executable - running with bash"
       nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
     fi
-	## To ensure started in order
-	sleep 0.2
+    ## To ensure started in order
+    sleep 1
   done
 }
 readonly -f fn_RunJobs
@@ -193,12 +191,12 @@ fn_LockManager()
       arr_Locks[${int_Count}]="${file_Lock}"
       (( int_Count+=1 ))
     done
-	if [[ ${int_Count} -lt 2 ]] ; then
-	  printf "\n\n No locks active\n\n"
-	  fn_ShowLine "="
-	  fn_PressEnter
-	  return 0
-	else
+	  if [[ ${int_Count} -lt 2 ]] ; then
+      printf "\n\n No locks active\n\n"
+      fn_ShowLine "="
+      fn_PressEnter
+      return 0
+    else
       fn_ShowLine "="
 
       printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
@@ -213,7 +211,7 @@ fn_LockManager()
       
         x | X ) return 0 ;;
       esac
-	fi
+    fi
   ##  fn_RunJobs
   done
 }

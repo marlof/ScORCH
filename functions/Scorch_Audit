@@ -23,8 +23,7 @@ fn_LogWhy()
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   printf "\n\n $(basename ${file_Job})\n\n"
   read -p " Enter a reason: " str_Answer
-  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}" >> "${file_Job}"
-  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}" >> "${file_Log}"
+  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" >/dev/null
 }
 readonly -f fn_LogWhy
 
@@ -35,10 +34,9 @@ fn_Audit()
   typeset local str_Dispatcher="${3:-}"
   [[ "${str_Transition}" = "deleted" ]] && fn_LogWhy
   if [[ "${str_Dispatcher}" ]] ; then
-    echo "$(${fn_LogDate}) ${str_Transition}" >> "${dir_Active}/$(basename ${file_Job})"
-    echo "$(${fn_LogDate}) ${str_Transition}" >> "${dir_Log}/$(basename ${file_Job}).log"
+    echo "$(${fn_LogDate}) ${str_Transition}"                            | tee -a "${dir_Active}/$(basename ${file_Job})" "${dir_Log}/$(basename ${file_Job}).log" >/dev/null
   else
-    echo "$(${fn_LogDate}) ${str_User} ran transition ${str_Transition}" >> "${dir_Active}/$(basename ${file_Job})"
+    echo "$(${fn_LogDate}) ${str_User} ran transition ${str_Transition}" | tee -a "${dir_Active}/$(basename ${file_Job})" "${dir_Log}/$(basename ${file_Job}).log" >/dev/null
   fi
 }
 readonly -f fn_Audit

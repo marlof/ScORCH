@@ -125,6 +125,15 @@ fn_CheckTask()
   fi
 }
 
+fn_NiceTime()
+{
+  local hours= minutes= seconds=
+  ((hours=\${1}/3600))
+  ((minutes=\${1}%3600/60))
+  ((seconds=\${1}%60))
+  printf "%02dh %02dm %02ds\n" \$hours \$minutes \$seconds
+}
+
 EOF
 }
 readonly -f fn_JobHeader
@@ -158,18 +167,27 @@ mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}" 2>/dev/null
 
 int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Completed}"/\${str_JobName} | wc -l)
+int_ManualCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Manual task" "\${dir_Completed}"/\${str_JobName} | wc -l)
 #(( int_FailureCount+=0 ))
 echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
-echo "\$(${fn_LogDate}) Tasks[\${int_Last}] Failures[\${int_FailureCount}]" >> "\${file_Log}"
+
 # CSV File
 # Request time,Response time, Start time, End Time, Job name, number of failures, who
- int_Created=\$(grep -m 1 "Created by:" \${file_Log} | cut -d" " -f1)
- str_Requested=${FROM:-${int_Responded}}
- int_Start=\$(grep  "^AUDIT:START"  \${file_Log} | tail -1 | cut -d: -f3)
- int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3) 
- (( int_Duration = int_Finish - int_Start ))
- echo \${str_Requested},\${int_Created},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration},\${int_Last},\${int_FailureCount},\${str_Owner} >> "${file_CSV}"
+int_Created=\$(grep -m 1 "Created by:" \${file_Log} | cut -d" " -f1)
+str_Requested=${FROM:-${int_Responded}}
+int_Start=\$(grep  "^AUDIT:START"  \${file_Log} | tail -1 | cut -d: -f3)
+int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3) 
+(( int_Duration = int_Finish - int_Start ))
+
+printf "\$(${fn_LogDate}) Tasks[\${int_Last}] Time[\$(fn_NiceTime \${int_Duration})] " >> "\${file_Log}"
+(( int_ManualCount  > 0 )) && printf "Manual tasks[\${int_ManualCount}]"               >> "\${file_Log}"
+(( int_FailureCount > 0 )) && printf "Failures[\${int_FailureCount}]"                  >> "\${file_Log}"
+printf "\n" >> "\${file_Log}"
+
+echo \${str_Requested},\${int_Created},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration},\${int_Last},\${int_FailureCount},\${str_Owner} >> "${file_CSV}"
 touch -h "\${dir_Completed}/\${str_JobName}" # To reflect the correct finish time in the file
+
+#fn_NiceTime \$(( \${int_Finish} - \${int_Start}))
 
 # ADD TICKETING CLOSE/SYSTEM HERE
 

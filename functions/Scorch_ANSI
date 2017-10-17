@@ -4,9 +4,12 @@ dis_FBlack="${str_ANSI}30m"
 dis_FRed="${str_ANSI}31m"
 dis_FGreen="${str_ANSI}32m"
 dis_FYellow="${str_ANSI}33m"
+# Background colours
 dis_BRed="${str_ANSI}41m"
 dis_BGreen="${str_ANSI}42m"
 dis_BYellow="${str_ANSI}43m"
-dis_Reset="${str_ANSI}0m"
+# Underline
 dis_ULOn="${str_ANSI}4m"
 dis_ULOff="${str_ANSI}24m"
+# Reset
+dis_Reset="${str_ANSI}0m"

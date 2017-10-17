@@ -132,7 +132,7 @@ readonly -f fnE_Rules
 
 fnE_RulesMenu()
 {
- ## printf "\n\n Rules menu "
+  ## printf "\n\n Rules menu "
   printf " ${dis_ULOn}A${dis_ULOff}mend rules |"
 }
 readonly -f fnE_RulesMenu
@@ -153,21 +153,21 @@ fnE_AmendRules()
 
   read -t 60 char_Choice
 
-    case ${char_Choice} in
+  case ${char_Choice} in
 
           a | A ) fn_ShowJobs2 running starting pending queued new
                fn_ShowLine
                fn_GetAnswer
-                           echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
+               echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
 
           d | D ) rm ${file_ActiveJob}.rules
                   # if link to active job in pending mv job to queued
-                          ;;
+                           ;;
 
-      ## Edit job
-      x | X ) return 0 ;;
-      *     ) return 0 ;;
-    esac
+          ## Edit job
+          x | X ) return 0 ;;
+          *     ) return 0 ;;
+  esac
 
 }
 readonly -f fnE_AmendRules
@@ -221,8 +221,8 @@ fn_CheckAuth()
   str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
   case ${str_Authority} in
     P | POWER ) b_Power=1 ;      str_Authority="Power User" ;;
-        R | REST* ) b_Restricted=1 ; str_Authority="View Only"  ;;
-        F | FULL  )                  str_Authority="Normal"     ;;
-                * ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator." ; exit 1 ;;
+    R | REST* ) b_Restricted=1 ; str_Authority="View Only"  ;;
+    F | FULL  )                  str_Authority="Normal"     ;;
+    *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
   esac
 }

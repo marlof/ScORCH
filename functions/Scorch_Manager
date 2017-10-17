@@ -37,35 +37,33 @@ fn_Manager()
     read -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
-
       ## Create a new job
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
-	  ## View CSV
-	  c | C ) ${cmd_Editor} "${file_CSV}" ;;
+      ## View CSV
+      c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
       ## Job State transition
-      d | D )                      fn_Transition delete  ;;
+      d | D ) fn_Transition delete  ;;
       q | Q ) fn_CheckDispatcher ; fn_Transition queue   ;;
       r | R ) fn_CheckDispatcher ; fn_Transition resume  ;;
       u | U )                      fn_Transition unqueue ;;
-	  p | P )                      fn_Transition pause   ;;
+      p | P )                      fn_Transition pause   ;;
 
       ## Misc
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
-	  [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
-	  
-	  ## Releases
-	  open       ) fnE_MkOpenScorch ;;
-	  enterprise ) fnE_MkEscorchtar ;;
+      [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
 
-      l | L ) fn_LockManager        ;;     
+      ## Releases
+      open       ) fnE_MkOpenScorch ;;
+      enterprise ) fnE_MkEscorchtar ;;
 
+      l | L ) fn_LockManager        ;;
       set )   fnE_Set ;;
-	  
       x | X ) break ;;
-	      * ) fn_SetLayout ;;
+     * ) fn_SetLayout ;;
+
     esac
 	fn_RunJobs
   done
@@ -115,11 +113,11 @@ fn_AdminFunctions()
 
   ##if [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
-    typeset str_JobState=${arr_States[${char_Choice}]}
-    typeset local file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
-    typeset local file_Link="${dir_Job}/${str_JobState}/${arr_Jobs[${char_Choice}]}"
-	typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
-    typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+    typeset         str_JobState="${arr_States[${char_Choice}]}"
+    typeset local       file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
+    typeset local      file_Link="${dir_Job}/${str_JobState}/${arr_Jobs[${char_Choice}]}"
+    typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
+    typeset local       file_Log="${dir_Log}/$(basename ${file_Job})".log
     while : ; do
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
@@ -169,7 +167,8 @@ fn_AdminFunctions()
                 return 0 ;;
 
         ## Skip a task in Job(s)
-        s | S ) fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
+        s | S ) fn_CheckOwner "${file_ActiveJob}"
+                fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
                 mv "${file_Link}" "${dir_Queued}"
@@ -200,8 +199,8 @@ fn_AdminFunctions()
         ## Mark Job as Fix in Progress (FIP)
         f | F ) echo " "
                 read -p " You may provide a keyword or tracking id: " str_Reply
-				[[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
-		        fn_Audit "${file_Job}" "fix in progress"
+                [[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
+                fn_Audit "${file_Job}" "fix in progress"
                 mv "${file_Link}" "${dir_Fixing}"
                 echo "$(${fn_LogDate}) Fix in progress${str_Reply}. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}"
                 return 0 ;;

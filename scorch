@@ -71,13 +71,15 @@
 ## 1.16 160713 marc      Fixed job owner reporting
 ##                       Old active jobs recovered from archive
 ## 1.17 170922 marc      Added update notification to Context Menu
+## 1.18 171015 marc      Formatting program and output. Improved %age call for disk space
 
 ## Determine the program name and the running directory
 typeset str_ProgramVersion="1.17"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
-typeset         fn_LogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
+typeset     fn_FullLogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
+typeset         fn_LogDate="date +%y%m%d-%H%M%S"
 typeset           str_User=$(whoami)
 
 ## User EDITOR preference
