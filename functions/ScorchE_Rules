@@ -58,7 +58,7 @@ fn_ProcessRequest()
   typeset local int_JobCount=1
   typeset local int_FileCount=1
 
-  fn_GetJobID
+  int_JobID=$(fn_GetJobID)
 
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
@@ -151,11 +151,11 @@ fnE_AmendRules()
   printf "\n\n "
   printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
 
-  read -t 60 char_Choice
+  read -n 1 -t 60 char_Choice
 
   case ${char_Choice} in
 
-          a | A ) fn_ShowJobs2 running starting pending queued new
+          a | A ) fn_ShowJobs2 failed running starting pending queued new
                fn_ShowLine
                fn_GetAnswer
                echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
@@ -177,10 +177,10 @@ fn_ExtractPairs()
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
   GetVar -pattern "Action"  -name ACTION_LIST      -list
-  GetVar -pattern "Release" -name RELEASE                -default "NO-REL"
-  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NO-ENV"
+  GetVar -pattern "Release" -name RELEASE                -default ""
+  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NA"
   GetVar -pattern "Type"    -name TYPE                   -default ""
-  GetVar -pattern "Ticket"  -name TICKET                 -default ""
+  GetVar -pattern "Ticket"  -name TICKET                 -default "ID-${int_JobID}"  
 
   GetVar -pattern "Label"  -name LABEL                   -default ""
   GetVar -pattern "Parent" -name PARENT_LIST -list       -default ""

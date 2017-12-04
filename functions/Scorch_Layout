@@ -127,6 +127,12 @@ fn_ShowLine()
 }
 readonly -f fn_ShowLine
 
+fn_ShowJobs()
+{
+    ${dir_Python}/showJobs.py -o /tmp/mycache $*
+    . /tmp/mycache
+}
+
 fn_ShowJobs2()
 {
   ## Show job details for each job state past. The value passed is one or more directory names
@@ -367,7 +373,8 @@ fn_FormatTasks()
     #fn_PressEnter
     fn_ShowLine
     tail -10 ${dir_Log}/$(basename ${file_Job}).log
-	  fn_ShowLine "="
+	  printf " "
+    fn_ShowLine "="
     printf "\n\n ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
     read -t ${int_Refresh} char_Choice
 
@@ -394,7 +401,8 @@ fn_ShowTasks()
   else
     printf "\n Display tasks for which job(s)?\n\n"
 
-    fn_ShowJobs2 superseded starting failed fixing queued pending new running completed
+    #fn_ShowJobs2 superseded starting failed fixing queued pending new running completed
+    fn_ShowJobs superseded starting failed fixing queued pending new running completed
     fn_ShowLine
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
@@ -461,7 +469,7 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
-##  printf "\n\n${dis_Reset}"
+  ##  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     ## Specific Mode
     printf " ${dis_ULOn}V${dis_ULOff}iew | ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
@@ -470,7 +478,7 @@ fn_ContextMenu()
       failed            ) b_FailedJobs=1 ;;
       fixing            ) b_FailedJobs=1 ;;
       new               ) b_NewJobs=1 ;;
-      running | pending ) b_RunningJobs=1 ;;
+      running           ) b_RunningJobs=1 ;;
     esac
   else
     ## Generic Mode
@@ -479,25 +487,28 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-        [[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
-        #echo "echo ${arr_States[@]} | grep -i queued)"
+    [[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
+    #echo "echo ${arr_States[@]} | grep -i queued)"
     [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
     [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_FailedJobs=1 && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
+    printf "${dis_ULOn}C${dis_ULOff}SV | "
+
   fi
 
 
-  [[ "${b_QueuedJobs}" ]]                              && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
-  [[ "${b_RunningJobs}" ]] || [[ "${b_QueuedJobs}" ]]  && printf "${dis_ULOn}P${dis_ULOff}ause | "
-  [[ "${b_FailedJobs}" ]]                              && printf "${dis_ULOn}R${dis_ULOff}esume | "
-  [[ "${b_FailedJobs}" ]]  && [ "${str_State}" ]       && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
-  [[ "${b_NewJobs}" ]]                                 && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
-  [[ "${str_State}" ]]                                 || printf "${dis_ULOn}M${dis_ULOff}OTD | "
-  [[ "${arr_Jobs[1]}" ]]   || [[ "${str_State}" ]]     && printf "${dis_ULOn}T${dis_ULOff}asks | "
+  [[ "${b_QueuedJobs}"  ]]                                && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
+  [[ "${b_RunningJobs}" ]]  || [[ "${b_QueuedJobs}" ]]    && printf "${dis_ULOn}P${dis_ULOff}ause | "
+  [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
+  [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
+  [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
+  [[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
+  [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
+  ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}C${dis_ULOff}ancel | "
 
-  printf "${dis_ULOn}C${dis_ULOff}SV | e${dis_ULOn}X${dis_ULOff}it : "
+  printf "e${dis_ULOn}X${dis_ULOff}it : "
 
 }
 readonly -f fn_ContextMenu

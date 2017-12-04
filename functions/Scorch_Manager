@@ -26,15 +26,14 @@ fn_Manager()
   hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
   while : ; do
     fn_ShowTop
-    fn_ShowJobs2 superseded failed fixing new running starting pending queued completed
+    fn_ShowJobs superseded failed fixing new running starting pending queued completed
     fn_ShowLine "="
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
-	fn_ContextMenu
+    fn_ContextMenu
 
 
-
-    read -t ${int_Refresh} char_Choice
+    read -n 1 -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
       ## Create a new job
@@ -53,16 +52,36 @@ fn_Manager()
       ## Misc
       m | M ) fn_EditMOTD           ;;
       t | T ) fn_ShowTasks          ;;
-      [0-9]* ) fn_AdminFunctions ${char_Choice} ;;
+      l | L ) fn_LockManager        ;;
+      x | X ) break ;;
+
 
       ## Releases
-      open       ) fnE_MkOpenScorch ;;
-      enterprise ) fnE_MkEscorchtar ;;
+      [0-9] ) fn_CatchWord ${char_Choice} "number" ;;
 
-      l | L ) fn_LockManager        ;;
-      set )   fnE_Set ;;
-      x | X ) break ;;
-     * ) fn_SetLayout ;;
+      o | O ) 
+         read -t ${int_Refresh} char_ChoiceExtra
+         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+         case ${str_Choice} in
+            open       ) fnE_MkOpenScorch ;;
+         esac  ;;
+
+      e | E )
+         read -t ${int_Refresh} char_ChoiceExtra
+         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+         case ${str_Choice} in
+            enterprise ) fnE_MkEscorchtar ;;
+         esac  ;;
+
+      s | S )
+         read -t ${int_Refresh} char_ChoiceExtra
+         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+         case ${str_Choice} in
+            set )   fnE_Set ;;
+         esac  ;;
+
+
+      * ) fn_SetLayout ;;
 
     esac
 	fn_RunJobs
@@ -79,10 +98,10 @@ fn_ViewJob()
   ${cmd_Editor} "${file_View}"
   if ! diff "${file_Orig}" "${file_View}" ; then
     printf "\n\nWarning. Not in edit mode. Changes will not be saved.\n"
-	read -n 1 -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
-	printf "\n\n"
-	if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
-	  mv "${file_View}" /tmp/$(basename "${file_Orig}")
+	  read -n 1 -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
+	  printf "\n\n"
+	  if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
+	    mv "${file_View}" /tmp/$(basename "${file_Orig}")
       fn_Audit "${file_Orig}" "saved an edited copy of job and saved a copy in /tmp"
     fi
 	#fn_PressEnter
@@ -100,11 +119,41 @@ fn_EditJob()
   ${cmd_Editor} "${file_Edit}"
   if ! diff "${file_Orig}" "${file_Edit}" ; then
 	  mv "${file_Edit}" "${file_Orig}"
-      fn_Audit "${file_Orig}" "edited job"
+    fn_Audit "${file_Orig}" "edited job"
   fi
   [ -f "${file_Edit}" ] && rm -f "${file_Edit}"
 }
 readonly -f fn_EditJob
+
+fn_Cancel()
+{
+  typeset local    file_Link="$1"
+  typeset local str_JobState="$2"
+  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+
+  fn_CheckOwner "${file_Link}"
+  if [[ "${str_JobState}" = "running" ]] ; then
+    echo kill job
+    ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v bash | grep -v grep
+    int_PID=$(ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v grep | awk -F" " '{print $2}')
+    ps -fu ${str_User}
+    pstree -p ${int_PID}
+    echo ${int_PID} 
+    printf "\n\n Killing Process with PID[${int_PID}]"
+    # mv ${file_Link} ${dir_Failed}
+
+   # kill ${int_PID}
+    fn_PressEnter
+  elif  [[ "${str_JobState}" = "failed"  ]] ; then
+    fn_Audit "${file_Link}" "Cancelled at task:$(fn_GetResumePoint ${file_Log} ) "
+    mv ${file_Link} ${dir_Completed}
+    printf "\n\n Cancelled Job : ${file_Link}"
+    fn_PressEnter
+  else
+    echo "Incorrect call"
+  fi
+  sleep 2
+}
 
 fn_AdminFunctions()
 {
@@ -122,12 +171,16 @@ fn_AdminFunctions()
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
-      read -t 30 char_Choice
+      read -n 1 -t 30 char_Choice
 
       case ${char_Choice} in
 	
+        # 
+        ## Abort Failed or Running jobs
+        c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
+
         ## View CSV
-        c | C ) ${cmd_Editor} "${file_CSV}" ;;
+        #c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
         ## Edit job
         v | V ) fn_ViewJob "${file_ActiveJob}" ;;
@@ -194,7 +247,6 @@ fn_AdminFunctions()
                 return 0 ;;
 
         ## Task View
-        t | T ) fn_ShowTasks "${file_Job}"          ;;
 
         ## Mark Job as Fix in Progress (FIP)
         f | F ) echo " "
@@ -207,8 +259,7 @@ fn_AdminFunctions()
 
         ## Amend Job rules
         a | A ) fnE_AmendRules        ;;
-		tail  ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
-
+        t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
         x | X ) return 0 ;;
         *     ) return 0 ;;
       esac
@@ -220,3 +271,30 @@ fn_AdminFunctions()
   fn_SetLayout
 }
 readonly -f fn_AdminFunctions
+
+fn_CatchWord()
+{
+  local char_ChoiceExtra="$1"
+  local arr_WordList="$2"
+  local int_Length=1
+  local str_Word=${char_ChoiceExtra}
+  local int_Del=1
+  while  [ "${char_ChoiceExtra}" != "" ]  ; do
+    read -n 1 -t 30 char_ChoiceExtra
+    if [ "${char_ChoiceExtra}" = "" ] ; then
+      int_Length=${#str_Word} 
+      int_Del=$(( int_Length - 1 )) 
+      (( int_Del >= 0 )) && eval str_Word=\${str_Word:0:${int_Del}} && printf "\b \b\b \b" || ( printf "\b \b" && continue )
+    else
+      str_Word=${str_Word}${char_ChoiceExtra}
+    fi
+  done
+  # To be extended
+  case ${str_Word} in
+    t | T      ) fn_ShowTasks "${file_Job}"          ;;
+    tail       ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
+    [0-9]*     ) fn_AdminFunctions ${str_Word}  ;;
+    *          ) clear ;;
+  esac
+  #echo "${str_Word}"
+}

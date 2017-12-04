@@ -36,7 +36,7 @@ fn_CheckSetUp()
 
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Fixing dir_Deleted \
-                                 dir_Running dir_Superseded dir_Completed dir_Tmp dir_Plugins \
+                                 dir_Running dir_Superseded dir_Manual dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
 

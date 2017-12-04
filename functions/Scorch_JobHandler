@@ -80,6 +80,7 @@ dir_Job="${dir_Job}"
 dir_Running="${dir_Running}"
 dir_Failed="${dir_Failed}"
 dir_Completed="${dir_Completed}"
+dir_Manual="${dir_Manual}"
 dir_Starting="${dir_Starting}"
 dir_Pause="${dir_Active}"
 dir_Active="${dir_Active}"
@@ -266,7 +267,7 @@ fn_ProcessRequest()
   typeset local int_JobCount=1
   typeset local int_FileCount=1
 
-  fn_GetJobID
+  int_JobID=$(fn_GetJobID)
   # Multi Action is enterprise feature
   ls ${dir_Tmp}/${str_ProgramName}.$$.*
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
@@ -275,7 +276,7 @@ fn_ProcessRequest()
     echo "${str_EachFile}"
 	
     fn_ExtractPairs
-    #b_Debug=1
+    b_Debug=1
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
     for ACTION in ${ACTION_LIST} ; do
 	    #echo "$ACTION is"
@@ -329,7 +330,23 @@ fn_GetJobID()
   
   typeset local file_JobIDLock="${file_JobID}".lock
 
-  if ( set -o noclobber; > "${file_JobIDLock}") 2> /dev/null ; then
+#  if ( set -o noclobber; > "${file_JobIDLock}") 2> /dev/null ; then
+#    if [ -r "${file_JobID}" ] ; then
+#      int_JobID=$(cat "${file_JobID}")
+#    else
+#      int_JobID=0
+#    fi
+#    (( int_JobID+=1 ))
+#    echo ${int_JobID} > "${file_JobID}"
+#    rm -f "${file_JobIDLock}"
+#  else
+#    echo "Could not get exclusive lock"
+#    exit 1
+#  fi
+
+  (
+    flock -w 1 200
+    #cat $file_JobID
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
     else
@@ -337,11 +354,8 @@ fn_GetJobID()
     fi
     (( int_JobID+=1 ))
     echo ${int_JobID} > "${file_JobID}"
-    rm -f "${file_JobIDLock}"
-  else
-    echo "Could not get exclusive lock"
-    exit 1
-  fi
+    echo ${int_JobID}
+  ) 200> "${file_JobIDLock}"
 }
 readonly -f fn_GetJobID
 
@@ -350,10 +364,10 @@ fn_ExtractPairs()
   GetVar -pattern "From"    -name FROM
   GetVar -pattern "Sent"    -name SENT
   GetVar -pattern "Action"  -name ACTION_LIST
-  GetVar -pattern "Release" -name RELEASE                -default "NO-REL"
-  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NO-ENV"
+  GetVar -pattern "Release" -name RELEASE                -default ""
+  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NA"
   GetVar -pattern "Type"    -name TYPE                   -default ""
-  GetVar -pattern "Ticket"  -name TICKET                 -default ""  
+  GetVar -pattern "Ticket"  -name TICKET                 -default "ID-${int_JobID}"  
 }
 ## Enterprise feature available readonly -f fn_ExtractPairs
 
@@ -453,7 +467,7 @@ pauseTask()
 {
   ## Expection to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
-  Task "printf \"Sleeping for ${int_Sleep} seconds\" ; sleep ${int_Sleep}" 
+  Task "printf \"Sleeping for ${int_Sleep} seconds\n\" ; sleep ${int_Sleep}" 
 }
 
 breakTask()
@@ -488,8 +502,9 @@ GetVar()
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
-## typeset local b_Upper=
-  
+  typeset local b_Upper=
+  typeset local b_Lower=
+ 
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
       case "${1}" in
@@ -498,7 +513,8 @@ GetVar()
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
         -list    )         b_List=1           ;;
-##		-upper   )         b_Upper=1          ;;
+        -upper   )         b_Upper=1          ;;
+        -lower   )         b_Lower=1          ;;
       esac
       shift
     done
@@ -527,7 +543,8 @@ GetVar()
   ## If a value hasnt been found or is empty, use the default if one is set
   ## ======================================================================
   [[ "${str_Value}" ]] || str_Value=${str_Default}
-##  [[ "${b_Upper}" ]] && str_Value=$(echo ${str_Value} | tr [:lower:] [:upper:])
+  [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
+  [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
 ##         tmp=${1:1}               # Strip off leading '/' . . .
 ##          str_Name=${tmp%%:*}     # Extract name.
 ##          str_Value=${tmp##*:}         # Extract value.
@@ -546,7 +563,8 @@ NGetVar()
   typeset local str_Default=
   typeset local b_IgnoreCase=1
   typeset local b_List=
-##  typeset local b_Upper=" -i "
+  typeset local b_Upper=
+  typeset local b_Lower=
   
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -556,7 +574,8 @@ NGetVar()
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
         -list    )         b_List=1           ;;
-##		-upper   )         b_Upper=           ;;
+        -upper   )         b_Upper=1          ;;
+        -lower   )         b_Lower=1          ;;
       esac
       shift
     done
@@ -567,6 +586,9 @@ NGetVar()
   echo "TMP is <${_tmp}>"
   Nstr_Name=${_tmp%%:*}
   Nstr_Value=${_tmp##*:}
+  [[ "${b_Upper}"   ]] && Nstr_Value=${Nstr_Value^^}
+  [[ "${b_Lower}"   ]] && Nstr_Value=${Nstr_Value,,}
+
   echo ${Nstr_Name}"=\"${Nstr_Value}\""
   sleep 5
 }
@@ -583,13 +605,13 @@ fn_Transition()
   case ${str_Transition} in
 
     ## Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
-    resume  ) fn_ShowJobs2 failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    queue   ) fn_ShowJobs failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    resume  ) fn_ShowJobs failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
 
     ## Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs2 failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs2 failed superseded starting queued ; str_Target="${dir_New}"     ;;
-    pause   ) fn_ShowJobs2 running starting queued pending   ; str_Target="${dir_Active}" ;;
+    delete  ) fn_ShowJobs failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs failed superseded starting queued ; str_Target="${dir_New}"     ;;
+    pause   ) fn_ShowJobs running starting queued pending   ; str_Target="${dir_Active}" ;;
 
   esac
 
@@ -604,16 +626,16 @@ fn_Transition()
   arr_Answer=$(fn_Range "${str_Answer}")
   if [ "${arr_Answer}" != "x " ] ; then
     for int_Choice in ${arr_Answer} ; do
-	  if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
+	    if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
         printf "Out of range" 
         fn_PressEnter
         return 0
       fi
-      
+
       typeset local  file_Link="${dir_Job}"/${arr_States[${int_Choice}]}/${arr_Jobs[${int_Choice}]}
       typeset local   file_Job="${dir_Active}/${arr_Jobs[${int_Choice}]}"
       typeset local   file_Log="${dir_Log}/$(basename "${file_Job}")".log
-	  typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
+      typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
 
       fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in
@@ -656,9 +678,9 @@ fn_CheckOwnJobs()
 {
   if [ "$(find "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
     printf "\n\n%s\n" "You have queued jobs that have not yet been started."
-	read -n 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
-	printf "\n\n"
-	[[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
+    read -n 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
+    printf "\n\n"
+    [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
   fi
 }
 readonly -f fn_CheckOwnJobs
@@ -667,7 +689,7 @@ fn_SetJobOwner()
 {
   typeset local file_Job="${1}"
   if grep "^str_Owner=" "${file_Job}" ; then
-	fn_Audit "${file_Job}" "accepted ownership of the job"
+    fn_Audit "${file_Job}" "accepted ownership of the job"
     sed 's/^str_Owner=.*/str_Owner='${str_User}'/g' "${file_Job}" > "${file_Job}".tmp
 	mv "${file_Job}".tmp "${file_Job}"
   fi

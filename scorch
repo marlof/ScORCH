@@ -73,9 +73,12 @@
 ## 1.17 170922 marc      Added update notification to Context Menu
 ## 1.18 171015 marc      Formatting program and output. Improved %age call for disk space
 ##                       Added timer to running jobs
+## 1.19 171018 marc      Added lower and upper options for GetVar
+##                       working on breakTask internal for jobs
+## 1.20 171204 marc      Trial python for showJobs
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.18"
+typeset str_ProgramVersion="1.19dev "
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -111,6 +114,7 @@ typeset         dir_Tmp="/dev/shm"
 typeset     dir_Plugins="${dir_Base}/plugins"
 typeset     str_Plugins="$(basename "${dir_Plugins}")"
 typeset   dir_Functions="${dir_Base}/functions"
+typeset      dir_Python="${dir_Base}/python"
 typeset   str_Functions="$(basename "${dir_Functions}")"
 
 ## Job definitions
@@ -130,6 +134,8 @@ typeset     dir_Deleted="${dir_Job}/deleted"
 typeset    dir_Archived="${dir_Job}/archived"
 typeset     dir_Pending="${dir_Job}/pending"
 typeset      dir_Active="${dir_Job}/active"
+typeset      dir_Manual="${dir_Job}/manual"
+
 ##typeset      file_JobID="${dir_Var}/jobid"
 
 typeset           b_Group=
@@ -212,7 +218,7 @@ fn_LoadFunctions()
 
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
-                if [[ $? = 0 ]] ; then
+        if [[ $? = 0 ]] ; then
           [[ ${b_Display} ]] || printf "%10s\n" "OK"
         else
           printf "%10s\n" "ERROR" && b_Errors=1
@@ -221,7 +227,7 @@ fn_LoadFunctions()
         echo "Cannot access <${str_EachFile}>"
       fi
     done
-        IFS=$SAVEIFS
+    IFS=$SAVEIFS
   else
     :
         ##echo "$(pwd) ${dir_Directory} could not be found"
