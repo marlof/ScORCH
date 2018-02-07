@@ -44,10 +44,11 @@ fn_Manager()
 
       ## Job State transition
       d | D ) fn_Transition delete  ;;
-      q | Q ) fn_CheckDispatcher ; fn_Transition queue   ;;
-      r | R ) fn_CheckDispatcher ; fn_Transition resume  ;;
-      u | U )                      fn_Transition unqueue ;;
-      p | P )                      fn_Transition pause   ;;
+      q | Q ) fn_CheckDispatcher     ; fn_Transition queue   ;;
+      r | R ) fn_CheckDispatcher     ; fn_Transition resume  ;;
+      u | U )                          fn_Transition unqueue ;;
+      p | P )                          fn_Transition pause   ;;
+      i | I ) fnE_PluginManagerMenu ;;
 
       ## Misc
       m | M ) fn_EditMOTD           ;;

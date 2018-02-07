@@ -469,6 +469,7 @@ fn_ContextMenu()
   typeset local b_FailedJobs=
   typeset local b_NewJobs=
   typeset local b_RunningJobs=
+  typeset local b_Plugins=
   ##  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     ## Specific Mode
@@ -494,6 +495,7 @@ fn_ContextMenu()
     [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_FailedJobs=1 && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
+    [[ "${ENTERPRISE}" ]] && b_Plugins=1
     printf "${dis_ULOn}C${dis_ULOff}SV | "
 
   fi
