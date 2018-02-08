@@ -12,6 +12,7 @@
 # 1.2       Marc Loftus     28/10/2017      Sorting NEW oldest first, COMPLATED oldest last
 # 1.3       Marc Loftus     30/10/2017      Starting convert of scorch(bash) to scorch(python)
 # 1.4       Marc Loftus     27/11/2017      C|hnaged to self contained ShowJobs function
+# 1.5       Marc Loftus     08/02/2018      Adjustment for args [2] to [1] for output file
 #      -v int_Column1Width=${int_Column1Width} \
 #      -v int_Column2Width=${int_Column2Width} \
 #      -v int_Column3Width=${int_Column3Width} \
