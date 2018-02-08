@@ -159,10 +159,10 @@ def main(argv):
     args = sys.argv[1:]
     while len(args):
         if args[0] == '-o':
-            outputfile = args[2]
+            outputfile = args[1]
             args = args[1:]
         elif args[0] == '-v':
-            option = args[2]
+            option = args[1]
             args = args[1:]
             print(option)
             #eval(option)
