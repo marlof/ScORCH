@@ -159,7 +159,7 @@ def main(argv):
     while len(args):
         if args[0] == '-o':
             outputfile = args[1]
-            args = args[1:]
+            args = args[2:]
         elif args[0] == '-v':
             option = args[1]
             args = args[1:]
