@@ -12,6 +12,7 @@
 # 1.2       Marc Loftus     28/10/2017      Sorting NEW oldest first, COMPLATED oldest last
 # 1.3       Marc Loftus     30/10/2017      Starting convert of scorch(bash) to scorch(python)
 # 1.4       Marc Loftus     27/11/2017      C|hnaged to self contained ShowJobs function
+# 1.5       Marc Loftus     08/02/2018      Adjustment for args [2] to [1] for output file
 #      -v int_Column1Width=${int_Column1Width} \
 #      -v int_Column2Width=${int_Column2Width} \
 #      -v int_Column3Width=${int_Column3Width} \
@@ -158,6 +159,7 @@ def main(argv):
     while len(args):
         if args[0] == '-o':
             outputfile = args[1]
+<<<<<<< HEAD
             #print("out file:", outputfile)
             #print("args:", args[2:])
             args = args[2:]
@@ -165,6 +167,14 @@ def main(argv):
             verbose =  1
             args = args[2:]
             #print(option)
+=======
+            args = args[1:]
+        elif args[0] == '-v':
+            option = args[1]
+            args = args[1:]
+            print(option)
+            #eval(option)
+>>>>>>> d07e6602b3165829338ae9a1f52f712df028efe8
             #print(args)
         else:
             list_Dir.append(args[0])
