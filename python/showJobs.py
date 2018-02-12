@@ -50,9 +50,8 @@ else:
     dir_Log   = dir_Base + "var/log/"
     cmd_Clear = "os.system('clear')" 
 
-str_User              = getpass.getuser()
+#str_User              = getpass.getuser()
 int_Count             = 1
-str_User              = getpass.getuser()
 str_ProgramName       = __file__
 int_PID               = os.getpid()
 int_Rows, int_Columns = os.popen('stty size', 'r').read().split()
@@ -154,28 +153,29 @@ def main(argv):
 #            fn_ShowJobs(arg)
 
 #    print("===========================")
-
+    outputfile = os.devnull
     args = sys.argv[1:]
     while len(args):
         if args[0] == '-o':
-            outputfile = args[2]
-            args = args[1:]
+            outputfile = args[1]
+            #print("out file:", outputfile)
+            #print("args:", args[2:])
+            args = args[2:]
         elif args[0] == '-v':
-            option = args[2]
-            args = args[1:]
-            print(option)
-            #eval(option)
+            verbose =  1
+            args = args[2:]
+            #print(option)
             #print(args)
         else:
             list_Dir.append(args[0])
             #fn_ShowJobs(args[0])
-        args = args[1:] # shift
+            args = args[1:] # shift
 
     #filename = '/tmp/%s.txt' % os.getpid()
     filename = outputfile
     temp = open(filename, 'w+b')
     
-    #print("ListL",list_Dir)
+    #print("Array ListDir",list_Dir)
     for eachDir in list_Dir:
         #print(eachDir)
         fn_ShowJobs(eachDir,temp)

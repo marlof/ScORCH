@@ -26,7 +26,6 @@ fn_GetRequest()
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
-
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
           str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
@@ -44,7 +43,7 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-            [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
+        [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
         echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi

@@ -2,8 +2,8 @@ SP_DEMO-HOSTNAME()
 {
   # Use   GetVar   to pass your own key pair values to the plugin
   # =============================================================
-  GetVar -pattern "Pause" -name "PAUSE" -default "60"
-  GetVar -pattern "Fail"  -name "FAIL"  -default "0"
+  GetVar -pattern "Pause" -name "PAUSE" -default "60" # Task will pause for (x) seconds
+  GetVar -pattern "Fail"  -name "FAIL"  -default "0" # Fails a task if value is 1 
   
   # Use   Task    to run a command
   # ==============================

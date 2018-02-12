@@ -130,7 +130,7 @@ readonly -f fn_ShowLine
 fn_ShowJobs()
 {
     ${dir_Python}/showJobs.py -o /tmp/mycache $*
-    . /tmp/mycache
+    [[ -r /tmp/mycache ]] && . /tmp/mycache
 }
 
 fn_ShowJobs2()
@@ -331,9 +331,12 @@ fn_FormatTasks()
   ## This function is only called by fn_ShowTasks and will format the layout
   ## regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
+  typeset local int_RefreshRate=${int_Refresh}
   # Fake the running state to start with a loop
-  str_JobState=running
-  while [ "${str_JobState}" = "running" ] ; do
+  typeset local str_TmpJobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+  str_JobState=${str_TmpJobState}
+  echo "${str_JobState} = ${str_TmpJobState}" 
+  while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
     clear
     fn_ShowTop
     fn_ShowLine
@@ -375,13 +378,15 @@ fn_FormatTasks()
     tail -10 ${dir_Log}/$(basename ${file_Job}).log
 	  printf " "
     fn_ShowLine "="
-    printf "\n\n ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
-    read -t ${int_Refresh} char_Choice
+    printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
+    read -n 1 -t ${int_RefreshRate} char_Choice
 
     case ${char_Choice} in
-	  p | P ) fn_PressEnter ;;
-	  x | X ) break ;;
+      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read int_RefreshRate ;;
+	    p | P ) fn_PressEnter ;;
+	    x | X ) break ;;
     esac
+
   done
 }
 readonly -f fn_FormatTasks

@@ -76,10 +76,13 @@
 ## 1.19 171018 marc      Added lower and upper options for GetVar
 ##                       working on breakTask internal for jobs
 ## 1.20 171204 marc      Trial python for showJobs
-## 1.21dev 180207 marc      Adding plugin manager
+## 1.21dev 180207 marc   Fixing TASK for none running jobs
+##                       Adding plugin manager
+##                       
+
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.21dev "
+typeset str_ProgramVersion="1.21dev"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"

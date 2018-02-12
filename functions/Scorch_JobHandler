@@ -242,7 +242,7 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -r str_Line
-	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+	    str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
