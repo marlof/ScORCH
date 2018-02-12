@@ -159,23 +159,11 @@ def main(argv):
     while len(args):
         if args[0] == '-o':
             outputfile = args[1]
-<<<<<<< HEAD
-            #print("out file:", outputfile)
-            #print("args:", args[2:])
-            args = args[2:]
-        elif args[0] == '-v':
-            verbose =  1
-            args = args[2:]
-            #print(option)
-=======
             args = args[1:]
         elif args[0] == '-v':
             option = args[1]
             args = args[1:]
             print(option)
-            #eval(option)
->>>>>>> d07e6602b3165829338ae9a1f52f712df028efe8
-            #print(args)
         else:
             list_Dir.append(args[0])
             #fn_ShowJobs(args[0])
