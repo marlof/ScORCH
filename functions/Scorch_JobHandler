@@ -233,7 +233,7 @@ fn_GetRequest()
   if [ ! -z "${file_Template}" ] ; then
     echo "$($fn_LogDate): Processing file:${file_Template}"
     while read -r str_Line ; do
-	  str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
@@ -375,11 +375,13 @@ StartGroup()
 {
   b_Background="&"
   arr_PIDs=""
+  lst_PIDs=""
   if [[ ${b_StartGroup} = "" ]] ; then
 	printf '
 	
 typeset local int_PID=
 typeset arr_PIDs=
+typeset lst_PIDs=
 	
 fn_GroupWait()
 {
@@ -388,11 +390,12 @@ fn_GroupWait()
     for int_PID in ${arr_PIDs} ; do
       if kill -0 ${int_PID} 2>/dev/null ; then
         : # PID is still running
-		echo "PID <${int_PID}> is still running"
+        echo "PID <${int_PID}> is still running"
         arr_PIDsRemaining="${arr_PIDsRemaining} ${int_PID}"  
       elif wait ${int_PID} ; then
         : # PID exited cleanly
-	    echo "PID <${int_PID}> completed"
+        # Need to get exit status of background process
+        echo "PID <${int_PID}> completed"
       else
         int_PID_RC=$?
    	    echo "PID <${int_PID}> completed with ${int_PID_RC}" >> "${file_Job}"
@@ -400,13 +403,56 @@ fn_GroupWait()
     done
     [[ ${#arr_PIDsRemaining} -eq 0 ]] && break
     arr_PIDs=${arr_PIDsRemaining}
-	echo "Remaining PIDs : ${#arr_PIDS}"
+    echo "Remaining PIDs : ${#arr_PIDS}"
+    sleep 5
+  done
+}
+
+fn_Index()
+{
+#  echo "List: ${!lst_PIDs[@]}"
+  for i in "${!lst_PIDs[@]}"; do
+    if [[ "${lst_PIDs[i]}" = "$1" ]]; then
+      let i++;
+      echo "$i"
+    fi
+  done
+#  echo "Test:$i"
+}
+
+fn_GroupWait()
+{
+  typeset local b_Failed=0
+  while : ; do
+    arr_PIDsRemaining=
+    for int_PID in ${arr_PIDs} ; do
+      if kill -0 ${int_PID} 2>/dev/null ; then
+        : # PID is still running
+        echo "PID <${int_PID}> is still running"
+        arr_PIDsRemaining="${arr_PIDsRemaining} ${int_PID}"
+      else  
+        wait ${int_PID}
+        int_PID_RC=$?
+        echo "PID <${int_PID}> completed with exit code ${int_PID_RC}"
+        ((  int_PID_RC == 0  )) && echo lst_PID[$(fn_Index ${int_PID})]=0 || echo lst_PID[$(fn_Index ${int_PID})]="-1"
+          #set | grep lst_PID
+        echo "Index : $(fn_Index ${int_PID})"
+      fi
+    done
+    if [[ ${#arr_PIDsRemaining} -eq 0 ]] ; then
+      echo ${lst_PIDs[@]}
+      [ $(echo ${lst_PIDs[@]}| grep "\-1") ] && echo "FAILED" || break
+      break
+    fi
+    # if b_Failed is true then exit rather than break
+    arr_PIDs=${arr_PIDsRemaining}
+    echo "Remaining PIDs : ${#arr_PIDS}"
     sleep 5
   done
 }
 
 ' >> "${file_Job}"
-	printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PIDs}\" >> \"\${file_Log}\"\n}\n" >> "${file_Job}"
+	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PIDs}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
 	b_StartGroup=1
   fi
   int_SubTask=0
@@ -440,7 +486,8 @@ Task()
     ((  int_SubTask++ ))
     str_GroupTask="_SubTask"
     printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
-    arr_PIDs=\"\${arr_PIDs} \$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
+    arr_PIDs=\"\${arr_PIDs} \$!\" ;\t#${str_ProgramName}_SubTask\n
+    lst_PIDs[${int_TaskCount}]=\"\$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
     str_LogExtension=".${int_SubTask}"
   else
     ## The task is a standard Task
@@ -531,7 +578,7 @@ GetVar()
        $1 ~ /^ *'"$str_Pattern"'/ {print $2}'       "${file_Request}" | sed -e 's/[,&]/ /g' )"
   else
     ## If the item is not a list, get rid of any spaces and tabs with gsub
-	## ===================================================================
+    ## ===================================================================
     str_Value="$(${cmd_AWK} 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
