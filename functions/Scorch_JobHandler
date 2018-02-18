@@ -419,7 +419,45 @@ fn_Index()
   done
 #  echo "Test:$i"
 }
-
+#1.       Check required parameters are set and that we can write to the parallel file
+#2.       Show the total number of actions in the parallel file
+#3.       Create log directory
+#4.       Take a copy of the parallel file
+#5.       Use SCORCHDB to break parallel file into columns
+#a.         <group id>|<task id>|<state>|<pid>|<command>
+#6.       If there are any FAILED tasks, set their status to PENDING
+#7.       Get list of group IDs in the parallel file
+#8.       Get a list of groups in the parallel file
+#9.       Loop over each group, starting and monitoring tasks as we go
+#10.   Keep looping until either all tasks in this group have completed successfully, or we have one or more FAILED tasks
+#and remaining RUNNING tasks have completed
+#11.   If no tasks are FAILED
+#a.       If no tasks are running for this qualifier and there are tasks remaining in PENDING state, start the next task
+#b.      Get the next PENDING task for this group
+#c.       If there are no more pending tasks for this group, move on to the next
+#d.      Get the task details
+#e.      running on the target group for this command
+#f.        If theres already a log for this task, we may be re-running after a failure
+#g.       Get the PID of the command
+#h.      Set the start time
+#i.         Update the entry in the parallel file
+#12.   Sleep for x  seconds to allow the tasks to run
+#13.   Get the task ID and PID of all tasks in the parallel file in RUNNING state for this group ID
+#14.   Split out the task ID and task PID and clear the end state for this task
+#15.   Run a harmless kill against the PID... if the kill succeeds, the process is still running
+#a.       The process is still running
+#b.      If the task isnt running, check its final state from its log file.  Cant reliably use "wait" here as bash has a bug that crashes
+#c.       If we have SUCCESS, mark the job as successful
+#d.      Else mark a failure
+#16.   If we got an end state for the task, update its entry in the parallel file
+#a.       Get the details of this task from the parallel file
+#b.      Update the entry in the parallel file
+#17.   Show a count of remaining PENDING tasks
+#18.   If all tasks for this group are in state SUCCESS, break
+#19.   If one or more tasks are FAILED and no tasks are RUNNING, break
+#20.   If any tasks are FAILED, error and exit
+#21.   End loop over group IDs
+#22.   Final check - make sure all tasks in the parallel file are marked as SUCCESS
 fn_GroupWait()
 {
   typeset local b_Failed=0
