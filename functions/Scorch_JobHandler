@@ -73,6 +73,7 @@ int_JobID=${int_JobID}
 int_ResumePoint=
 int_Last=0
 str_JobName="\$(basename "\$0")"
+lst_PID=""
 
 
 # Directory locations
@@ -100,15 +101,25 @@ fn_CheckTask()
   typeset local int_Task=\${2}
 
   if [ \${int_RC} -ne 0 ] ; then
-    mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-    echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-    echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
-    rm "\${LOCK}" 2>/dev/null
-    exit 1
-  else
-    echo "\$(${fn_LogDate}) Completed task [\${int_Task}/\${int_Last}]" >> "\${file_Log}"
-  fi
+    if [ \${b_Background} ] ; then
+      echo "FAILED Task \${int_Task} - But this is a subtask so this is never called"
+      set -x
+      lst_PID[\${int_Task}]="ERROR"
+      echo "failed task is lst_PID[\${int_Task}] : \${lst_PID[\${int_Task}]}"
+      exit 1
+      set +x
+    else
 
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+      echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
+      rm "\${LOCK}" 2>/dev/null
+      exit 1
+    fi
+  else
+    printf "\$(${fn_LogDate}) Completed task [\${int_Task}/\${int_Last}]\nAUDIT:T:\${int_Task}:C\n" >> "\${file_Log}"
+  fi
+set +x
   # Checking if PAUSED
   if [ -f "\${dir_Pause}"/\${str_JobName}".pause" ] ; then
     if [[ \${int_Task} = \${int_Last} ]] ; then
@@ -122,7 +133,7 @@ fn_CheckTask()
       echo "\$(${fn_LogDate}) Paused. Resume point automatically set for resume:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
-	fi
+    fi
   fi
 }
 
@@ -155,15 +166,15 @@ int_StartTask=\${int_ResumePoint:-1}
 int_Last=${int_TaskCount}
 
 while (( int_StartTask <= int_Last )) ; do
-  echo "===================" >> "\${file_Log}"
-  echo "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]" >> "\${file_Log}"
+  printf "===================\n" >> "\${file_Log}"
+  printf "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]\nAUDIT:T:\${int_StartTask}:R\n" >> "\${file_Log}"
   declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
-echo "===================" >> "\${file_Log}"
+printf "===================\n" >> "\${file_Log}"
 
-echo "\$(${fn_LogDate}) COMPLETED:\${int_StartTask}" >> "\${dir_Running}"/\${str_JobName}
+printf "\$(${fn_LogDate}) Completed task:\${int_StartTask}\nAUDIT:T:\${int_StartTask}:C\n" >> "\${dir_Running}"/\${str_JobName}
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}" 2>/dev/null
 
@@ -374,123 +385,78 @@ fn_ExtractPairs()
 StartGroup()
 {
   b_Background="&"
-  arr_PIDs=""
-  lst_PIDs=""
+ # arr_PID=""
+ # lst_PID=""
   if [[ ${b_StartGroup} = "" ]] ; then
 	printf '
 	
 typeset local int_PID=
-typeset arr_PIDs=
-typeset lst_PIDs=
-	
-fn_GroupWait()
+typeset local arr_PID=
+typeset local arr_FailedTasks=""
+typeset local b_Background=1
+
+lst_PIDRunning=""
+lst_PIDResult=""
+lst_FailedTasks=""
+
+
+fn_Count() ( set -f; set -- $1; echo $# )
+fn_PIDWait()
 {
-  while : ; do
-    arr_PIDsRemaining=
-    for int_PID in ${arr_PIDs} ; do
+  echo "Get number of lst_PID: $(fn_Count "$lst_PID")"
+  echo "Waiting for lst_PID for <${lst_PID}>"
+  while [[ ${#lst_PID} -ne 0 ]] ; do
+    # Allow some time for tasks to get going
+    sleep 5
+    for str_TaskPID in $lst_PID ; do
+      int_Task=${str_TaskPID%%:*}
+      int_PID=${str_TaskPID#*:}
+      #echo $int_Task:$int_PID
       if kill -0 ${int_PID} 2>/dev/null ; then
-        : # PID is still running
-        echo "PID <${int_PID}> is still running"
-        arr_PIDsRemaining="${arr_PIDsRemaining} ${int_PID}"  
+        lst_PIDRunning="${lst_PIDRunning}${int_Task}:$int_PID "
       elif wait ${int_PID} ; then
-        : # PID exited cleanly
-        # Need to get exit status of background process
-        echo "PID <${int_PID}> completed"
+        lst_PIDResult="${lst_PIDResult}${int_Task}:0 "
+        echo "AUDIT:T:${int_Task}:C"
       else
         int_PID_RC=$?
-   	    echo "PID <${int_PID}> completed with ${int_PID_RC}" >> "${file_Job}"
+        #echo "Task ${int_Task} failed"
+        lst_FailedTasks="${lst_FailedTasks}${int_Task} "
+        echo "AUDIT:T:${int_Task}:F"
+        lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
       fi
     done
-    [[ ${#arr_PIDsRemaining} -eq 0 ]] && break
-    arr_PIDs=${arr_PIDsRemaining}
-    echo "Remaining PIDs : ${#arr_PIDS}"
-    sleep 5
+
+    if [[ ${#lst_PIDRunning} -eq 0 ]] ; then
+       echo "${lst_PIDResult}"
+       for str_TaskResult in ${lst_PIDResult} ; do
+         int_Task=${str_TaskResult%%:*}
+         int_Result=${str_TaskResult#*:}
+         if [[ "$int_Result" -ne 0 ]] ; then
+           echo "Task $int_Task failed"
+         fi
+       done
+
+    else
+      
+      echo " PID Running: ${lst_PIDRunning}"
+      #echo " PID Result : ${lst_PIDResult}"
+    fi
+    lst_PID=${lst_PIDRunning}
+    #arr_Remaining=$lst_PID )
+    lst_PIDRunning=""
+    echo "$(fn_Count "$lst_PID") tasks remaining"
   done
+  if [[ ! -z ${lst_FailedTasks} ]] ; then
+    echo "FAILED TASKS: ${lst_FailedTasks}"
+    mv "${dir_Running}"/${str_JobName} "${dir_Failed}"/.
+    exit 1
+  fi
 }
 
-fn_Index()
-{
-#  echo "List: ${!lst_PIDs[@]}"
-  for i in "${!lst_PIDs[@]}"; do
-    if [[ "${lst_PIDs[i]}" = "$1" ]]; then
-      let i++;
-      echo "$i"
-    fi
-  done
-#  echo "Test:$i"
-}
-#1.       Check required parameters are set and that we can write to the parallel file
-#2.       Show the total number of actions in the parallel file
-#3.       Create log directory
-#4.       Take a copy of the parallel file
-#5.       Use SCORCHDB to break parallel file into columns
-#a.         <group id>|<task id>|<state>|<pid>|<command>
-#6.       If there are any FAILED tasks, set their status to PENDING
-#7.       Get list of group IDs in the parallel file
-#8.       Get a list of groups in the parallel file
-#9.       Loop over each group, starting and monitoring tasks as we go
-#10.   Keep looping until either all tasks in this group have completed successfully, or we have one or more FAILED tasks
-#and remaining RUNNING tasks have completed
-#11.   If no tasks are FAILED
-#a.       If no tasks are running for this qualifier and there are tasks remaining in PENDING state, start the next task
-#b.      Get the next PENDING task for this group
-#c.       If there are no more pending tasks for this group, move on to the next
-#d.      Get the task details
-#e.      running on the target group for this command
-#f.        If theres already a log for this task, we may be re-running after a failure
-#g.       Get the PID of the command
-#h.      Set the start time
-#i.         Update the entry in the parallel file
-#12.   Sleep for x  seconds to allow the tasks to run
-#13.   Get the task ID and PID of all tasks in the parallel file in RUNNING state for this group ID
-#14.   Split out the task ID and task PID and clear the end state for this task
-#15.   Run a harmless kill against the PID... if the kill succeeds, the process is still running
-#a.       The process is still running
-#b.      If the task isnt running, check its final state from its log file.  Cant reliably use "wait" here as bash has a bug that crashes
-#c.       If we have SUCCESS, mark the job as successful
-#d.      Else mark a failure
-#16.   If we got an end state for the task, update its entry in the parallel file
-#a.       Get the details of this task from the parallel file
-#b.      Update the entry in the parallel file
-#17.   Show a count of remaining PENDING tasks
-#18.   If all tasks for this group are in state SUCCESS, break
-#19.   If one or more tasks are FAILED and no tasks are RUNNING, break
-#20.   If any tasks are FAILED, error and exit
-#21.   End loop over group IDs
-#22.   Final check - make sure all tasks in the parallel file are marked as SUCCESS
-fn_GroupWait()
-{
-  typeset local b_Failed=0
-  while : ; do
-    arr_PIDsRemaining=
-    for int_PID in ${arr_PIDs} ; do
-      if kill -0 ${int_PID} 2>/dev/null ; then
-        : # PID is still running
-        echo "PID <${int_PID}> is still running"
-        arr_PIDsRemaining="${arr_PIDsRemaining} ${int_PID}"
-      else  
-        wait ${int_PID}
-        int_PID_RC=$?
-        echo "PID <${int_PID}> completed with exit code ${int_PID_RC}"
-        ((  int_PID_RC == 0  )) && echo lst_PID[$(fn_Index ${int_PID})]=0 || echo lst_PID[$(fn_Index ${int_PID})]="-1"
-          #set | grep lst_PID
-        echo "Index : $(fn_Index ${int_PID})"
-      fi
-    done
-    if [[ ${#arr_PIDsRemaining} -eq 0 ]] ; then
-      echo ${lst_PIDs[@]}
-      [ $(echo ${lst_PIDs[@]}| grep "\-1") ] && echo "FAILED" || break
-      break
-    fi
-    # if b_Failed is true then exit rather than break
-    arr_PIDs=${arr_PIDsRemaining}
-    echo "Remaining PIDs : ${#arr_PIDS}"
-    sleep 5
-  done
-}
+
 
 ' >> "${file_Job}"
-	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PIDs}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
+	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PID}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
 	b_StartGroup=1
   fi
   int_SubTask=0
@@ -498,7 +464,7 @@ fn_GroupWait()
 
 EndGroup()
 {
-  printf "fn_Task_${int_TaskCount}(){ fn_GroupWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}(){ fn_PIDWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   b_Background=
   (( int_TaskCount++ ))
   int_SubTask=0
@@ -524,16 +490,16 @@ Task()
     ((  int_SubTask++ ))
     str_GroupTask="_SubTask"
     printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
-    arr_PIDs=\"\${arr_PIDs} \$!\" ;\t#${str_ProgramName}_SubTask\n
-    lst_PIDs[${int_TaskCount}]=\"\$!\" ;}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
+    lst_PID=\"\${lst_PID} ${int_TaskCount}:\$!\";}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
     str_LogExtension=".${int_SubTask}"
+    str_CheckTask=""
   else
     ## The task is a standard Task
     str_GroupTask=""
     str_LogExtension=""
-
+    str_CheckTask="fn_CheckTask \$? \${int_StartTask};"
   fi
-  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   ##else
   ##  printf "fn_Task_${int_TaskCount}"
   ##fi

@@ -79,10 +79,10 @@
 ## 1.21dev 180207 marc   Fixing TASK for none running jobs
 ##                       Adding plugin manager
 ##                       dos2unix on showJobs.py
-
+##                       Wait group improvements
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.21.4dev"
+typeset str_ProgramVersion="1.21.5dev"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"

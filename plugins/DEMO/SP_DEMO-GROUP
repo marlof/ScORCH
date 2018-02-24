@@ -1,15 +1,17 @@
 SP_DEMO-GROUP()
 {
+  GetVar -pattern "Fail" -name FAIL -default ""
   Task "echo first task"
   StartGroup
-    Task "sleep 30"
+    Task "sleep 15"
     Task "printf \${RANDOM:4}"
+    (( FAIL==1 )) && Task "false"
   EndGroup
   
-  Task "echo sleep 30 completed"
+  Task "echo sleep 15 completed"
   
   StartGroup
-    Task "sleep 20"
+    Task "sleep 12"
     Task "hostname"
   EndGroup
 }

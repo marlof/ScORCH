@@ -122,7 +122,7 @@ fn_CheckRunning()
     for file_EachJob in ${arr_RunningJobs} ; do
 	    if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
         mv "${dir_Running}/${file_EachJob}" "${dir_Failed}/."
-        echo "$(${fn_LogDate}) Orphaned. Resume point:unknown" | tee "${dir_Active}/${file_EachJob}" "${dir_Log}/${file_EachJob}.log"
+        echo "$(${fn_LogDate}) Orphaned. Resume point:unknown" | tee -a "${dir_Active}/${file_EachJob}" "${dir_Log}/${file_EachJob}.log"
       fi
     done
   fi
@@ -136,7 +136,7 @@ fn_CheckDispatcher()
   [ -f "${file_DispatchLock}" ] && ( [[ "$(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}')" ]] || rm "${file_DispatchLock}" )
   if [ -L "${file_DispatchLock}" ] ; then
     ## Check the lock is correct
-    echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
+    #echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher" | head -1) -eq $(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}') ]] ; then
 #echo This is the dispatcher      
       return 0
