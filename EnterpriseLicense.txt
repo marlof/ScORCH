@@ -1,0 +1,82 @@
+ScORCH Enterprise License Agreement
+This software license agreement ("Agreement") is a legal agreement between you (either an individual or an entity, "You" or "Your") and WebMarcIT Ltd ( "We", "Our" or "Us") for the use of ScORCH software (“Software”) and any services that may be provided. WebMarcIT Ltd reserves the right to modify the terms of this Agreement at any time.
+
+By purchasing the Software (or authorising any other person to do so) You warrant that you are capable of entering into a legally binding agreement, that You have read and understand this Agreement and that You accept its terms and conditions. You acknowledge that this Agreement constitutes the complete statement of the agreement between You and WebMarcIT Ltd.
+
+1. Grant and Scope of License
+
+Subject to the terms and conditions of this Agreement and the payment by You of the applicable fee for the Software, WebMarcIT Limited grants You a limited, non-exclusive, worldwide license to install, download and use a single instance of the Software ("License") through a single installation. Each License may run one instance of the Software, accessible via one path. Any attempt to circumvent this limitation is prohibited and will result in the License being revoked.
+
+Before using the Software, you must register in the autoscorch.com customer area administrator details as well as the hostname address on which You will use the License. These details must be kept up-to-date.
+
+2. Rights
+
+The Software is licensed to You for use only under the terms and conditions of the License. You acknowledge that all intellectual property rights, copyrights and trademarks in the Software belong to WebMarcIT Ltd, that rights in the Software are licensed (not sold) to You, and that You have no rights in, or to, the Software other than the right to use them in accordance with the terms of this Agreement.
+
+All copies of the Software must contain the same proprietary notices that appear on and in the Software, including all copyright notices embedded in the Software, which must remain unaltered from the original and visible at all times, unless by specific prior arrangement with WebMarcIT Ltd.
+
+The Software may be permanently transferred by the original purchaser to a third party ("Subsequent Licensee") not before 120 days following purchase, provided that the expiry date of the License falls after the date of the transfer. The original licensee may not retain a copy or installation of the Software. The Subsequent Licensee must agree to the terms of this Agreement and waive the right to transfer.
+
+3. Restrictions
+
+This license is granted to You alone. You may not redistribute the Software in whole or in part. You may not rent, lease, sub-license, sell, assign, pledge, transfer or otherwise dispose of the Software in any form, on a temporary or permanent basis, without the prior written consent of WebMarcIT Ltd.
+
+For the avoidance of doubt, You are solely responsible for managing content posted using your installation of the Software (“Your Content”). WebMarcIT Ltd shall have no liability in respect of Your Content including but not limited to its accuracy or lawfulness.
+
+You are solely responsible for ensuring that Your Content and Your use of the Software complies with all applicable legislation and regulations, including but not limited to all applicable Data Protection and Privacy legislation. You undertake to ensure that the Software is not used by You or others to engage in illegal activity. You may not use the software to engage in any activity that would violate the rights of third parties. You hereby agree to indemnify Us from any loss or damage arising from Your breach of this provision.
+
+4. Termination
+
+The License for the Software is effective until terminated. You may terminate the License at any time by uninstalling the Software and destroying all copies of the Software.
+
+WebMarcIT Ltd reserves the right to revoke Your License to use the Software should any of the terms of this Agreement be violated.
+
+5. Customer Data
+
+It is Your responsibility to ensure that you provide WebMarcIT Ltd with accurate, complete and current contact information. A failure to do so may result in Your inability to access updates and services.
+
+You must maintain the confidentiality and security of your customer credentials that allow You to access the AutoScorch.com customer area. Any communication received by WebMarcIT Ltd through the customer area shall be assumed to have originated from You or an agent acting on your behalf.
+
+6. Support
+
+For the initial twelve months of the License (“Initial Period”), which shall commence upon payment by You of the applicable license Fee, We shall provide You with support to respond to any problems (“Support”) You are experiencing with the Software which result in it not complying with its description or the demonstration, as made available on Our website (“Problem”). Such Support and all software updates ("Updates") are included in the License Fee for the Initial Period. Additional payments ("Extension Payments") will be required to extend access to Support and Updates beyond the Initial Period.
+
+You may notify Us of Problems via the website and We will use Our reasonable endeavours to respond to such Problems and provide a resolution to such Problems. For the avoidance of doubt, We do not warrant that We can provide resolution to Problems on an individual basis and resolution to Problems may be provided with the next Update.
+
+7. Add-ons and Services
+
+Add-ons and services associated with a License (“Add-ons”) may have additional requirements which You must ensure are met before purchasing.
+
+You may only use an Add-on with its associated License. If the Add-on purchase becomes invalid (such as through refund or cancellation, etc), you must immediately uninstall the Add-on and delete all associated files.
+
+Add-ons may not be separately transferred between Your Licenses or to a third party. When a License is transferred to a Subsequent Purchaser, all Add-ons associated with that License will be transferred as well.
+
+Access to Support and Updates for the Add-on is dependent on the associated License having current access to Support and Updates. The License's Extension Payment may be changed by the purchase of Add-ons. Once an Add-on is purchased, the Extension Payment will always take the Add-on into account. To not extend an Add-on with an Extension Payment, You must contact us to cancel the Add-on before making the Extension Payment. No refund will be given in this case and should You wish to re-gain access to the Add-on, You will need to re-purchase it.
+
+8. Disclaimer of Warranties
+
+The Software is provided on an "AS IS" basis, without warranty of any kind, including without limitation the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+
+You acknowledge that the Software has not been developed to meet Your individual requirements, and that it is therefore Your responsibility to ensure that the facilities and functions of the Software meet your requirements prior to purchase. You acknowledge that the Software may not be free of bugs or errors, and agree that the existence of errors shall not constitute a breach of this Agreement.
+
+The entirety of the risk as to the results, quality and performance of the Software is with You.
+
+In the event that You are purchasing the Software as a consumer, nothing in this clause shall affect your statutory rights.
+
+9. Limitation of Liability
+
+Our liability for losses suffered by you, arising out of or in connection with this agreement (including any liability for the acts or omissions of its employees, agents and subcontractors), whether arising in contract, tort (including negligence), misrepresentation or otherwise, shall be limited to 100% of the purchase price. We shall not be liable for indirect, incidental, or consequential damages of any kind, including loss of income or profits, loss of goodwill, loss of data, or the like. Nothing in this Agreement shall limit or exclude the liability of either party for death or personal injury resulting from negligence, fraud or fraudulent misrepresentation.
+
+This Agreement sets out the full extent of Your obligations and liabilities in respect of the supply of the Software. In particular, there are no conditions, warranties, representations or other terms, express or implied, that are binding on You except as specifically stated in this Agreement. Any condition, warranty, representation or other term concerning the supply of the Software which might otherwise be implied into, or incorporated in, this Agreement, or any collateral contract, whether by statute, common law or otherwise, is hereby excluded to the fullest extent permitted by law.
+
+10. Indemnification
+
+You agree to indemnify, defend, and hold harmless WebMarcIT Ltd and its officers, directors, agents, and employees from and against any and all demands, claims, losses and liabilities, including reasonable attorney's fees, arising out of or caused by Your use of the Software. This obligation shall survive the termination of this Agreement.
+
+11. Refund Policy
+
+We will maintain a reasonable policy regarding requests for refunds. We reserve the right to refuse a refund or to apply a partial refund. An administration charge may be applied where a refund is offered.
+
+12. Jurisdiction
+
+This License, its subject matter or its formation (including non-contractual disputes or claims) shall be governed by and construed in accordance with English law and submitted to the non-exclusive jurisdiction of the English courts. If an English Court judges any provision of this Agreement to be invalid, void, or unenforceable, the parties agree that the remaining provisions of this Agreement shall remain valid and enforceable.

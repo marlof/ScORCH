@@ -331,6 +331,7 @@ fn_FormatTasks()
   ## This function is only called by fn_ShowTasks and will format the layout
   ## regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
+  typeset local file_Log="{${dir_Log}/$(basename ${file_Job}).log}"
   typeset local int_RefreshRate=${int_Refresh}
   # Fake the running state to start with a loop
   typeset local str_TmpJobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
@@ -373,11 +374,26 @@ fn_FormatTasks()
             END {
               printf "\n\n"
             }'
+    cat "${file_Log}" | ${cmd_AWK} 'BEGIN {
+      linenum=1 
+    }
+    $0 ~ "AUDIT:T:" {
+      print "$2,$3,$4,NR,NF"
+    }'
     #fn_PressEnter
     fn_ShowLine
     tail -10 ${dir_Log}/$(basename ${file_Job}).log
 	  printf " "
     fn_ShowLine "="
+
+int_Last=$(grep int_Last= ${file_Job} | tail -1 | cut -d= -f2)
+for int_Count in $(seq 1  ${int_Last}) ; do
+  printf "${int_Count}: $(grep "AUDIT:T:${int_Count}" ${file_Job} | tail -1 | cut -d":" -f4) :"
+  # tail shows sub tasks
+  grep fn_Task_${int_Count} ${file_Job} | tail -1 | cut -f2
+done
+fn_ShowLine "="
+
     printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
     read -n 1 -t ${int_RefreshRate} char_Choice
 

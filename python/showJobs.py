@@ -40,15 +40,17 @@ dir_Run=os.getcwd()
 # Set up variables
 if os.name == "nt":
     # Windows
+    print("Not yet onfigured for windows")
     dir_Base  = "C:\\Users\\Marc\\Google Drive\\WebMarcIT\\scorch\\ScORCH\\"
     dir_Job   = dir_Base + "jobs\\"
     dir_Log   = dir_Base + "var\\log\\"
     cmd_Clear = "os.system('cls')"
+    exit()
 else:
     # Everything else
-    dir_Base  = "/mnt/c/Users/marc/Google Drive/WebMarcIT/scorch/ScORCH/"
-    dir_Job   = dir_Base + "jobs/"
-    dir_Log   = dir_Base + "var/log/"
+    dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dir_Job   = dir_Base + "/jobs/"
+    dir_Log   = dir_Base + "/var/log/"
     cmd_Clear = "os.system('clear')" 
 
 #str_User              = getpass.getuser()

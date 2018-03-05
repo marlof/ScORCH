@@ -464,7 +464,7 @@ fn_PIDWait()
 
 EndGroup()
 {
-  printf "fn_Task_${int_TaskCount}(){ fn_PIDWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}(){\tfn_PIDWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \${int_StartTask};}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   b_Background=
   (( int_TaskCount++ ))
   int_SubTask=0
@@ -499,7 +499,8 @@ Task()
     str_LogExtension=""
     str_CheckTask="fn_CheckTask \$? \${int_StartTask};"
   fi
-  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   ##else
   ##  printf "fn_Task_${int_TaskCount}"
   ##fi
