@@ -1,0 +1,30 @@
+# Orchestration framework
+
+# Template of requirements to create a Sequence of Events (SoE) 
+Action      : LONGRUN
+Ticket      : DEM-001
+Environment : DEV-01
+Label       : dev
+
+Action      : OBRAR-DEMO LONGRUN
+Ticket      : DEM-001
+Environment : ST-01 ST-02
+Parent      : dev
+Label       : systest
+
+
+# Task list
+
+# Rules
+
+
+# Running all the jobs at the same time invokes the flow manager (enterprise feature)
+(q)ueue the jobs
+
+# First job runs the other jobs are pending waiting for the first job to finish
+# export SHOWMAX=30
+# export REFRSH=10
+# export TAIL=25
+
+# Deployment framework 
+obrar -l

@@ -80,9 +80,11 @@
 ##                       Adding plugin manager
 ##                       dos2unix on showJobs.py
 ##                       Wait group improvements
+##                       editor build git test
+## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.21.5dev"
+typeset str_ProgramVersion="1.21.6dev"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -255,12 +257,16 @@ typeset b_Start=
 typeset b_Background=
 typeset b_Install=
 typeset file_Template=
+typeset str_Action=
+typeset lst_GetVar=
 
 ## Check for argument list
 ## scorch can be run in several modes (install, new, file, dispatcher, manager and background)
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
+      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ;;
+      -o          ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ;;
       -h          ) b_Help=1 ;;
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -dispatcher ) b_Dispatcher=1 ;;
@@ -276,6 +282,8 @@ if [ $# -ne 0 ] ; then
     shift
   done
 fi
+
+
 
 
 #HEADER
@@ -298,6 +306,12 @@ fn_CheckAuth
 fn_CheckDispatcher
 
 [[ ${b_Dispatcher} ]] && fn_Dispatcher
+if [[ ${str_Action} ]] ; then
+  echo "Action:${str_Action}" > ${file_Template}
+  echo "${lst_GetVar}" | tr ";" "\n" >> ${file_Template}
+  cat ${file_Template}
+fi
+
 
 if [[ ${file_Template} ]] ; then
   [[ ! -r "${file_Template}" ]] &&  echo "Error: Cannot read template file ${file_Request}" && exit 1
