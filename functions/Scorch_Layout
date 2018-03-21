@@ -331,7 +331,7 @@ fn_FormatTasks()
   ## This function is only called by fn_ShowTasks and will format the layout
   ## regardless of whether the tasks were requested from a group call
   typeset local file_Job="${1}"
-  typeset local file_Log="{${dir_Log}/$(basename ${file_Job}).log}"
+  typeset local file_Log="${dir_Log}/$(basename ${file_Job}).log"
   typeset local int_RefreshRate=${int_Refresh}
   # Fake the running state to start with a loop
   typeset local str_TmpJobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
@@ -378,7 +378,7 @@ fn_FormatTasks()
       linenum=1 
     }
     $0 ~ "AUDIT:T:" {
-      print "$2,$3,$4,NR,NF"
+      #print "$2,$3,$4,NR,NF"
     }'
     #fn_PressEnter
     fn_ShowLine

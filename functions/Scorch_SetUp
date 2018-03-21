@@ -82,7 +82,7 @@ readonly -f fn_CheckSetUp
 fn_Help()
 {
   # Help
-  echo "${str_ProgramName} "
+  echo "${str_ProgramName}"
   echo " # Options"
   echo "    -p <alternative plugin dir>   Use a different plugin directory"
   echo " "
@@ -90,7 +90,7 @@ fn_Help()
   echo "    -h                            Show help"
   echo "    -v                            Display version"
   echo " "
-  echo " # Internal Modes"
+  echo " # Internal Modes                 "
   echo "    -dispatcher                   Run is dispatcher mode"
   echo "    -new                          Load new job from input"
   echo "    -file <file template> [-s]    Load new job from file [ and move to start ]"
@@ -99,6 +99,13 @@ fn_Help()
   echo "    -p <dir>                      Use Plugins from given directory"
   echo "    -f <dir>                      Use Functions from given directory"
   echo " "
+  echo " # Command Line Advanced Options"
+  echo "    -a <ActionName>               Action Name"
+  echo "    -o <keyname>:<keyvalue>       A keypair for the action"
+  echo "    -s                            Start"
+  echo ""
+  echo " # Example"
+  echo "    scorch -a SAFEDEMO -o key1:value1 -o key2:val2 -s"
 }
 readonly -f fn_Help
 
@@ -245,8 +252,12 @@ readonly -f fn_UpdateResumePoint
 
 fn_PressEnter()
 {
-  printf "\n\n"
-  read -p " Press Enter to continue "
+  if [[  b_Interactice=1 ]] ; then
+    printf "\n\n"
+    read -p " Press Enter to continue "
+  else
+    printf "\nNon Interactive Mode\n"
+  fi
 }
 readonly -f fn_PressEnter
 
