@@ -19,6 +19,7 @@
 #      -v int_Column4Width=${int_Column4Width} \
 #      -v int_Column5Width=${int_Column5Width} \
 #      -v int_Column6Width=${int_Column6Width} \
+# 1.6       Marc Loftus     17/04/2018      Adjustment to OS paths
 ############################################################################################################
 str_ProgramVersion = '1.4dev'
 
@@ -49,11 +50,10 @@ if os.name == "nt":
 else:
     # Everything else
     dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dir_Job   = dir_Base + "/jobs/"
-    dir_Log   = dir_Base + "/var/log/"
+    dir_Job   = dir_Base + "jobs/"
+    dir_Log   = dir_Base + "var/log/"
     cmd_Clear = "os.system('clear')" 
 
-#str_User              = getpass.getuser()
 int_Count             = 1
 str_ProgramName       = __file__
 int_PID               = os.getpid()
@@ -137,7 +137,7 @@ def main(argv):
     #print('Program name:',os.path.basename(__file__))
     #print('Argument List:', str(sys.argv))
     #inputfile = ''
-    outputfile = ''
+    outputfile = 'os.devnull'
 #    try:
 #        opts, args = getopt.getopt(argv,"hi:o:v:",["ifile=","ofile="])
 #    except getopt.GetoptError:
@@ -165,7 +165,6 @@ def main(argv):
         elif args[0] == '-v':
             option = args[1]
             args = args[1:]
-            print(option)
         else:
             list_Dir.append(args[0])
             #fn_ShowJobs(args[0])
