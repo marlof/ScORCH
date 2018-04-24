@@ -106,10 +106,13 @@ fn_CheckTask()
       set -x
       lst_PID[\${int_Task}]="ERROR"
       echo "failed task is lst_PID[\${int_Task}] : \${lst_PID[\${int_Task}]}"
+      echo "AUDIT:T:\${int_Task}:F" >> "\${dir_Running}"/\${str_JobName}
+
       exit 1
       set +x
     else
-
+      echo "AUDIT:T:\${int_Task}:F" >> "\${dir_Running}"/\${str_JobName}
+      sleep .2
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
       echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
@@ -118,6 +121,8 @@ fn_CheckTask()
     fi
   else
     printf "\$(${fn_LogDate}) Completed task [\${int_Task}/\${int_Last}]\nAUDIT:T:\${int_Task}:C\n" >> "\${file_Log}"
+    echo "AUDIT:T:\${int_Task}:C" >> "\${dir_Running}"/\${str_JobName}
+    sleep .2
   fi
 set +x
   # Checking if PAUSED
@@ -126,6 +131,8 @@ set +x
       echo "\$(${fn_LogDate}) Last Task already. Cannot paused from task:\${int_Task}" >> "\${file_Log}"
       rm "\${dir_Pause}"/\${str_JobName}".pause"
     else
+      echo "AUDIT:T:\${int_Task}:P" >> "\${dir_Running}"/\${str_JobName}
+      sleep .2
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       rm "\${dir_Pause}"/\${str_JobName}".pause"
       (( int_Task+=1 ))
@@ -169,6 +176,8 @@ while (( int_StartTask <= int_Last )) ; do
   printf "===================\n" >> "\${file_Log}"
   printf "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]\nAUDIT:T:\${int_StartTask}:R\n" >> "\${file_Log}"
   declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
+  echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Running}"/\${str_JobName}
+  sleep .2
   fn_Task_\${int_StartTask}
   (( int_StartTask+=1 ))
 done
@@ -324,7 +333,15 @@ fn_ProcessRequest()
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*"   "${dir_Superseded}"/.
         fi
-        [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/." && ${str_ProgramName} -background
+        if [[ ${b_Start} ]] ; then
+          if [[ ${b_Sync} ]] ; then
+            mv "${file_Job}" "${dir_Queued}/." 
+            "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1
+          else
+            mv "${file_Job}" "${dir_Queued}/." && ${str_ProgramName} -background
+          fi
+        fi
+
 
       done
     done
@@ -417,11 +434,15 @@ fn_PIDWait()
       elif wait ${int_PID} ; then
         lst_PIDResult="${lst_PIDResult}${int_Task}:0 "
         echo "AUDIT:T:${int_Task}:C"
+        echo "AUDIT:T:${int_Task}:C" >> "${dir_Running}"/${str_JobName}
+
       else
         int_PID_RC=$?
         #echo "Task ${int_Task} failed"
         lst_FailedTasks="${lst_FailedTasks}${int_Task} "
         echo "AUDIT:T:${int_Task}:F"
+        echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
+
         lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
       fi
     done
@@ -743,7 +764,7 @@ fn_SetJobOwner()
   if grep "^str_Owner=" "${file_Job}" ; then
     fn_Audit "${file_Job}" "accepted ownership of the job"
     sed 's/^str_Owner=.*/str_Owner='${str_User}'/g' "${file_Job}" > "${file_Job}".tmp
-	mv "${file_Job}".tmp "${file_Job}"
+	  mv "${file_Job}".tmp "${file_Job}"
   fi
 }
 readonly -f fn_SetJobOwner
@@ -756,7 +777,7 @@ fn_CheckOwner()
     read -n 1 -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
       y | Y ) fn_SetJobOwner "${file_Job}" ;;
-	  * ) break ;;
+	        * ) break ;;
     esac
   fi
 }

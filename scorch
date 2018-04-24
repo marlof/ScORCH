@@ -81,10 +81,11 @@
 ##                       dos2unix on showJobs.py
 ##                       Wait group improvements
 ##                       editor build git test
+## 1.22 180424           Task display updates
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.21.6dev"
+typeset str_ProgramVersion="1.22"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -259,24 +260,37 @@ typeset b_Install=
 typeset file_Template=
 typeset str_Action=
 typeset lst_GetVar=
+typeset b_Interactice=1
+typeset b_Sync=
 
 ## Check for argument list
 ## scorch can be run in several modes (install, new, file, dispatcher, manager and background)
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
-      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ;;
-      -o          ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ;;
+
       -h          ) b_Help=1 ;;
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+
+      ## API Mode
+      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_Interactice=0 ;;
+      -o          ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ;;
+      -s          ) b_Start=1 ;;
+      -sync       ) b_Sync=1 ;;
       -dispatcher ) b_Dispatcher=1 ;;
+
+      ## Internal Mode
+      -file       ) shift ; file_Template="$1" ; b_Interactice=0 ;;
       -new        ) b_New=1 ;;
       -background ) b_Background=1 ;;
-      -file       ) shift ; file_Template="$1" ;;
-      -s          ) b_Start=1 ;;
+
+      ## Development / Alternative Mode
       -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
       -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
+
+      ## Install Mode
       -install    ) b_Install=1 ;;
+
       ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
     shift
@@ -312,11 +326,17 @@ if [[ ${str_Action} ]] ; then
   cat ${file_Template}
 fi
 
-
 if [[ ${file_Template} ]] ; then
   [[ ! -r "${file_Template}" ]] &&  echo "Error: Cannot read template file ${file_Request}" && exit 1
   fn_NewJob "${file_Template}"
-  exit 0
+  if [[ ${b_Sync} ]] ; then
+    b_Debug=1
+    echo "waiting for ${str_JobName} to complete"
+    set | grep SAFE
+    sleep 10
+  else
+    exit 0
+  fi
 fi
 
 fn_CreateFile "${file_CSV}"
@@ -340,6 +360,7 @@ else
   fn_CheckOwnJobs
 fi
 fn_HouseKeeping
+
 
 tput sgr0 2 >/dev/null
 exit 0
