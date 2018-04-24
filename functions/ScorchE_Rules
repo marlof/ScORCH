@@ -101,6 +101,7 @@ fn_ProcessRequest()
         fn_JobFooter "${file_Job}"
         echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
+        b_StartGroup=""
 
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
            mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
