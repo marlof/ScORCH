@@ -87,7 +87,7 @@
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.22.1"
+typeset str_ProgramVersion="1.23"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
