@@ -100,7 +100,8 @@ def fn_ShowJobs(str_State,temp):
         arr_Files = list(os.listdir('.'))                                       
         #print ("debug - files1 :', files,'\n')
         arr_Files.sort(key=lambda x: os.path.getmtime(x))
-
+        if str_State == "completed":
+            arr_Files=list(reversed(arr_Files))
         for str_File in arr_Files:
 
             ''' Class handling '''
@@ -111,6 +112,7 @@ def fn_ShowJobs(str_State,temp):
             str_JobSplit = str_File.split("_")
             file_JobLog  = dir_Log + str_File + ".log"
 
+            # Collect the last line of the log file
             if os.access (file_JobLog, os.R_OK):
 
 #               for line in open(str_File,"r"):

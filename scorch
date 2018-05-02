@@ -24,7 +24,7 @@
 ## str  string
 ## dir  the variable defines a directory
 ## file the variable defines a filename
-##
+###
 ## Ideas not yet implemented........
 ## <hn>_ext_<var name>     A variable that has been derived from running an external script or
 ##                         command that might change
@@ -83,6 +83,7 @@
 ##                       editor build git test
 ## 1.22 180424           Task display updates
 ## 1.22.1 180424  marc   Issue #28 resolved
+## 1.23 180502           Completed list is showjobs.py reversed
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
