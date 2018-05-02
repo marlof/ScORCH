@@ -20,23 +20,30 @@
 #      -v int_Column5Width=${int_Column5Width} \
 #      -v int_Column6Width=${int_Column6Width} \
 # 1.6       Marc Loftus     17/04/2018      Adjustment to OS paths
+# 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs highlighted
 ############################################################################################################
-str_ProgramVersion = '1.4dev'
+str_ProgramVersion = '1.7'
 
 import os, getpass, getopt, sys
 import time
 import glob
 import tempfile
+import re
 
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 
+class colours:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
 
-#import ctypes
 dir_Run=os.getcwd()
-#typeset           dir_Orig="$(pwd)/${dir_Run}"
-#typeset     fn_FullLogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
-#typeset         fn_LogDate="date +%y%m%d-%H%M%S"
 
 # Set up variables
 if os.name == "nt":
@@ -52,42 +59,28 @@ else:
     dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dir_Job   = dir_Base + "/jobs/"
     dir_Log   = dir_Base + "/var/log/"
-    cmd_Clear = "os.system('clear')" 
+    cmd_Clear = "os.system('clear')"
 
 int_Count             = 1
 str_ProgramName       = __file__
 int_PID               = os.getpid()
 int_Rows, int_Columns = os.popen('stty size', 'r').read().split()
 list_Dir              = []
-#print(int_Rows, int_Columns)
-#print open(__file__).read()
-
-#print ("Eid [%s]"  % (getpass.getuser()))
-#print ("pwd: [%s]" % (os.getcwd()))
-
-
-
-
 
 def fn_ShowLine(cha_LineChar,str_LineTitle):
     ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
         This can actually show a row of strings but they my not fill the whole depending on string width '''
     parity=(len(cha_LineChar))
-    print(cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity)))
-
-#fp = tempfile.TemporaryFile()
-#    fp.write(b'Hello world!')
+    print( cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity)))
 
 def fn_ShowJobs(str_State,temp):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
     arr_str_DirList  = (listdir(join(dir_Job,str_State)))                   #   Create an "ls" list for the directory
-    arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*')   #   Create an "ls $jobdir/Job*" 
-    if arr_str_DirList2:                                                    #   If there is anything in the directory 
+    arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*')   #   Create an "ls $jobdir/Job*"
+    if arr_str_DirList2:                                                    #   If there is anything in the directory
 
-        #print ("debug:\n" , dic_str_DirList[str_State], "\n")
         fn_ShowLine("-",str_State.upper())
-        # print( "-- " + str_State.upper() + " ---------------------------------------------------------------------------" )           #   mark the state
         global int_Count
 
         if os.name == "nt":
@@ -97,11 +90,16 @@ def fn_ShowJobs(str_State,temp):
 
         #print ("debug - testing dir", dir_State)
         os.chdir(dir_State)                                                     # Change to the job/state directory
-        arr_Files = list(os.listdir('.'))                                       
+        arr_Files = list(os.listdir('.'))
         #print ("debug - files1 :', files,'\n')
         arr_Files.sort(key=lambda x: os.path.getmtime(x))
         if str_State == "completed":
             arr_Files=list(reversed(arr_Files))
+        if str_State == "failed":
+          ansi_colour=colours.FAIL
+        else:
+          ansi_colour=colours.RESET
+
         for str_File in arr_Files:
 
             ''' Class handling '''
@@ -115,10 +113,6 @@ def fn_ShowJobs(str_State,temp):
             # Collect the last line of the log file
             if os.access (file_JobLog, os.R_OK):
 
-#               for line in open(str_File,"r"):
-#                  if "str_Owner=" in line:
-#                     print line
-
                 ptr_JobLogFile = open(file_JobLog,"r")
 
                 str_JobLogFile = ptr_JobLogFile.readlines()
@@ -128,36 +122,14 @@ def fn_ShowJobs(str_State,temp):
             else:
                 str_LastLine   = "Error: Cannot read file"
 
-            #print ("%3d%+10s|%+20s|%+8s|%+20s|%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_JobLogFile[-1].rstrip('\n')))
-            print ("%3d%+10s|%+20s|%+8s|%+20s|%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine))
+            if re.search("WIP", str_LastLine):
+              ansi_colour=colours.RESET
+
+            print (ansi_colour + "%3d%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
             int_Count = int_Count + 1
-            #print(x.name,x.states)
 
 
 def main(argv):
-    #print('Number of arguments:', len(sys.argv), 'arguments.')
-    #print('Program name:',os.path.basename(__file__))
-    #print('Argument List:', str(sys.argv))
-    #inputfile = ''
-    outputfile = 'os.devnull'
-#    try:
-#        opts, args = getopt.getopt(argv,"hi:o:v:",["ifile=","ofile="])
-#    except getopt.GetoptError:
-#        print(__file__ , '-o <outputfile> <state> <state>*')
-#        sys.exit(2)
-#    for opt, arg in opts:
-#        if opt == '-h':
-#            print(__file__ , ' -i <inputfile> -o <outputfile>')
-#            sys.exit()
-#        elif opt in ("-o", "--ofile"):
-#            outputfile = arg
-#        elif opt in ("-v"):
-#            print(arg)
-#        else:
-#            print(opt)
-#            fn_ShowJobs(arg)
-
-#    print("===========================")
     outputfile = os.devnull
     args = sys.argv[1:]
     while len(args):
@@ -169,28 +141,15 @@ def main(argv):
             args = args[1:]
         else:
             list_Dir.append(args[0])
-            #fn_ShowJobs(args[0])
             args = args[1:] # shift
 
-    #filename = '/tmp/%s.txt' % os.getpid()
     filename = outputfile
     temp = open(filename, 'w+b')
-    
-    #print("Array ListDir",list_Dir)
+
     for eachDir in list_Dir:
-        #print(eachDir)
         fn_ShowJobs(eachDir,temp)
+
     temp.write('int_Count='+str(int_Count)+'\n')
-
-    #print('Output file is "', outputfile)
-
-    #print(tempfile.gettempdir())
-    #temp.seek(0)
-    #print(temp.read())
-    #print("\n\n")
-
- 
-
 
     name= 'varname'
     value= 'something'
@@ -200,33 +159,4 @@ def main(argv):
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-
-
-#setattr(self, name, value) #equivalent to: self.varname= 'something'
-
-#print(self.varname)
-#will print 'something'
-'''      system("echo arr_States["linenum"]="state" >> "file_Cache)
-      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
-
-      linenum++
-    }
-    END {
-      system("echo int_Count="linenum" >> "file_Cache )
-    }'
-    ##. ${file_Cache}
-#       cat "${file_Cache}"
-    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
-
-
-  file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
-  echo "#$$" > "${file_Cache}"
-
-  >>> fp = tempfile.TemporaryFile()
->>> fp.write(echo arr_States[]=state)
-
-import tempfile
-
-    '''
-
 
