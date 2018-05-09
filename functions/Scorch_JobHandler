@@ -26,13 +26,15 @@
 ## fn_ProcessRequest()
 ## fn_GetJobID()
 ## fn_ExtractPairs()
-## StartGroup
-## EndGroup
-## Task()
-## tryTask()
-## pauseTask()
-## breakTask()
-## GetVar()
+##
+##   StartGroup
+##   EndGroup
+##   Task()
+##   tryTask()
+##   pauseTask()
+##   breakTask()
+##   GetVar()
+##
 ## fn_Transition()
 ## fn_CheckOwnJobs()
 ## fn_SetJobOwner()
@@ -71,6 +73,7 @@ str_Owner=${str_User}
 # Job settings
 int_JobID=${int_JobID}
 int_ResumePoint=
+lst_ReRun=
 int_Last=0
 str_JobName="\$(basename "\$0")"
 lst_PID=""
@@ -107,7 +110,6 @@ fn_CheckTask()
       lst_PID[\${int_Task}]="ERROR"
       echo "failed task is lst_PID[\${int_Task}] : \${lst_PID[\${int_Task}]}"
       echo "AUDIT:T:\${int_Task}:F" >> "\${dir_Running}"/\${str_JobName}
-
       exit 1
       set +x
     else
@@ -124,7 +126,6 @@ fn_CheckTask()
     echo "AUDIT:T:\${int_Task}:C" >> "\${dir_Running}"/\${str_JobName}
     sleep .2
   fi
-set +x
   # Checking if PAUSED
   if [ -f "\${dir_Pause}"/\${str_JobName}".pause" ] ; then
     if [[ \${int_Task} = \${int_Last} ]] ; then
@@ -171,6 +172,15 @@ fn_JobFooter()
 
 int_StartTask=\${int_ResumePoint:-1}
 int_Last=${int_TaskCount}
+
+# If lst_ReRun is not blank
+# lst_ReRun=$(grep "^FAILED TASKS:" \$file_Log | tail -1 | cut -d: -f2-)
+for int_ResumeTask in ${lst_ReRun} ; do
+  echo "Rerun task ${int_ResumeTask}"
+  grep "^fn_Task_${int_ResumeTask}" ${file_Job}
+  # but only if AUDIT:4 is F
+done
+
 
 while (( int_StartTask <= int_Last )) ; do
   printf "===================\n" >> "\${file_Log}"

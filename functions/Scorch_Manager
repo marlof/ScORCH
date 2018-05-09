@@ -16,7 +16,11 @@
 
 ## These functions manage the manager/view screen
 ## fn_Manager()
+## fn_ViewJob()
+## fn_EditJob()
+## fn_Cancel()
 ## fn_AdminFunctions()
+## fn_CatchWord()
 
 
 fn_Manager()
@@ -36,6 +40,10 @@ fn_Manager()
     read -n 1 -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
+
+      ## Admin Menu
+      a | A ) fn_Admin ;;
+
       ## Create a new job
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
@@ -43,12 +51,12 @@ fn_Manager()
       c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
       ## Job State transition
-      d | D ) fn_Transition delete  ;;
+      d | D )                          fn_Transition delete  ;;
       q | Q ) fn_CheckDispatcher     ; fn_Transition queue   ;;
       r | R ) fn_CheckDispatcher     ; fn_Transition resume  ;;
       u | U )                          fn_Transition unqueue ;;
       p | P )                          fn_Transition pause   ;;
-      i | I ) fnE_PluginManagerMenu ;;
+      i | I )                          fnE_PluginManagerMenu ;;
 
       ## Misc
       m | M ) fn_EditMOTD           ;;
@@ -81,7 +89,6 @@ fn_Manager()
             set )   fnE_Set ;;
          esac  ;;
 
-
       * ) fn_SetLayout ;;
 
     esac
@@ -90,6 +97,27 @@ fn_Manager()
   tput smam
 }
 readonly -f fn_Manager
+
+fn_Admin()
+{
+  clear
+  fn_ShowTop
+  fn_ShowLine
+  if [[ -f ${file_Prefs} ]] ; then
+    fn_ShowLine "-" "${file_Prefs}"
+    cat ${file_Prefs}
+  fi
+  fn_ShowLine "="
+  printf "\n ${dis_ULOn}E${dis_ULOff}dit Preferences | "
+  printf " e${dis_ULOn}X${dis_ULOff}it : "
+
+  read -n 1 -t ${int_Refresh} char_Choice
+
+  case ${char_Choice} in
+    e | E ) ${cmd_Editor} ${file_Prefs} ;;
+    x | X ) return ;;
+  esac
+}
 
 fn_ViewJob()
 {
@@ -176,7 +204,6 @@ fn_AdminFunctions()
 
       case ${char_Choice} in
 	
-        # 
         ## Abort Failed or Running jobs
         c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
 
@@ -285,7 +312,15 @@ fn_CatchWord()
     if [ "${char_ChoiceExtra}" = "" ] ; then
       int_Length=${#str_Word} 
       int_Del=$(( int_Length - 1 )) 
-      (( int_Del >= 0 )) && eval str_Word=\${str_Word:0:${int_Del}} && printf "\b \b\b \b" || ( printf "\b \b" && continue )
+      if (( int_Del >= 0 )) ; then
+        eval str_Word=\${str_Word:0:${int_Del}}
+        printf "\b \b\b \b"
+        # Oracle printf "\b\b\b   \b\b\b"
+      else
+        printf "\b \b"
+        # Oracle printf "\b\b  \b\b"
+        continue
+      fi
     else
       str_Word=${str_Word}${char_ChoiceExtra}
     fi

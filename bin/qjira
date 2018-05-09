@@ -1,13 +1,13 @@
 #!/bin/bash
 
 typeset CURL=$(which curl)
-typeset JIRA_SERVER='http://jira:8080'
+typeset JIRA_SERVER='http://jira:32768'
 typeset JIRA_ISSUE_URL=${JIRA_SERVER}/rest/api/2/issue
 typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
 
 typeset TICKET=$1
+#typeset AUTH='user:sphere'
 typeset AUTH='marc:test123'
-typeset AUTH='user:sphere'
 
 typeset PYTHON=$(which python)
 
@@ -19,7 +19,7 @@ Error()
   exit 1
 }
 
-#curl -D- -u 'marc:g8EM6EUhH5!' -X GET -H 'Content-Type: application/json' 'http://jira:8080/rest/api/2/issue/DEP-1'
+#curl -D- -u 'marc:test123' -X GET -H 'Content-Type: application/json' ${JIRA_SERVER}'/rest/api/2/issue/DEP-1'
 #${CURL} -D- -u $AUTH -X GET -H 'Content-Type: application/json' "${JIRA_ISSUE_URL}/${TICKET}"
 
 #_JIRA_ISSUE_DETAILS=$(${CURL} -fk -X POST -H "Authorization: Basic ${_AUTH_HEADER}" \
@@ -29,18 +29,22 @@ Error()
 #echo "DETAILS:$_JIRA_SSUE_DETAILS"
 #read
 #echo "==============="
-#_JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
-#                                          -H "Content-Type: application/json" \
-#                                          --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}")
-_JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
-                                          -H "Content-Type: application/json" \
-                                          --data '{"jql":"key = '${TICKET}'""}' "${JIRA_SEARCH_URL}")
+
+# Works
+_JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
+                                       -H     "Content-Type: application/json" \
+                                       --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}")
+# in Test
+#_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
+#                                      -H     "Content-Type: application/json" \
+#                                      --data '{"jql":"key = '${TICKET}'""}' "${JIRA_SEARCH_URL}")
 
 
-echo ${_JIRA_ISSUE_DETAILS}
+#echo ${_JIRA_ISSUE_DETAILS}
 #echo "==============="
-#curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "http://jira:8080/rest/api/2/user?username=user"
+#curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "${JIRA_SERVER}/rest/api/2/user?username=user"
 # Issue description
+echo ${TICKET}
 echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues   -a -e fields  -e description -u
 
 #   _ISSUE_DESCRIPTION=$(echo ${_JIRA_ISSUE_DETAILS} | ${PYTHON} -c '
