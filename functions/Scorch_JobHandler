@@ -174,12 +174,30 @@ int_StartTask=\${int_ResumePoint:-1}
 int_Last=${int_TaskCount}
 
 # If lst_ReRun is not blank
-# lst_ReRun=$(grep "^FAILED TASKS:" \$file_Log | tail -1 | cut -d: -f2-)
-for int_ResumeTask in ${lst_ReRun} ; do
-  echo "Rerun task ${int_ResumeTask}"
-  grep "^fn_Task_${int_ResumeTask}" ${file_Job}
-  # but only if AUDIT:4 is F
-done
+lst_ReRun=\$(grep "^FAILED TASKS:" \${file_Log} | tail -1 | cut -d: -f2)
+if [[ ! -z \${lst_ReRun} ]] ; then
+  for int_ResumeTask in \${lst_ReRun} ; do
+    echo "Rerun task \${int_ResumeTask}"
+    declare -f fn_Task_\${int_ResumeTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
+    echo "AUDIT:T:\${int_ResumeTask}:R" >> "\${dir_Running}"/\${str_JobName}
+    sleep .2
+    fn_Task_\${int_ResumeTask}
+
+    # grep "^fn_Task_\${int_ResumeTask}" \${file_Job}
+    # but only if AUDIT:4 is F
+  done
+
+  echo "Look for fn_PIDWait between Task \${int_ResumePoint} and Task \${int_Last}"
+  while [ \${int_ResumePoint} -le \${int_Last} ] ; do
+    grep "^fn_Task_\${int_ResumePoint}.*fn_PIDWait" \${dir_Running}/\${str_JobName} && echo Resume \${int_ResumePoint} && break
+    (( int_ResumePoint++ ))
+  done
+
+  # Next PIDWait
+  echo PID wait point is \${int_ResumePoint}
+  int_StartTask=\${int_ResumePoint}
+fi
+
 
 
 while (( int_StartTask <= int_Last )) ; do
@@ -474,12 +492,15 @@ fn_PIDWait()
       #echo " PID Result : ${lst_PIDResult}"
     fi
     lst_PID=${lst_PIDRunning}
-    #arr_Remaining=$lst_PID )
     lst_PIDRunning=""
     echo "$(fn_Count "$lst_PID") tasks remaining"
   done
+
   if [[ ! -z ${lst_FailedTasks} ]] ; then
+    arr_Failed=($lst_FailedTasks)
+    int_ResumeTask=${arr_Failed[0]}
     echo "FAILED TASKS: ${lst_FailedTasks}"
+    echo "Resume point:${int_ResumeTask}"
     mv "${dir_Running}"/${str_JobName} "${dir_Failed}"/.
     exit 1
   fi
