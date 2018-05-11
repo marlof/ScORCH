@@ -66,8 +66,10 @@ fnE_MkEscorchtar()
   echo "Basedir : ${dir_Base}"
   echo "Program : ${str_ProgramName}"
   echo "Function: ${dir_Functions}"
-  tar cf ${dir_Base}/escorch.${str_ProgramVersion}.tar ${dir_Base}/${str_ProgramName} ${dir_Python} ${dir_Functions} ${dir_Plugins}/DEMO
-##  md5sum ${dir_Base}/escorch.${str_ProgramVersion}.tar > 
-  
-  sleep 5
+  cd ${dir_Base}
+  tar cf escorch.${str_ProgramVersion}.tar ${str_ProgramName} Python functions plugins/DEMO
+  md5sum escorch.${str_ProgramVersion}.tar > escorch.${str_ProgramVersion}.tar.md5
+  sleep 2
+  echo "Done"
+  sleep 3
 }

@@ -470,6 +470,7 @@ fn_PIDWait()
         #echo "Task ${int_Task} failed"
         lst_FailedTasks="${lst_FailedTasks}${int_Task} "
         echo "AUDIT:T:${int_Task}:F"
+        echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Running}"/${str_JobName}
         echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
 
         lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
