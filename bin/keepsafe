@@ -1,0 +1,126 @@
+#!/bin/bash
+##
+## Copyright 2017 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## keepsafe -r read a cred
+## keepsafe -w write a cred
+## keepsafe -w -f update an existing cred
+## keepsafe -l list available creds
+## ssh-keygen -t dsa
+## 
+set -u
+
+typeset local BASE_DIR= b_Force= READ= WRITE=
+typeset local file_Key=~/.ssh/mykey
+typeset local file_Cred=mycred
+str_ProgramName=$(basename $0)
+str_ProgramVersion=1.0
+
+fn_Usage()
+{
+  echo "$0  [ -r <credential> | -w <credential> [-f] ]  |  [-l]  |  [ -e ]
+
+  -r <credential>     Read the stored value for the credential name.
+  -w <credential>     Write a new credential.
+  -f                  Overwrite / update a credential.
+  -l [string]         List all known credentials [matching the pattern string].
+  "
+}
+
+
+fn_Write()
+{
+  # Create a file and set its credentials in case we are the first user
+  touch ${file_Cred} 2>/dev/null
+  chmod 660 ${file_Cred} 2>/dev/null
+  [[ ! -w ${file_Cred} ]] && echo "Credential file not writable" && exit 1
+
+  if [[ "$(grep "^${WRITE}=" ${file_Cred})" ]] && [[ -z ${b_Force} ]]; then
+    echo "Error: Credential <${WRITE}> already exists. Use -f to force overwrite."
+    exit 1
+  fi
+
+  while : ; do
+    str_Check1=""
+    str_Check2=""
+
+    # Get the first password
+    str_Prompt="Enter value to encrypt  : "
+    while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
+      [[ ${chr_Input} == $'\0' ]] && break
+      str_Prompt="*"
+      str_Check1+="${chr_Input}"
+    done
+    echo
+
+    # Get the second password
+    str_Prompt="Confirm value to encrypt: "
+    while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
+      [[ ${chr_Input} == $'\0' ]] && break
+      str_Prompt="*"
+      str_Check2+="${chr_Input}"
+    done
+    echo
+
+    [[ ${str_Check1} != ${str_Check2} ]] && echo "Error: passwords do not match - try again" && exit 1 || break
+  done
+
+  grep -v "^${WRITE}=" ${file_Cred} >${file_Cred}.tmp
+  echo "$WRITE=$(echo ${str_Check1} | openssl enc -aes-256-cbc -a -salt -e -pass file:${file_Key})" >> ${file_Cred}.tmp
+  mv ${file_Cred}.tmp ${file_Cred}
+  echo "Credential $WRITE written"
+}
+
+fn_Read()
+{
+  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
+  str_CRED=$(grep ${READ} ${file_Cred} | cut -d"=" -f2-)
+  if [[ ! -z ${str_CRED} ]] ; then
+    echo ${str_CRED} | openssl enc -aes-256-cbc -a -salt -d -pass file:${file_Key}
+  else
+    echo "Cannot find cred"
+  fi
+
+}
+
+fn_List()
+{
+  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
+  if [[ -z $GREP ]] ; then
+    echo "file_Cred:${file_Cred}"
+    cat ${file_Cred} | cut -d"=" -f1 | sort 
+  else
+    grep -i "${GREP}.*\=.*\=" ${file_Cred} | cut -d"=" -f1 | sort
+  fi
+}
+
+if [ $# -ne 0 ] ; then
+  while [ $# -gt 0 ] ; do
+    case "$1" in
+      -h          ) fn_Usage ;;
+      -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+      -r          ) shift ; READ=${1:-}  ;;
+      -f          ) b_Force=1            ;;
+      -w          ) shift ; WRITE=${1:-} ;;
+      -l          ) shift ; GREP=${1:-}   ; fn_List ;;
+      -e          ) vi ${file_Cred}      ;;
+      -*          ) fn_Usage ; exit 1    ;;
+      ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
+    esac
+    shift
+  done
+fi
+
+
+[[ ! -r  ${file_Key} ]] && echo "Error: Cannot read private key file: ${file_Key}"  && exit 1
+
+[[ $READ ]] && fn_Read
+[[ $WRITE ]] && fn_Write
+:
+
