@@ -71,6 +71,8 @@ fn_ShowTop()
   ## Display the name of the program and any interesting facts about the environment
   ## ===============================================================================
   typeset local int_TitleWidth
+  [[ -z ${int_Column1Width} ]] && int_Column1Width=10
+  [[ -z ${int_Column2Width} ]] && int_Column2Width=10
   (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
   #clear
   ${cmd_CLEAR}
@@ -368,23 +370,28 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
   $0 != "" { 
     if ( $1 ~ "^AUDIT:T") {
       split($1,task_tmp,":")
-      switch (task_tmp[4]) {
-        case "R":
-          str_Progress = " >>>  " 
-          break
-        case "C":
-          str_Progress = "[done]"
-          break
-        case "F":
-          str_Progress = "[fail]"
-          break
-        default:
-          str_Progress = "  ??? "
-          break
-      }
-      #if ( task_tmp[4] == "R")      str_Progress=" >>>  "
-      #if ( task_tmp[4] == "C")      str_Progress="[done]"
-      #if ( task_tmp[4] == "F")      str_Progress="[fail]"
+
+      # switch turned off due to issues with some nix versions
+      #switch (task_tmp[4]) {
+      #  case "R":
+      #    str_Progress = " >>>  " 
+      #    break
+      #  case "C":
+      #    str_Progress = "[done]"
+      #    break
+      #  case "F":
+      #    str_Progress = "[fail]"
+      #    break
+      #  default:
+      #    str_Progress = "  ??? "
+      #    break
+      #}
+
+      if ( task_tmp[4] == "R")      str_Progress="  >>>   "
+      if ( task_tmp[4] == "C")      str_Progress="[ done ]"
+      if ( task_tmp[4] == "F")      str_Progress="[ fail ]"
+      if ( task_tmp[4] == "S")      str_Progress="[ skip ]"
+      if ( task_tmp[4] == "M")      str_Progress="[manual]"
       arr_Progress[task_tmp[3]]=str_Progress
     }
     if ( $1 ~ "^fn_Task_[1-9]") {
@@ -414,7 +421,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
 
     #fn_PressEnter
     fn_ShowLine
-    tail -10 ${dir_Log}/$(basename ${file_Job}).log
+    tail -${int_Tail} ${dir_Log}/$(basename ${file_Job}).log
 	  printf " "
     fn_ShowLine "="
 
@@ -512,7 +519,7 @@ fn_JobInfo()
           fn_ShowLine "-" "Template"
           sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
           echo ""
-      fn_ShowLine "-" "Log Summary"
+      fn_ShowLine "-" "Log Summary "
       tail -${int_Tail} "${file_Log}"
       echo ""
       fn_ShowLine "-"

@@ -79,6 +79,29 @@ fn_CheckSetUp()
 }
 readonly -f fn_CheckSetUp
 
+fn_SetPrefs()
+{
+  if [[ -f ${file_Prefs} ]] ; then
+    source ${file_Prefs}
+  else
+    echo '
+## Layout Option
+## =============
+# Maximum number of jobs to show (useful for screen size preferences)
+typeset      int_MaxShown="30"
+
+# Inactivity timeout before returning to previous menu (suggested: 20)
+typeset       int_Refresh="20"
+
+# Number of log lines to show from the bottom of the log file (suggested: 25)
+typeset          int_Tail="25"
+
+# Editor to use when viewing log files, scorch jobs and the preferences file (suggested: vi)
+cmd_Editor="vi"
+' >> ${file_Prefs}
+fi
+}
+
 fn_Help()
 {
   # Help

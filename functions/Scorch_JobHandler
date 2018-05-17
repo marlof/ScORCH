@@ -104,6 +104,14 @@ fn_CheckTask()
   typeset local int_Task=\${2}
 
   if [ \${int_RC} -ne 0 ] ; then
+    if [ \${int_RC} = 99 ] ; then
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      sleep .2
+      echo "AUDIT:T:\${int_Task}:M" >> "\${dir_Failed}"/\${str_JobName}
+      echo "\$(${fn_LogDate}) +++Manual task. Resume point:\${int_Task}" >> "\${file_Log}"
+      rm "\${LOCK}" 2>/dev/null
+      exit 1
+    fi
     if [ \${b_Background} ] ; then
       echo "FAILED Task \${int_Task} - But this is a subtask so this is never called"
       set -x
@@ -114,8 +122,8 @@ fn_CheckTask()
       set +x
     else
       echo "AUDIT:T:\${int_Task}:F" >> "\${dir_Running}"/\${str_JobName}
-      sleep .2
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      sleep .2
       echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
       echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
@@ -152,6 +160,13 @@ fn_NiceTime()
   ((minutes=\${1}%3600/60))
   ((seconds=\${1}%60))
   printf "%02dh %02dm %02ds\n" \$hours \$minutes \$seconds
+}
+
+Manual()
+{
+  printf "\n\n\t\$*\n"
+  echo "Skip this task to continue."
+  return 99
 }
 
 EOF
@@ -573,13 +588,13 @@ pauseTask()
 {
   ## Expection to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
-  Task "printf \"Sleeping for ${int_Sleep} seconds\n\" ; sleep ${int_Sleep}" 
+  Task "printf \"Sleeping for ${int_Sleep} seconds\\n\" ; sleep ${int_Sleep}" 
 }
 
 breakTask()
 {
   ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
-  Task "printf \"$*\\nForcing interrupt. Skip this task to continue.  \" ; [ 0 = 1 ]" 
+  Task "Manual \"$*\n\"" 
 }
 
 GetVar()

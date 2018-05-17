@@ -44,6 +44,7 @@ fn_Dispatcher()
 	  ## Make sure all current jobs reporting a running state are actually running
 
     fn_CheckRunning
+    sleep ${int_DispatchSleep}
 
     ## Check the pending directory first for any rules that have succeeded
     typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
@@ -106,7 +107,7 @@ fn_Dispatcher()
       done
     fi
     (( int_DispatchCount+=1 ))
-    sleep ${int_DispatchSleep}
+    #sleep ${int_DispatchSleep}
   done
   rm -f "${file_DispatchLock}"
   typeset int_DispatcherPID=0

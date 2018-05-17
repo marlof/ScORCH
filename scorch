@@ -87,10 +87,12 @@
 ## 1.24 180503    marc   Publish functions updated to include Python
 ## 1.25 180509    marc   Resume group tasks
 ## 1.26 180511    marc   Resumed Group Jobs shows number of failures
+## 1.27 180516    marc   github#29 Resume from Tasks
+##                       github#30 Manual Tasks
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.26"
+typeset str_ProgramVersion="1.27"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -322,6 +324,7 @@ fi
 # Area reserved for loading OPENSCORCH - Do not remove
 #FOOTER
 fn_CheckSetUp
+fn_SetPrefs
 fn_CheckAuth
 fn_CheckDispatcher
 
@@ -339,7 +342,9 @@ if [[ ${file_Template} ]] ; then
     b_Debug=1
     echo "waiting for ${str_JobName} to complete"
     set | grep SAFE
+    echo call scorch in background and exit clean
     sleep 10
+
   else
     exit 0
   fi
