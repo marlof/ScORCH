@@ -18,4 +18,40 @@ SP_DEMO-GROUP2()
     Task "hostname"
     Task "sleep 22"
   EndGroup
+
+  StartGroup
+    Task "echo CFW-STOP"
+    breakTask "CON-WCC"
+    Task "echo EDS-VIEW-INFRA"
+    Task "echo RMB-APP"
+  EndGroup
+  StartGroup
+    Task "echo CON-APP"
+    Task "echo EDS-OES-CORE"
+  EndGroup
+  StartGroup
+    Task "echo EDS-CSS-CORE"
+    Task "echo EDS-DBS-ALTER"
+    Task "echo EDS-OES-CORE"
+  EndGroup
+  StartGroup
+    Task "echo CSS-WLST"
+    Task "echo EDS-ODS-CORE"
+  EndGroup
+  StartGroup
+    Task "echo CFW-START"
+    Task "echo EDS-NFR-CORE"
+    Task "echo OCH-SDM-CORE"
+  EndGroup
+  Task "echo CHECK-SDM"
+  StartGroup
+    Task "EDS-FAH-CORE"
+    Task "ODI-DBS-PRIV"
+  EndGroup
+  breakTask "ODI-TOP"
+  StartGroup
+    breakTask "ODI-APP"
+    Task ODI-DBS-CORE
+  EndGroup
+
 }

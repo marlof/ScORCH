@@ -67,7 +67,7 @@ fnE_MkEscorchtar()
   echo "Program : ${str_ProgramName}"
   echo "Function: ${dir_Functions}"
   cd ${dir_Base}
-  tar cf escorch.${str_ProgramVersion}.tar ${str_ProgramName} Python functions plugins/DEMO
+  tar cf escorch.${str_ProgramVersion}.tar ${str_ProgramName} python functions plugins/DEMO
   md5sum escorch.${str_ProgramVersion}.tar > escorch.${str_ProgramVersion}.tar.md5
   sleep 2
   echo "Done"

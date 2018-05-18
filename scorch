@@ -89,10 +89,11 @@
 ## 1.26 180511    marc   Resumed Group Jobs shows number of failures
 ## 1.27 180516    marc   github#29 Resume from Tasks
 ##                       github#30 Manual Tasks
+## 1.28 180518    marc   Working with centos
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.27"
+typeset str_ProgramVersion="1.28"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"

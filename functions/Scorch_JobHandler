@@ -398,7 +398,7 @@ fn_ProcessRequest()
 fn_GetJobID()
 {
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
-  [[ ! -f "${file_JobID}" ]] && echo "Creating JobID file" && fn_CreateFile "${file_JobID}"
+  [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
   
   typeset local file_JobIDLock="${file_JobID}".lock
 
@@ -586,7 +586,7 @@ tryTask()
 
 pauseTask()
 {
-  ## Expection to the naming convention is pauseTask. This is used in plugins by users
+  ## Exception to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
   Task "printf \"Sleeping for ${int_Sleep} seconds\\n\" ; sleep ${int_Sleep}" 
 }

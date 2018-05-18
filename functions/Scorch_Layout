@@ -29,7 +29,7 @@ fn_SetLayout()
 {
   ## Define the bounds of the screen
   ## The default screen layout is broken into columns to split up job names into
-  ## meaningfull groups
+  ## meaningful groups
   ##
   ##  C1|     C2|        C3|        C4|
   ##==========================================================
@@ -110,7 +110,7 @@ readonly -f fn_ShowTop
 
 fn_ShowLine()
 {
-  ## Show a line of dashes unless a dirrent character is past or character and title is passed
+  ## Show a line of dashes unless a different character is past or character and title is passed
 
   ## Check if parameters have been past
   ## ==================================

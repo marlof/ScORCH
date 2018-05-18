@@ -194,7 +194,7 @@ fn_CheckAuth()
   ## The idea is that users will need to be allowed to use scorch as a reporting tool
   ## or be allowed access to certain systems/plugin directories
 
-  ##  #Username  : [ full | <blank> ] : [ all | <comma seperated list of plugin dirs>]
+  ##  #Username  : [ full | <blank> ] : [ all | <comma separated list of plugin dirs>]
   ##     marc:full:all
   ##     root::all
   ##     user::demo

@@ -15,9 +15,9 @@
 ##
 
 ## These functions allow the display and modification of the classic "message of the day"
-## the <base>/etc/motd file contains a ruuning history and audit of all messages previously displayed
+## the <base>/etc/motd file contains a running history and audit of all messages previously displayed
 
-## The file contruct
+## The file construct
 ## +<date> <user> : <message>         # + Adds / changes last message
 ## -<date> <user> : cleared message   # - Clears last message
 ##
