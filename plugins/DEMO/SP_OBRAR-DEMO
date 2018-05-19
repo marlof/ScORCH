@@ -1,6 +1,6 @@
 SP_OBRAR-DEMO()
 {
-  Task "obrar DEMO -t ${RANDOM:3}"
+  Task "obrar DEMO1 -t ${RANDOM:3}"
   pauseTask 34
   breakTask "This is a manual break task"
   tryTask false

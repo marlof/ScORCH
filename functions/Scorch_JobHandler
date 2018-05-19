@@ -594,7 +594,7 @@ pauseTask()
 breakTask()
 {
   ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
-  Task "Manual \"$*\n\"" 
+  Task "Manual \"$*\\n\"" 
 }
 
 GetVar()
