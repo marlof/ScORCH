@@ -30,9 +30,9 @@
 ##   StartGroup
 ##   EndGroup
 ##   Task()
-##   tryTask()
-##   pauseTask()
-##   breakTask()
+##   tryTask()   | Try()
+##   pauseTask() | Sleep()
+##   breakTask() | Manual()
 ##   GetVar()
 ##
 ## fn_Transition()
@@ -164,9 +164,15 @@ fn_NiceTime()
 
 Manual()
 {
-  printf "\n\n\t\$*\n"
+  printf "\n\n\t\$*\n\n"
   echo "Skip this task to continue."
   return 99
+}
+
+Sleep()
+{
+  printf "\n\n\tSleeping for \$1 seconds\n"
+  sleep \$1
 }
 
 EOF
@@ -584,17 +590,32 @@ tryTask()
   Task "$*" OR true
 }
 
+Try()
+{
+  tryTask "$~"
+}
+
 pauseTask()
 {
   ## Exception to the naming convention is pauseTask. This is used in plugins by users
   int_Sleep=${1:-10}
-  Task "printf \"Sleeping for ${int_Sleep} seconds\\n\" ; sleep ${int_Sleep}" 
+  Task "Sleep ${int_Sleep}" 
+}
+
+Sleep()
+{
+  pauseTask ${1:-10}
 }
 
 breakTask()
 {
   ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
-  Task "Manual \"$*\\n\"" 
+  Task "Manual \"$*\"" 
+}
+
+Manual()
+{
+  breakTask "\"$*\""
 }
 
 GetVar()
