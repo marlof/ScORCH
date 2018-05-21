@@ -91,10 +91,11 @@
 ##                       github#30 Manual Tasks
 ## 1.28 180518    marc   Working with centos
 ## 1.28.1         marc   Minor format fix
+## 1.29           marc
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.28.1"
+typeset str_ProgramVersion="1.29"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -342,10 +343,23 @@ if [[ ${file_Template} ]] ; then
   fn_NewJob "${file_Template}"
   if [[ ${b_Sync} ]] ; then
     b_Debug=1
-    echo "waiting for ${str_JobName} to complete"
-    set | grep SAFE
-    echo call scorch in background and exit clean
-    sleep 10
+    sleep 1
+echo "find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} ${dir_Running} -name $(basename ${file_Job}) )"
+    while [[ "$(find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} -name $(basename ${file_Job}) )" ]] ; do
+      fn_RunJobs
+      sleep 10
+    done
+
+echo "Now find the jobs final resting place - completed or failed or lost"
+find -L ${dir_Completed} -name $(basename ${file_Job}) && echo "SUCCESS" && exit 0
+find -L ${dir_Failed} -name $(basename ${file_Job}) && echo "FAILED" && exit 1
+echo "waiting for ${str_JobName} to complete"
+set | grep SAFE
+echo call scorch in background and exit clean
+
+set | grep JobFile
+exit 0
+
 
   else
     exit 0
@@ -366,8 +380,8 @@ if [[ "${b_Background}" ]] ; then
   fn_RunJobs # one more try just to mop up
 else
   fn_SetLayout
-  [ "${b_Help}" ] && fn_Help && exit 0
-  [ "${b_New}" ] && fn_NewJob && exit 0
+  [ "${b_Help}" ] && fn_Help   && exit 0
+  [ "${b_New}" ]  && fn_NewJob && exit 0
 
   fn_Manager
   fn_CheckOwnJobs

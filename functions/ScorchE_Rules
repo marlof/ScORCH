@@ -184,7 +184,6 @@ fn_ExtractPairs()
 
   GetVar -pattern "Label"  -name LABEL                   -default ""
   GetVar -pattern "Parent" -name PARENT_LIST -list       -default ""
-
 }
 readonly -f fn_ExtractPairs
 
@@ -209,11 +208,11 @@ fn_CheckAuth()
   if [ ! -r ${file_Users} ] ; then
     if [ -f ${file_Users} ] ; then
       echo "The file ${file_Users} is not readable."
-          ls -l ${file_Users}
-          exit 1
+      ls -l ${file_Users}
+      exit 1
     else
       echo "The users file does not exist. Create the users file ${file_Users}"
-          exit 1
+      exit 1
     fi
   fi
 

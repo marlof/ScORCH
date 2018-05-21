@@ -21,8 +21,9 @@
 #      -v int_Column6Width=${int_Column6Width} \
 # 1.6       Marc Loftus     17/04/2018      Adjustment to OS paths
 # 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs highlighted
+# 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
 ############################################################################################################
-str_ProgramVersion = '1.7'
+str_ProgramVersion = '1.8'
 
 import os, getpass, getopt, sys
 import time
@@ -44,6 +45,10 @@ class colours:
     RESET = '\033[0m'
 
 dir_Run=os.getcwd()
+# Default maxnum
+maxnum = 35
+b_More = False
+int_More = 0
 
 # Set up variables
 if os.name == "nt":
@@ -73,15 +78,18 @@ def fn_ShowLine(cha_LineChar,str_LineTitle):
     parity=(len(cha_LineChar))
     print( cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity)))
 
-def fn_ShowJobs(str_State,temp):
+def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
     arr_str_DirList  = (listdir(join(dir_Job,str_State)))                   #   Create an "ls" list for the directory
     arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*')   #   Create an "ls $jobdir/Job*"
+    global b_More
+    global int_More
+    global int_Count
     if arr_str_DirList2:                                                    #   If there is anything in the directory
 
         fn_ShowLine("-",str_State.upper())
-        global int_Count
+        
 
         if os.name == "nt":
             dir_State = dir_Job + str_State + '\\'
@@ -102,36 +110,44 @@ def fn_ShowJobs(str_State,temp):
 
         for str_File in arr_Files:
 
-            ''' Class handling '''
+            ''' Max Display '''
+            if int_Count < maxnum:
+                #print("ok", int_Count, maxnum)
+                ''' Class handling '''
 
-            temp.write('arr_States['+str(int_Count)+']='+str_State+'\n')
-            temp.write('arr_Jobs['+str(int_Count)+']='+str_File+'\n')
+                temp.write('arr_States['+str(int_Count)+']='+str_State+'\n')
+                temp.write('arr_Jobs['+str(int_Count)+']='+str_File+'\n')
 
-            str_JobSplit = str_File.split("_")
-            file_JobLog  = dir_Log + str_File + ".log"
+                str_JobSplit = str_File.split("_")
+                file_JobLog  = dir_Log + str_File + ".log"
 
-            # Collect the last line of the log file
-            if os.access (file_JobLog, os.R_OK):
+                # Collect the last line of the log file
+                if os.access (file_JobLog, os.R_OK):
 
-                ptr_JobLogFile = open(file_JobLog,"r")
+                    ptr_JobLogFile = open(file_JobLog,"r")
 
-                str_JobLogFile = ptr_JobLogFile.readlines()
-                ptr_JobLogFile.close()
-                str_LastLine   = str_JobLogFile[-1].rstrip('\n')
+                    str_JobLogFile = ptr_JobLogFile.readlines()
+                    ptr_JobLogFile.close()
+                    str_LastLine   = str_JobLogFile[-1].rstrip('\n')
 
+                else:
+                    str_LastLine   = "Error: Cannot read file"
+
+                if re.search("WIP", str_LastLine):
+                  ansi_colour=colours.RESET
+
+                print (ansi_colour + "%3d%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
+                int_Count = int_Count + 1
             else:
-                str_LastLine   = "Error: Cannot read file"
+                b_More = True
+                int_More = int_More + 1
 
-            if re.search("WIP", str_LastLine):
-              ansi_colour=colours.RESET
-
-            print (ansi_colour + "%3d%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
-            int_Count = int_Count + 1
 
 
 def main(argv):
     outputfile = os.devnull
     args = sys.argv[1:]
+    global int_More
     while len(args):
         if args[0] == '-o':
             outputfile = args[1]
@@ -139,6 +155,9 @@ def main(argv):
         elif args[0] == '-v':
             option = args[1]
             args = args[1:]
+        elif args[0] == '-n':
+            maxnum = int(args[1])
+            args = args[2:]
         else:
             list_Dir.append(args[0])
             args = args[1:] # shift
@@ -147,7 +166,10 @@ def main(argv):
     temp = open(filename, 'w+b')
 
     for eachDir in list_Dir:
-        fn_ShowJobs(eachDir,temp)
+        fn_ShowJobs(eachDir,temp,maxnum)
+
+    if b_More is True:
+        print("+++ More - [total "+str(int_More)+"]")
 
     temp.write('int_Count='+str(int_Count)+'\n')
 

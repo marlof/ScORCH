@@ -132,7 +132,7 @@ readonly -f fn_ShowLine
 fn_ShowJobs()
 {
     if [ -f ${dir_Python}/showJobs.py ] ; then
-      ${dir_Python}/showJobs.py -o /tmp/mycache $*
+      ${dir_Python}/showJobs.py -n $int_MaxShown -o /tmp/mycache $* 
       [[ -r /tmp/mycache ]] && . /tmp/mycache
     else
       fn_ShowJobs2
