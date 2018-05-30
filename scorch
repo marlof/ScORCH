@@ -92,10 +92,11 @@
 ## 1.28 180518    marc   Working with centos
 ## 1.28.1         marc   Minor format fix
 ## 1.29           marc
+## 1.30           marc   
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.29"
+typeset str_ProgramVersion="1.30dev"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -271,7 +272,7 @@ typeset b_Install=
 typeset file_Template=
 typeset str_Action=
 typeset lst_GetVar=
-typeset b_Interactice=1
+typeset b_NonInteractive=
 typeset b_Sync=
 
 ## Check for argument list
@@ -284,14 +285,14 @@ if [ $# -ne 0 ] ; then
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
 
       ## API Mode
-      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_Interactice=0 ;;
+      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_NonInteractive=1 ;;
       -o          ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ;;
       -s          ) b_Start=1 ;;
       -sync       ) b_Sync=1 ;;
       -dispatcher ) b_Dispatcher=1 ;;
 
       ## Internal Mode
-      -file       ) shift ; file_Template="$1" ; b_Interactice=0 ;;
+      -file       ) shift ; file_Template="$1" ; b_NonInteractive=1 ;;
       -new        ) b_New=1 ;;
       -background ) b_Background=1 ;;
 
@@ -344,15 +345,32 @@ if [[ ${file_Template} ]] ; then
   if [[ ${b_Sync} ]] ; then
     b_Debug=1
     sleep 1
-echo "find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} ${dir_Running} -name $(basename ${file_Job}) )"
-    while [[ "$(find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} -name $(basename ${file_Job}) )" ]] ; do
-      fn_RunJobs
+
+    while : ; do
+      str_JobState=$(fn_JobState $(basename ${file_Job}))
+      case $str_JobState in
+        new      ) echo "You must use -s to also start sync jobs" ; exit 1 ;;
+        
+        queued   ) echo "Checking dispatcher" ; fn_CheckDispatcher  ; sleep 5 ; fn_RunJobs ;;
+        starting ) echo "Running Own Jobs" ; sleep 5 ; fn_RunJobs ;;
+        queued | pending | running ) : ;;
+        
+        failed ) echo "$(basename ${file_Job}) FAILED" ; exit 1 ;;
+        completed ) echo "$(basename ${file_Job}) Completed" ; exit 0 ;;
+        *   ) echo "What is ${str_JobState}" ; exit 1 ;;
+      esac
       sleep 10
     done
+
+#    while [[ "$(find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} -name $(basename ${file_Job}) )" ]] ; do
+#   fn_RunJobs
+#      sleep 10
+#    done
 
 echo "Now find the jobs final resting place - completed or failed or lost"
 find -L ${dir_Completed} -name $(basename ${file_Job}) && echo "SUCCESS" && exit 0
 find -L ${dir_Failed} -name $(basename ${file_Job}) && echo "FAILED" && exit 1
+
 echo "waiting for ${str_JobName} to complete"
 set | grep SAFE
 echo call scorch in background and exit clean

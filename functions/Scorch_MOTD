@@ -45,8 +45,8 @@ fn_EditMOTD()
   typeset local str_MOTD
   fn_CreateFile ${file_MOTD} 2>/dev/null
 
-  printf "\n Enter new message (or enter to blank out last message: \n "
-  read str_MOTD
+  printf "\n Enter new message (or enter to blank out last message): \n "
+  read -e str_MOTD
 
   if [ "${str_MOTD}" = "" ] ;then
     echo "-$(date +'%D %T') ${str_User}: cleared message+" >> "${file_MOTD}"

@@ -448,7 +448,7 @@ fn_ShowLine "="
     read -n 1 -t ${int_RefreshRate} char_Choice
 
     case ${char_Choice} in
-      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read int_RefreshRate ;;
+      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_RefreshRate ;;
 	    p | P ) fn_PressEnter ;;
 	    x | X ) break ;;
     esac

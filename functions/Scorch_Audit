@@ -22,7 +22,7 @@ fn_LogWhy()
 {
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   printf "\n\n $(basename ${file_Job})\n\n"
-  read -p " Enter a reason: " str_Answer
+  read -e -p " Enter a reason: " str_Answer
   echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" >/dev/null
 }
 readonly -f fn_LogWhy

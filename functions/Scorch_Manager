@@ -69,21 +69,21 @@ fn_Manager()
       [0-9] ) fn_CatchWord ${char_Choice} "number" ;;
 
       o | O ) 
-         read -t ${int_Refresh} char_ChoiceExtra
+         read -e -t ${int_Refresh} char_ChoiceExtra
          str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
          case ${str_Choice} in
             open       ) fnE_MkOpenScorch ;;
          esac  ;;
 
       e | E )
-         read -t ${int_Refresh} char_ChoiceExtra
+         read -e -t ${int_Refresh} char_ChoiceExtra
          str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
          case ${str_Choice} in
             enterprise ) fnE_MkEscorchtar ;;
          esac  ;;
 
       s | S )
-         read -t ${int_Refresh} char_ChoiceExtra
+         read -e -t ${int_Refresh} char_ChoiceExtra
          str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
          case ${str_Choice} in
             set )   fnE_Set ;;
@@ -281,7 +281,7 @@ fn_AdminFunctions()
 
         ## Mark Job as Fix in Progress (FIP)
         f | F ) echo " "
-                read -p " You may provide a keyword or tracking id: " str_Reply
+                read -e -p " You may provide a keyword or tracking id: " str_Reply
                 [[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
                 fn_Audit "${file_Job}" "fix in progress"
                 mv "${file_Link}" "${dir_Fixing}"

@@ -33,7 +33,7 @@ Error()
 # Works
 _JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
                                        -H     "Content-Type: application/json" \
-                                       --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}")
+                                       --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}" || echo "qjira:ERROR")
 # in Test
 #_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
 #                                      -H     "Content-Type: application/json" \
@@ -45,6 +45,7 @@ _JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADE
 #curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "${JIRA_SERVER}/rest/api/2/user?username=user"
 # Issue description
 echo ${TICKET}
+echo ${_JIRA_ISSUE_DETAILS} | grep -q "qjira:ERROR" && echo "Jira issue. Check Jira is running, username/password or ticket number" && exit 1
 echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues   -a -e fields  -e description -u
 
 #   _ISSUE_DESCRIPTION=$(echo ${_JIRA_ISSUE_DETAILS} | ${PYTHON} -c '

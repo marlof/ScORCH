@@ -22,8 +22,9 @@
 # 1.6       Marc Loftus     17/04/2018      Adjustment to OS paths
 # 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs highlighted
 # 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
+# 1.8.1                                     changed wording
 ############################################################################################################
-str_ProgramVersion = '1.8'
+str_ProgramVersion = '1.8.1'
 
 import os, getpass, getopt, sys
 import time
@@ -169,7 +170,7 @@ def main(argv):
         fn_ShowJobs(eachDir,temp,maxnum)
 
     if b_More is True:
-        print("+++ More - [total "+str(int_More)+"]")
+        print("+++ ["+str(int_More)+" more]")
 
     temp.write('int_Count='+str(int_Count)+'\n')
 

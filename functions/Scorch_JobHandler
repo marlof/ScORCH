@@ -39,6 +39,7 @@
 ## fn_CheckOwnJobs()
 ## fn_SetJobOwner()
 ## fn_CheckOwner()
+## fn_JobState()
 
 
 
@@ -310,7 +311,7 @@ fn_GetRequest()
     printf "\n help <plugin>    at any time for additional parameters\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
-      read -r str_Line
+      read -e -r str_Line
 	    str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
@@ -367,9 +368,16 @@ fn_ProcessRequest()
         Task "echo AUDIT:START:\${str_StartTime}"
 
         echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
-        eval "${fn_Call}"
-        if [[ $? -ne 0 ]] ; then
-          echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
+        echo ${fn_Call} #>> "${dir_Log}"/$(basename "${file_Job}").log
+        ${fn_Call}
+        int_ReturnCode=${PIPESTATUS[0]}
+        # PIPESTATUS AND USE PIPE TEE
+        if [[ ${int_ReturnCode} -ne 0 ]] ; then
+          echo "exit 1" >> "${file_Job}"
+          echo "# Template Begin" >> "${file_Job}"
+          cat "${file_Request}" >> "${file_Job}"
+          echo "# Template End" >> "${file_Job}"
+          echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
           exit 1
@@ -615,7 +623,7 @@ breakTask()
 
 Manual()
 {
-  breakTask "\"$*\""
+  breakTask "$*"
 }
 
 GetVar()
@@ -851,3 +859,9 @@ fn_CheckOwner()
   fi
 }
 readonly -f fn_CheckOwner
+
+fn_JobState()
+{
+  local file_Job=${1}
+  basename $(dirname $(find ${dir_Job} -name ${file_Job} | grep -v "/active/"))
+}

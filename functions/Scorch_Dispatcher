@@ -203,7 +203,7 @@ fn_LockManager()
 
       printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
 
-      read -t 30 char_Choice
+      read -e -t 30 char_Choice
       [[ "${char_Choice}" = "" ]] && char_Choice="x"
       case "${char_Choice}" in
 

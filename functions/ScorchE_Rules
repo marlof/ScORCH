@@ -27,7 +27,7 @@ fn_GetRequest()
     printf "\n help <plugin>    at any time for additional parameters\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
-      read -r str_Line
+      read -e -r str_Line
           str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
 ##      if echo "${str_Line}" | grep -qi ACTION ; then
 ##        (( int_GetCount+=1 ))
@@ -88,16 +88,22 @@ fn_ProcessRequest()
         fi
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
+printf "${fn_Call}: "
+        ${fn_Call}
 
-        echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
-        eval "${fn_Call}"
-        if [[ $? -ne 0 ]] ; then
-          echo "$(${fn_LogDate}) Error in plugin" >> "${dir_Log}"/$(basename "${file_Job}").log
+        int_ReturnCode=${PIPESTATUS[0]}
+        # PIPESTATUS AND USE PIPE TEE
+        if [[ ${int_ReturnCode} -ne 0 ]] ; then
+          echo "exit 1" >> "${file_Job}"
+          echo "# Template Begin" >> "${file_Job}"
+          cat "${file_Request}" >> "${file_Job}"
+          echo "# Template End" >> "${file_Job}"
+          echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
           exit 1
         fi
-
+echo " int_TaskCount=${int_TaskCount}" ; sleep 3
         fn_JobFooter "${file_Job}"
         echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
