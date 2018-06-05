@@ -112,7 +112,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
         for str_File in arr_Files:
 
             ''' Max Display '''
-            if int_Count < maxnum:
+            if int_Count <= maxnum:
                 #print("ok", int_Count, maxnum)
                 ''' Class handling '''
 

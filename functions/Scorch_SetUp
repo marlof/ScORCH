@@ -164,6 +164,8 @@ fn_HouseKeeping()
   ( cd "${dir_Active}" && find ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
   find "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
+  [[ -w ${file_Cache} ]] && rm ${file_Cache}
+
   # Touch active New etc jobs (Sometimes old jobs are still being used even after a long time)
   # Recover jobs jobs that have taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )

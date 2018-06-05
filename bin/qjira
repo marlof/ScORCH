@@ -41,6 +41,7 @@ _JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADE
 
 
 #echo ${_JIRA_ISSUE_DETAILS}
+
 #echo "==============="
 #curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "${JIRA_SERVER}/rest/api/2/user?username=user"
 # Issue description

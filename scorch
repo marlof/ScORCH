@@ -92,11 +92,12 @@
 ## 1.28 180518    marc   Working with centos
 ## 1.28.1         marc   Minor format fix
 ## 1.29           marc
-## 1.30           marc   
+## 1.30           marc   shell read command now reads in raw (-e)
+## 1.31           marc   cache file no longer shared
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.30dev"
+typeset str_ProgramVersion="1.31"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -163,6 +164,8 @@ typeset       int_SubTask=
 typeset       str_SubTask=
 typeset int_DispatchSleep=10
 typeset           hex_MD5=
+typeset       file_Cache=/tmp/mycache.$$
+
 
 fn_ResetJobDefinitions()
 {
