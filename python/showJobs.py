@@ -23,8 +23,9 @@
 # 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs highlighted
 # 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
 # 1.8.1                                     changed wording
+# 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
 ############################################################################################################
-str_ProgramVersion = '1.8.1'
+str_ProgramVersion = '1.9'
 
 import os, getpass, getopt, sys
 import time
@@ -34,6 +35,7 @@ import re
 
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
+
 
 class colours:
     HEADER = '\033[95m'
@@ -165,6 +167,10 @@ def main(argv):
 
     filename = outputfile
     temp = open(filename, 'w+b')
+
+    if maxnum == 999:
+        rows, columns = os.popen('stty size', 'r').read().split()
+        maxnum = int(rows) - 10
 
     for eachDir in list_Dir:
         fn_ShowJobs(eachDir,temp,maxnum)
