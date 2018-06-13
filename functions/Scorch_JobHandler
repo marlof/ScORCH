@@ -146,8 +146,8 @@ fn_CheckTask()
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       rm "\${dir_Pause}"/\${str_JobName}".pause"
       (( int_Task+=1 ))
-      echo "\$(${fn_LogDate}) Paused. Resume point automatically set for resume:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-      echo "\$(${fn_LogDate}) Paused. Resume point automatically set for resume:\${int_Task}" >> "\${file_Log}"
+      echo "\$(${fn_LogDate}) Paused. automatically updated to Resume Point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+      echo "\$(${fn_LogDate}) Paused. Automatically updated to Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
     fi

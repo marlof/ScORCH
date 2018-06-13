@@ -74,7 +74,6 @@ fn_ShowTop()
   [[ -z ${int_Column1Width} ]] && int_Column1Width=10
   [[ -z ${int_Column2Width} ]] && int_Column2Width=10
   (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
-  #clear
   ${cmd_CLEAR}
 
   ## Check the current width of the screen
@@ -344,7 +343,7 @@ fn_FormatTasks()
   str_JobState=${str_TmpJobState}
   echo "${str_JobState} = ${str_TmpJobState}" 
   while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
-    clear
+    ${cmd_CLEAR}
     fn_ShowTop
     fn_ShowLine
     str_JobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
@@ -501,7 +500,6 @@ readonly -f fn_ShowTasks
 fn_JobInfo()
 {
       ${cmd_CLEAR}
-      #clear
       fn_ShowTop
       fn_ShowLine "-" "Job Details"
       typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")

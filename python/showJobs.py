@@ -24,6 +24,7 @@
 # 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
 # 1.8.1                                     changed wording
 # 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
+# 1.10      Marc Loftus     12/06/2018      Adding Puase and Rules flags
 ############################################################################################################
 str_ProgramVersion = '1.9'
 
@@ -54,20 +55,24 @@ b_More = False
 int_More = 0
 
 # Set up variables
-if os.name == "nt":
+#if os.name == "nt":
     # Windows
-    print("Not yet onfigured for windows")
-    dir_Base  = "C:\\Users\\Marc\\Google Drive\\WebMarcIT\\scorch\\ScORCH\\"
-    dir_Job   = dir_Base + "\\jobs\\"
-    dir_Log   = dir_Base + "\\var\\log\\"
-    cmd_Clear = "os.system('cls')"
-    exit()
-else:
+#    print("Not yet onfigured for windows")
+#    dir_Base  = "C:\\Users\\Marc\\Google Drive\\WebMarcIT\\scorch\\ScORCH\\"
+#    dir_Job   = dir_Base + "\\jobs\\"
+#    dir_Log   = dir_Base + "\\var\\log\\"
+#    cmd_Clear = "os.system('cls')"
+#    exit()
+#else:
     # Everything else
-    dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dir_Job   = dir_Base + "/jobs/"
-    dir_Log   = dir_Base + "/var/log/"
-    cmd_Clear = "os.system('clear')"
+dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dir_Job   = dir_Base + "/jobs/"
+dir_Log   = dir_Base + "/var/log/"
+str_Pause = "pause"
+str_Rule  = "rules"
+cmd_Clear = "os.system('clear')"
+chr_PauseFlag = ""
+chr_RuleFlag = ""
 
 int_Count             = 1
 str_ProgramName       = __file__
@@ -112,6 +117,14 @@ def fn_ShowJobs(str_State,temp,maxnum):
           ansi_colour=colours.RESET
 
         for str_File in arr_Files:
+            if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
+                chr_PauseFlag = "P"
+            else:
+                chr_PauseFlag = " "
+            if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
+                chr_RuleFlag = "R"
+            else:
+                chr_RuleFlag = " "
 
             ''' Max Display '''
             if int_Count <= maxnum:
@@ -139,7 +152,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                 if re.search("WIP", str_LastLine):
                   ansi_colour=colours.RESET
 
-                print (ansi_colour + "%3d%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
+                print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
                 int_Count = int_Count + 1
             else:
                 b_More = True

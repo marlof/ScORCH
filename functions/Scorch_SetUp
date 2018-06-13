@@ -64,7 +64,8 @@ fn_CheckSetUp()
   printf "\n\tcmd_AWK: ${cmd_AWK}\n"
 
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
-  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo"
+  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo \"\""
+  (( b_NonInteractive == 1 )) && cmd_CLEAR="echo \"\""
 
 #  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 

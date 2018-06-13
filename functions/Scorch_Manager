@@ -100,7 +100,7 @@ readonly -f fn_Manager
 
 fn_Admin()
 {
-  clear
+  ${cmd_CLEAR}
   fn_ShowTop
   fn_ShowLine
   if [[ -f ${file_Prefs} ]] ; then
@@ -333,7 +333,7 @@ fn_CatchWord()
     t | T      ) fn_ShowTasks "${file_Job}"          ;;
     tail       ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
     [0-9]*     ) fn_AdminFunctions ${str_Word}  ;;
-    *          ) clear ;;
+    *          ) ${cmd_CLEAR} ;;
   esac
   #echo "${str_Word}"
 }
