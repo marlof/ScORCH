@@ -444,7 +444,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
 fn_ShowLine "="
 
     printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
-    read -n 1 -t ${int_RefreshRate} char_Choice
+    read ${str_Quick} -t ${int_RefreshRate} char_Choice
 
     case ${char_Choice} in
       r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_RefreshRate ;;

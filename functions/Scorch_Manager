@@ -35,9 +35,10 @@ fn_Manager()
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
     fn_ContextMenu
+    (( b_Quick == 1 )) && str_Quick="-n 1" || str_Quick=""
 
 
-    read -n 1 -t ${int_Refresh} char_Choice
+    read ${str_Quick} -t ${int_Refresh} char_Choice
 
     case ${char_Choice} in
 
@@ -111,7 +112,7 @@ fn_Admin()
   printf "\n ${dis_ULOn}E${dis_ULOff}dit Preferences | "
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
-  read -n 1 -t ${int_Refresh} char_Choice
+  read ${str_Quick} -t ${int_Refresh} char_Choice
 
   case ${char_Choice} in
     e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
@@ -127,7 +128,7 @@ fn_ViewJob()
   ${cmd_Editor} "${file_View}"
   if ! diff "${file_Orig}" "${file_View}" ; then
     printf "\n\nWarning. Not in edit mode. Changes will not be saved.\n"
-	  read -n 1 -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
+	  read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
 	  printf "\n\n"
 	  if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
 	    mv "${file_View}" /tmp/$(basename "${file_Orig}")
@@ -200,7 +201,7 @@ fn_AdminFunctions()
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
-      read -n 1 -t 30 char_Choice
+      read ${str_Quick} -t 30 char_Choice
 
       case ${char_Choice} in
 	

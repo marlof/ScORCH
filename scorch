@@ -97,11 +97,11 @@
 ## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 ## 1.32           marc   Resume after pause fixed issue #31
 ##                       Pause and Rules flags shown on showJob #32
-##
+## 1.33           marc   read quick for experts and slow for novice
 ##
 ##
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.32"
+typeset str_ProgramVersion="1.33"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"

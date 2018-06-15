@@ -828,7 +828,7 @@ fn_CheckOwnJobs()
 {
   if [ "$(find "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
     printf "\n\n%s\n" "You have queued jobs that have not yet been started."
-    read -n 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
+    read ${str_Quick} 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
     printf "\n\n"
     [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
   fi
@@ -851,7 +851,7 @@ fn_CheckOwner()
   typeset local file_Job="${1}"
   if ! grep "^str_Owner=${str_User}" "${file_Job}" ; then
     printf "\n\nYou do not own this job\n\nCurrent owner: $(grep "^str_Owner=" "${file_Job}")\n\n"
-    read -n 1 -p "Do you wish to take ownership? [y/n]: "
+    read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
       y | Y ) fn_SetJobOwner "${file_Job}" ;;
 	        * ) break ;;

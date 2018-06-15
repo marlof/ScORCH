@@ -157,7 +157,7 @@ fnE_AmendRules()
   printf "\n\n "
   printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
 
-  read -n 1 -t 60 char_Choice
+  read ${str_Quick} -t 60 char_Choice
 
   case ${char_Choice} in
 

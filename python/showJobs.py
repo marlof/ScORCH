@@ -24,14 +24,16 @@
 # 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
 # 1.8.1                                     changed wording
 # 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
-# 1.10      Marc Loftus     12/06/2018      Adding Puase and Rules flags
+# 1.10      Marc Loftus     12/06/2018      Adding Pause and Rules flags
+# 1.11      Marc Loftus     15/06/2018      Adding elasped time
 ############################################################################################################
-str_ProgramVersion = '1.9'
+str_ProgramVersion = '1.11'
 
 import os, getpass, getopt, sys
-import time
+import time        # Used for ls sorting in time order
+import datetime    # Used for elapsed running time
 import glob
-import tempfile
+import tempfile    # Used to have an output file
 import re
 
 from os import listdir, access
@@ -73,6 +75,7 @@ str_Rule  = "rules"
 cmd_Clear = "os.system('clear')"
 chr_PauseFlag = ""
 chr_RuleFlag = ""
+str_Time = ""
 
 int_Count             = 1
 str_ProgramName       = __file__
@@ -151,8 +154,25 @@ def fn_ShowJobs(str_State,temp,maxnum):
 
                 if re.search("WIP", str_LastLine):
                   ansi_colour=colours.RESET
+                if str_State == "running":
+                    
+                  # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
+                  with open(file_JobLog) as origin:
+                    for line in origin:
+                       if not "AUDIT:START:1" in line:
+                          continue
+                       try:
+                          str_StartTime = int(line.split(':')[2])
+                       except IndexError:
+                          print
 
-                print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
+
+                  str_CurrentTime=int(time.time())
+                  str_Time=str_CurrentTime - str_StartTime
+                  str_Time=str(datetime.timedelta(seconds=str_Time))
+                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%+s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_Time, str_LastLine, colours.RESET))
+                else:
+                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
                 int_Count = int_Count + 1
             else:
                 b_More = True

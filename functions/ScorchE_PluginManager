@@ -88,7 +88,7 @@ fnE_PluginManagerMenu()
   printf "\n\n "
   printf " ${dis_ULOn}O${dis_ULOff}N | O${dis_ULOn}F${dis_ULOff}F  | e${dis_ULOn}X${dis_ULOff}it : "
 
-  read -n 1 -t 60 char_Choice
+  read ${str_Quick} -t 60 char_Choice
 
   case ${char_Choice} in
 
