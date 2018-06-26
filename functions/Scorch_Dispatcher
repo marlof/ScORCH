@@ -140,10 +140,10 @@ fn_CheckDispatcher()
     ## Check the lock is correct
     #echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher" | head -1) -eq $(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}') ]] ; then
-#echo This is the dispatcher      
+      #echo This is the dispatcher      
       return 0
     else
-#echo This is not the dispatcher      
+      #echo This is not the dispatcher      
       rm "${file_DispatchLock}" 2>/dev/null
     fi
   else

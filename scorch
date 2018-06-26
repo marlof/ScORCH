@@ -265,7 +265,7 @@ readonly -f fn_LoadFunctions
 
 fn_CheckLicense()
 {
-  echo "Checking license"
+  # Simulate license check
   b_Licence=1
   return 1
 }

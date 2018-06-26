@@ -119,6 +119,8 @@ def fn_ShowJobs(str_State,temp,maxnum):
         else:
           ansi_colour=colours.RESET
 
+        int_Width=int(int_Columns) - 3 - 8   - 10 - 20  - 8  - 20 
+
         for str_File in arr_Files:
             if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
                 chr_PauseFlag = "P"
@@ -172,7 +174,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                   str_Time=str(datetime.timedelta(seconds=str_Time))
                   print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%+s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_Time, str_LastLine, colours.RESET))
                 else:
-                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine, colours.RESET))
+                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine[:int_Width], colours.RESET))
                 int_Count = int_Count + 1
             else:
                 b_More = True

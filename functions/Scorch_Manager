@@ -28,6 +28,7 @@ fn_Manager()
   typeset local char_Choice=
   tput rmam
   hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
+  trap ':' SIGWINCH
   while : ; do
     fn_ShowTop
     fn_ShowJobs superseded failed fixing new running starting pending queued completed
@@ -86,6 +87,7 @@ fn_Manager()
       s | S )
          read -e -t ${int_Refresh} char_ChoiceExtra
          str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+         fn_CheckDispatcher
          case ${str_Choice} in
             set )   fnE_Set ;;
          esac  ;;
@@ -202,6 +204,8 @@ fn_AdminFunctions()
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
       read ${str_Quick} -t 30 char_Choice
+      fn_CheckDispatcher
+
 
       case ${char_Choice} in
 	
@@ -236,7 +240,6 @@ fn_AdminFunctions()
                 else
                   mv "${file_Link}" "${dir_Queued}"
                 fi
-                fn_CheckDispatcher
                 return 0 ;;
 
         ## Resume Job(s)
@@ -245,7 +248,6 @@ fn_AdminFunctions()
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
                 mv "${file_Link}" "${dir_Queued}"
-                fn_CheckDispatcher
                 return 0 ;;
 
         ## Skip a task in Job(s)
@@ -257,7 +259,6 @@ fn_AdminFunctions()
                 #echo "AUDIT:T:${int_Task}:S" >> "${file_Jobh}"
 
                 mv "${file_Link}" "${dir_Queued}"
-                fn_CheckDispatcher
                 return 0 ;;
 
         ## Pause Job(s)

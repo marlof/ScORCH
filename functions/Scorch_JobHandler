@@ -674,7 +674,7 @@ GetVar()
   ## ===================================================================
   if [ "${b_List}" ] ; then
     ## Lists can be passed as a space, comma or ampersand separated list 
-	## i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
+    ## i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
     str_Value="$(${cmd_AWK} 'BEGIN {
        FS=":"
        IGNORECASE='"$b_IgnoreCase"' }
@@ -689,6 +689,10 @@ GetVar()
          $2=$2;
          print $2}'       "${file_Request}" )" 
   fi
+
+[[ $b_IgnoreCase ]] && str_Case=" -i " || str_Case=""
+grep ${str_Case} -w  '[[:space:]]*${pattern}[[:space:]]*:' /tmp/getvar.tmp
+#
 
   ## If a value hasnt been found or is empty, use the default if one is set
   ## ======================================================================
