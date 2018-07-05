@@ -16,15 +16,18 @@
 
 ## These functions check the layout is correct and provides common initialisation functions
 ## fn_CheckSetup()
+## fn_SetPrefs()
 ## fn_Help()
 ## fn_HouseKeeping()
 ## fn_GetAnswer()
 ## fn_Range()
+## fn_RangeTUI()
 ## fn_CreateFile()
 ## fn_GetResumePoint()
 ## fn_UpdateResumePoint()
 ## fn_PressEnter()
 ## fn_Trap()
+## fn_Select()
 
 
 # Some global variables for setup functions
@@ -82,9 +85,7 @@ readonly -f fn_CheckSetUp
 
 fn_SetPrefs()
 {
-  if [[ -f ${file_Prefs} ]] ; then
-    source ${file_Prefs}
-  else
+  if [[ ! -f ${file_Prefs} ]] ; then
     echo '
 ## Layout Option
 ## =============
@@ -103,7 +104,9 @@ export        cmd_Editor="vi"
 # Allow quick menu options (suggested value for novice=0 expert=1)
 export           b_Quick="0"
 ' >> ${file_Prefs}
-fi
+  fi
+  source ${file_Prefs}
+
 }
 
 fn_Help()

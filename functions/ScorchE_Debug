@@ -4,6 +4,11 @@
 # Unauthorised copying of this file, via any medium is strictly prohibited
 # This is the proprietary software of WebMarcIT Ltd
 # Written by marc@webmarcit.com
+# for x in * ; do echo $x ; echo "===========" ; grep ^[a-z].*() $x; read; done
+
+## fnE_Set()
+## fnE_MkOpenScorch()
+## fnE_MkEscorchtar()
 
 fnE_Set()
 {

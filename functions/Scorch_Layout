@@ -19,6 +19,8 @@
 ## fn_ShowTop()
 ## fn_ShowLine()
 ## fn_ShowJobs2()
+## fn_DisplayTime()
+## fn_ShowJobs3()
 ## fn_FormatTasks()
 ## fn_ShowTasks()
 ## fn_JobInfo()
@@ -557,7 +559,7 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    [[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
+    #[[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
     #echo "echo ${arr_States[@]} | grep -i queued)"
     [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
     [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
@@ -565,7 +567,7 @@ fn_ContextMenu()
     [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_FailedJobs=1 && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
-    printf "${dis_ULOn}C${dis_ULOff}SV | "
+    #printf "${dis_ULOn}C${dis_ULOff}SV | "
 
   fi
 
@@ -574,7 +576,7 @@ fn_ContextMenu()
   [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
   [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
-  [[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
+  #[[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}C${dis_ULOff}ancel | "
 

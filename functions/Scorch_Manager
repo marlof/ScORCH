@@ -16,6 +16,8 @@
 
 ## These functions manage the manager/view screen
 ## fn_Manager()
+## fn_ShowPrefs()
+## fn_Admin()
 ## fn_ViewJob()
 ## fn_EditJob()
 ## fn_Cancel()
@@ -49,8 +51,6 @@ fn_Manager()
       ## Create a new job
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
-      ## View CSV
-      c | C ) ${cmd_Editor} "${file_CSV}" ;;
 
       ## Job State transition
       d | D )                          fn_Transition delete  ;;
@@ -61,9 +61,9 @@ fn_Manager()
       i | I )                          fnE_PluginManagerMenu ;;
 
       ## Misc
-      m | M ) fn_EditMOTD           ;;
+      #m | M ) fn_EditMOTD           ;;
+      #l | L ) fn_LockManager        ;;
       t | T ) fn_ShowTasks          ;;
-      l | L ) fn_LockManager        ;;
       x | X ) break ;;
 
 
@@ -101,25 +101,96 @@ fn_Manager()
 }
 readonly -f fn_Manager
 
+fn_ShowPrefs()
+{
+  while : ; do
+    ${cmd_CLEAR}
+    fn_ShowTop
+    fn_ShowLine
+    if [[ -f ${file_Prefs} ]] ; then
+      printf "\n\n"
+      fn_ShowLine "-" " Prefs ${file_Prefs}"
+      cat ${file_Prefs}
+      fn_ShowLine
+    fi
+    echo ""
+    fn_ShowLine "="
+    printf "\n "
+    printf "${dis_ULOn}E${dis_ULOff}dit Preferences | "
+    printf "${dis_ULOn}D${dis_ULOff}efaults | "
+    printf " e${dis_ULOn}X${dis_ULOff}it : "
+
+    read ${str_Quick} -t ${int_Refresh} char_Choice
+
+    case ${char_Choice} in
+      e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+      d | D ) [[ -w ${file_Prefs} ]] && rm ${file_Prefs} && fn_SetPrefs ;;
+      x | X ) return 0 ;;
+      *     ) return 0 ;;
+    esac
+  done
+}
+
+#fn_ShowMOTD()
+#{
+#  ${cmd_CLEAR}
+#  fn_ShowTop
+#  fn_ShowLine
+#  echo ""
+#  fn_ShowLine "-" "Message of the day"
+#  fn_DisplayMOTD
+#  echo ""
+#  fn_ShowLine "="
+#  printf "\n"
+# # printf "${dis_ULOn}M${dis_ULOff}OTD | "
+#  printf "e${dis_ULOn}X${dis_ULOff}it : "#
+#
+#  read ${str_Quick} -t ${int_Refresh} char_Choice
+
+#  case ${char_Choice} in
+#    m | M ) fn_EditMOTD  ;;
+#    x | X ) return 0 ;;
+#    *     ) return 0 ;;
+#  esac
+#}
+
+
 fn_Admin()
 {
+  while : ; do
+
   ${cmd_CLEAR}
   fn_ShowTop
   fn_ShowLine
-  if [[ -f ${file_Prefs} ]] ; then
-    fn_ShowLine "-" "${file_Prefs}"
-    cat ${file_Prefs}
-  fi
+  printf "\n"
+  printf " P) Change Display and Timing preferences %s\n\n" ${file_Prefs}
+  printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
+  printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
+  printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
+  #fn_ShowLine "-" "Message of the day"
+  #fn_DisplayMOTD
   fn_ShowLine "="
-  printf "\n ${dis_ULOn}E${dis_ULOff}dit Preferences | "
+  fn_DisplayMOTD
+  printf "\n"
+  printf "${dis_ULOn}P${dis_ULOff}references | "
+  printf "${dis_ULOn}M${dis_ULOff}essage | "
+  printf "${dis_ULOn}L${dis_ULOff}ocks | "
+  printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
   read ${str_Quick} -t ${int_Refresh} char_Choice
 
   case ${char_Choice} in
-    e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
-    x | X ) return ;;
+    m | M ) fn_AdminMOTD  ;;
+    p | P ) fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+    l | L ) fn_LockManager        ;;
+    ## View CSV
+    v | V ) ${cmd_Editor} "${file_CSV}" ;;
+    x | X ) return 0 ;;
+    *     ) return 0 ;;
+
   esac
+  done
 }
 
 fn_ViewJob()
@@ -165,26 +236,28 @@ fn_Cancel()
 
   fn_CheckOwner "${file_Link}"
   if [[ "${str_JobState}" = "running" ]] ; then
-    echo kill job
-    ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v bash | grep -v grep
-    int_PID=$(ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v grep | awk -F" " '{print $2}')
-    ps -fu ${str_User}
-    pstree -p ${int_PID}
-    echo ${int_PID} 
-    printf "\n\n Killing Process with PID[${int_PID}]"
-    # mv ${file_Link} ${dir_Failed}
-
-   # kill ${int_PID}
-    fn_PressEnter
+    printf "From AUDIT PID:"
+    int_PID=$(grep "^AUDIT:PID:" ${file_Log} | tail -1 | cut -d: -f3)
+#    ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v bash | grep -v grep
+#    int_PID=$(ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v grep | awk -F" " '{print $2}')
+#    echo ${int_PID} 
+    echo "Processes running at termination:" >> ${file_Log}
+    ps -fu ${str_User} >> ${file_Log}
+    echo "Process tree at termination:" >> ${file_Log}
+    pstree -p ${int_PID} >> ${file_Log}
+    printf "\n Killing Process with PID[${int_PID}]"
+    kill ${int_PID}
+    mv ${file_Link} ${dir_Failed}
+    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Log} | tail -1 | cut -d: -f3)
+    fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
   elif  [[ "${str_JobState}" = "failed"  ]] ; then
-    fn_Audit "${file_Link}" "Cancelled at task:$(fn_GetResumePoint ${file_Log} ) "
+    fn_Audit "${file_Link}" "Aborted"
     mv ${file_Link} ${dir_Completed}
-    printf "\n\n Cancelled Job : ${file_Link}"
-    fn_PressEnter
+    printf "\n\n Aborted Job : ${file_Link}"
   else
     echo "Incorrect call"
   fi
-  sleep 2
+  fn_PressEnter
 }
 
 fn_AdminFunctions()

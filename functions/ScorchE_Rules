@@ -5,6 +5,15 @@
 # This is the proprietary software of WebMarcIT Ltd
 # Written by marc@webmarcit.com
 
+## fn_GetRequest()
+## fn_ProcessRequest()
+## fn_ShowRules()
+## fnE_Rules()
+## fnE_RulesMenu()
+## fnE_AmendRules()
+## fn_ExtractPairs()
+## fn_CheckAuth()
+
 fn_GetRequest()
 {
   ## Receive the request from a file or interactively

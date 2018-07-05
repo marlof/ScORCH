@@ -15,7 +15,6 @@
 ##
 
 ## These functions handle aspects or creating and processing new jobs, tasks and task groups
-## fn_NewJob()
 ## fn_JobHeader()
 ## fn_CheckTask()
 ## fn_JobFooter()
@@ -192,7 +191,7 @@ fn_JobFooter()
   ## echo "Adding footer to ${file_Job}"
   cat >> "${file_Job}" << EOF
 
-int_StartTask=\${int_ResumePoint:-1}
+int_StartTask=\${int_ResumePoint:-0}
 int_Last=${int_TaskCount}
 
 # If lst_ReRun is not blank
@@ -832,7 +831,7 @@ fn_CheckOwnJobs()
 {
   if [ "$(find "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
     printf "\n\n%s\n" "You have queued jobs that have not yet been started."
-    read ${str_Quick} 1 -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
+    read ${str_Quick} -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
     printf "\n\n"
     [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] && nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
   fi

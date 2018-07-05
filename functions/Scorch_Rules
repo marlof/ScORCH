@@ -15,7 +15,7 @@
 ##
 
 ## These functions manage the stubbing of enterprise available rules 
-##    fn_Rules()
+## fn_ShowRules()
 
 fn_ShowRules()
 {

@@ -119,6 +119,12 @@ def fn_ShowJobs(str_State,temp,maxnum):
         else:
           ansi_colour=colours.RESET
 
+        # int_Column1Width=3     # Job num
+        # int_Column2Width=8     # Job ID
+        # int_Column3Width=20    # Longest Action
+        # int_Column4Width=10    # Longest Envrionment
+        # int_Column5Width=23    # Longest Release 
+        # int_Column6Width=      # Width left for the log
         int_Width=int(int_Columns) - 3 - 8   - 10 - 20  - 8  - 20 
 
         for str_File in arr_Files:
