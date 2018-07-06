@@ -68,7 +68,7 @@ fn_Manager()
 
 
       ## Releases
-      [0-9] ) fn_CatchWord ${char_Choice} "number" ;;
+      [0-9]* ) (( b_Quick )) && fn_CatchWord ${char_Choice} "number" || fn_AdminFunctions ${char_Choice} ;;
 
       o | O ) 
          read -e -t ${int_Refresh} char_ChoiceExtra

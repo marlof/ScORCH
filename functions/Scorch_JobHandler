@@ -829,7 +829,7 @@ readonly -f fn_Transition
 
 fn_CheckOwnJobs()
 {
-  if [ "$(find "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
+  if [ "$(find -L "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
     printf "\n\n%s\n" "You have queued jobs that have not yet been started."
     read ${str_Quick} -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
     printf "\n\n"
@@ -866,5 +866,5 @@ readonly -f fn_CheckOwner
 fn_JobState()
 {
   local file_Job=${1}
-  basename $(dirname $(find ${dir_Job} -name ${file_Job} | grep -v "/active/"))
+  basename $(dirname $(find -L ${dir_Job} -name ${file_Job} | grep -v "/active/"))
 }

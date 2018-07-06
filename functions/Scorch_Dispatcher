@@ -100,7 +100,7 @@ fn_Dispatcher()
           ## (failed, completed, deleted, new)
           typeset local arr_JobLocks=$(ls "${file_JobLock}"*)
           for file_EachLock in ${arr_JobLocks} ; do
-            [[ "$(find ${dir_Job}/running ${dir_Job}/starting -name $(ls -l "${file_EachLock}" | ${cmd_AWK} -F" " '{print $NF}'))" ]] || rm "${file_EachLock}"
+            [[ "$(find -L ${dir_Job}/running ${dir_Job}/starting -name $(ls -l "${file_EachLock}" | ${cmd_AWK} -F" " '{print $NF}'))" ]] || rm "${file_EachLock}"
           done
         fi
         sleep 1

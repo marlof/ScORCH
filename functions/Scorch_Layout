@@ -51,10 +51,10 @@ ${dir_Running}"
   int_Column2Width=8        # System reference number (like JIRA) or use ticket number
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
-  (( int_Column3Width=$(find ${dir_Active} | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
-  (( int_Column4Width=$(find ${dir_Active} | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
-  (( int_Column5Width=$(find ${dir_Active} ! -name "*.rules" | ${cmd_AWK} -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
-  (( int_Column6Width=$(find ${dir_Active} | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
+  (( int_Column3Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
+  (( int_Column4Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
+  (( int_Column5Width=$(find -L ${dir_Active} ! -name "*.rules" | ${cmd_AWK} -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
+  (( int_Column6Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
   IFS=$SAVEIFS
 #int_Column2Width=16
 #int_Column3Width=12 #${int_Column3Width:-20}       # The Action / Plugin
@@ -265,7 +265,7 @@ fn_ShowJobs3()
   cd "${dir_Job}"
   int_Count=1
 
-  find ${@} -type l
+  find -L ${@} -type l
 
   file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
   echo "#$$" > "${file_Cache}"
@@ -341,18 +341,18 @@ fn_FormatTasks()
   typeset local file_Log="${dir_Log}/$(basename ${file_Job}).log"
   typeset local int_RefreshRate=${int_Refresh}
   # Fake the running state to start with a loop
-  typeset local str_TmpJobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+  typeset local str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
   str_JobState=${str_TmpJobState}
   echo "${str_JobState} = ${str_TmpJobState}" 
   while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
     ${cmd_CLEAR}
     fn_ShowTop
     fn_ShowLine
-    str_JobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+    str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
 
     printf "\n\n   "
     ls -lL "${file_Job}"
-    [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+    [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find-L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
     case ${str_JobState} in
       queued  | pending | new ) int_Task=$(grep "^int_ResumePoint=" ${file_Job} | head -1 | cut -d"=" -f2) ;;
       failed  | fixing        ) int_Task=$(grep "Resume point:" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | awk -F":" '{print $NF}') ;;

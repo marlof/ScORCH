@@ -158,25 +158,25 @@ fn_HouseKeeping()
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
 
-  [ $(ls "${dir_Completed}/*" 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
+  [ $(ls "${dir_Completed}/*" 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
-  find -H "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
-  find "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
+  find -L -H "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
+  find -L "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Remove old deleted links
-  find "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
+  find -L "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Archive old active jobs
-  ( cd "${dir_Active}" && find ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
-  find "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
+  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
+  find -L "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
   [[ -w ${file_Cache} ]] && rm ${file_Cache}
 
   # Touch active New etc jobs (Sometimes old jobs are still being used even after a long time)
   # Recover jobs jobs that have taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
-  arr_Recover=$( cd "${dir_New}" && find . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
+  arr_Recover=$( cd "${dir_New}" && find -L . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
   echo ${arr_Recover}
   for file_Recover in ${arr_Recover} ; do
     ( cd "${dir_Active}" && tar xf active.tar ${file_Recover} )
@@ -184,8 +184,8 @@ fn_HouseKeeping()
 
   IFS=£{SAVEIFS}
   # Clean Up cache files
-  find "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
-  find "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null
+  find -L "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
+  find -L "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null
 }
 readonly -f fn_HouseKeeping
 
