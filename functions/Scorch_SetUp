@@ -28,6 +28,8 @@
 ## fn_PressEnter()
 ## fn_Trap()
 ## fn_Select()
+## fn_IsNumber()
+
 
 
 # Some global variables for setup functions
@@ -309,3 +311,13 @@ fn_Select()
   typeset -a arr_Temp=
 }
 readonly fn_Select
+
+fn_IsNumber()
+{
+  re='^-?[0-9]+([.][0-9]+)?$'
+  if [[ $1 =~ $re ]] ; then
+    return 0
+  else
+    return 1
+  fi
+}

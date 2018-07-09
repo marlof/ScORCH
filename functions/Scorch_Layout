@@ -42,10 +42,10 @@ fn_SetLayout()
 
   # Purposely set one per line to cope with white space in directory names
   arr_Checks="
-${dir_New}
-${dir_Completed}
-${dir_Failed}
-${dir_Running}"
+    ${dir_New}
+    ${dir_Completed}
+    ${dir_Failed}
+    ${dir_Running}"
 
   int_Column1Width=4        # Selection number
   int_Column2Width=8        # System reference number (like JIRA) or use ticket number
@@ -449,7 +449,14 @@ fn_ShowLine "="
     read ${str_Quick} -t ${int_RefreshRate} char_Choice
 
     case ${char_Choice} in
-      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_RefreshRate ;;
+      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_NewRefreshRate
+              if fn_IsNumber $int_NewRefreshRate ; then
+                int_RefreshRate=${int_NewRefreshRate}
+              else
+                printf "\n An integar is expected for the refresh rate."
+                sleep 2
+              fi
+              ;;
 	    p | P ) fn_PressEnter ;;
 	    x | X ) break ;;
     esac
