@@ -163,6 +163,11 @@ fn_Admin()
   fn_ShowTop
   fn_ShowLine
   printf "\n"
+  printf " B) Build a tar release                   ${dir_Base}/escorch.${str_ProgramVersion}.tar\n\n"
+  printf " C) Check for latest online version       ${str_LatestVersion}\n\n"
+  [[ "${str_LatestVersion}" != "check" ]] && \
+  printf " I) Install latest version                ${str_LatestVersion}\n\n"
+
   printf " P) Change Display and Timing preferences %s\n\n" ${file_Prefs}
   printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
   printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
@@ -172,6 +177,9 @@ fn_Admin()
   fn_ShowLine "="
   fn_DisplayMOTD
   printf "\n"
+  printf "${dis_ULOn}B${dis_ULOff}uild Release | "
+  printf "${dis_ULON}C${dis_ULOff}heck Version | "
+  [[ "${str_LatestVersion}" != "check" ]] && printf "${dis_ULON}I${dis_ULOff}nstall ${str_LatestVersion} | "
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
   printf "${dis_ULOn}L${dis_ULOff}ocks | "
@@ -181,6 +189,9 @@ fn_Admin()
   read ${str_Quick} -t ${int_Refresh} char_Choice
 
   case ${char_Choice} in
+    b | B ) fnE_MkEscorchtar ;;
+    c | C ) fn_CheckLatest ;;
+    i | I ) fn_InstallLatest ;;
     m | M ) fn_AdminMOTD  ;;
     p | P ) fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) fn_LockManager        ;;

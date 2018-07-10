@@ -101,10 +101,11 @@
 ## 1.34           marc   #24 abort jobs
 ##                       #34 b_Quick fix
 ##                       #35 Refresh improvement
-##
+## 1.35           marc   #23 Added new version features
 ##
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.34"
+typeset str_ProgramVersion="1.35"
+typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(pwd)/${dir_Run}"
@@ -172,6 +173,9 @@ typeset       str_SubTask=
 typeset int_DispatchSleep=10
 typeset           hex_MD5=
 typeset       file_Cache=/tmp/mycache.$$
+         
+typeset              URL="http://www.autoscorch.com/"
+typeset     file_Version="downloads/version.txt"
 
 
 fn_ResetJobDefinitions()

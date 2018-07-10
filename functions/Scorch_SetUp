@@ -321,3 +321,41 @@ fn_IsNumber()
     return 1
   fi
 }
+
+fn_CheckLatest()
+{
+  echo ""
+  printf "\n\n Checking $URL/${file_Version}\n"
+  str_LatestVersion=$(curl ${URL}/${file_Version})
+  fn_IsNumber ${str_LatestVersion} || str_LatestVersion="check"
+  file_Latest="${URL}/downloads/escorch.${str_LatestVersion}.tar"
+  fn_PressEnter
+  #fn_InstallLatest
+}
+
+fn_InstallLatest()
+{
+  local file_Install=$dir_Etc/install.txt
+  printf " Checking for MD5   : "
+  str_MD5=$(curl -s ${file_Latest}.md5)
+  echo ${str_MD5}
+
+  printf " Retrieving tar file: "
+  cd ${dir_Base}
+  curl -s -o scorch.tar ${file_Latest} && echo "Done" || echo "FAILED"
+
+  printf " Verifying MD5      : "
+  md5sum scorch.tar
+
+  if [[ ! -f ${file_Install} ]] ; then
+    touch ${file_Install}
+    chmod 770 ${file_Install}
+  fi
+
+  if [[ -w ${file_Install} ]] ; then
+    echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
+  fi
+  
+
+  fn_PressEnter
+}

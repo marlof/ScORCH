@@ -74,7 +74,7 @@ fnE_MkEscorchtar()
   cd ${dir_Base}
   tar cf escorch.${str_ProgramVersion}.tar ${str_ProgramName} python functions plugins/DEMO
   md5sum escorch.${str_ProgramVersion}.tar > escorch.${str_ProgramVersion}.tar.md5
-  sleep 2
+  echo ${str_ProgramVersion} > version.txt
   echo "Done"
   sleep 3
 }
