@@ -329,27 +329,45 @@ fn_CheckLatest()
   str_LatestVersion=$(curl ${URL}/${file_Version})
   fn_IsNumber ${str_LatestVersion} || str_LatestVersion="check"
   file_Latest="${URL}/downloads/escorch.${str_LatestVersion}.tar"
-  fn_PressEnter
+  #fn_PressEnter
   #fn_InstallLatest
 }
 
 fn_InstallLatest()
 {
-  local file_Install=$dir_Etc/install.txt
+  local file_Install=${dir_Etc}/install.txt
+  local     file_MD5=${dir_Tmp}/scorch.tar.md5
+  local     file_Tar=${dir_Tmp}/scorch.tar
+  local   dir_Backup=${dir_Base}/.${str_ProgramVersion}.backup
   printf " Checking for MD5   : "
-  str_MD5=$(curl -s ${file_Latest}.md5)
-  echo ${str_MD5}
+  curl -s -o ${file_MD5} ${file_Latest}.md5
+  echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+  cat ${file_MD5}
+  
+
+  #str_MD5=${str_MD5% *}
 
   printf " Retrieving tar file: "
   cd ${dir_Base}
-  curl -s -o scorch.tar ${file_Latest} && echo "Done" || echo "FAILED"
+  curl -s -o ${file_Tar} ${file_Latest} && echo "Done" || echo "FAILED"
 
   printf " Verifying MD5      : "
-  md5sum scorch.tar
+  md5sum -c ${file_MD5}
 
   if [[ ! -f ${file_Install} ]] ; then
     touch ${file_Install}
     chmod 770 ${file_Install}
+  fi
+
+  # if MD5s match
+  printf " Checking files modified since last install... "
+  lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
+  if [[ ! -z $lst_Changed ]] ; then
+    mkdir -p -m 775 ${dir_Backup}
+    printf "\n Found files that can be backed up - (y/n response required)\n${lst_Changed}\n\n"
+    find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt -okdir cp {} ${dir_Backup}/. \;
+  else
+    echo "None"
   fi
 
   if [[ -w ${file_Install} ]] ; then
