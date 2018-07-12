@@ -347,31 +347,37 @@ fn_InstallLatest()
 
   #str_MD5=${str_MD5% *}
 
-  printf " Retrieving tar file: "
+  printf " Retrieving tar file:\n"
   cd ${dir_Base}
-  curl -s -o ${file_Tar} ${file_Latest} && echo "Done" || echo "FAILED"
+  curl -# -o ${file_Tar} ${file_Latest} && echo " Done" || echo " FAILED"
 
   printf " Verifying MD5      : "
-  md5sum -c ${file_MD5}
+  cd ${dir_Tmp}
+  if md5sum -c ${file_MD5} ; then
 
-  if [[ ! -f ${file_Install} ]] ; then
-    touch ${file_Install}
-    chmod 770 ${file_Install}
-  fi
+    if [[ ! -f ${file_Install} ]] ; then
+      touch ${file_Install}
+      chmod 770 ${file_Install}
+    fi
 
-  # if MD5s match
-  printf " Checking files modified since last install... "
-  lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
-  if [[ ! -z $lst_Changed ]] ; then
-    mkdir -p -m 775 ${dir_Backup}
-    printf "\n Found files that can be backed up - (y/n response required)\n${lst_Changed}\n\n"
-    find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt -okdir cp {} ${dir_Backup}/. \;
+    # if MD5s match
+    printf "\n Checking files modified since last install... "
+    lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
+    if [[ ! -z $lst_Changed ]] ; then
+      mkdir -p -m 775 ${dir_Backup}
+      printf "\n Found files that can be backed up - (y/n response required)\n${lst_Changed}\n\n"
+      find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt -okdir cp {} ${dir_Backup}/. \;
+    else
+      echo "None"
+    fi
+
+    if [[ -w ${file_Install} ]] ; then
+      echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
+    fi
   else
-    echo "None"
-  fi
-
-  if [[ -w ${file_Install} ]] ; then
-    echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
+    echo " Problem verifying file."
+    cat ${file_MD5}
+    echo " Check network connection, disk space."
   fi
   
 
