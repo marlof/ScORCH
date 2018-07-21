@@ -336,8 +336,8 @@ fn_CheckLatest()
 fn_InstallLatest()
 {
   local file_Install=${dir_Etc}/install.txt
-  local     file_MD5=${dir_Tmp}/scorch.tar.md5
-  local     file_Tar=${dir_Tmp}/scorch.tar
+  local     file_MD5=${dir_Base}/scorch.tar.md5
+  local     file_Tar=${dir_Base}/scorch.tar
   local   dir_Backup=${dir_Base}/.${str_ProgramVersion}.backup
   printf " Checking for MD5   : "
   curl -s -o ${file_MD5} ${file_Latest}.md5
@@ -352,7 +352,7 @@ fn_InstallLatest()
   curl -# -o ${file_Tar} ${file_Latest} && echo " Done" || echo " FAILED"
 
   printf " Verifying MD5      : "
-  cd ${dir_Tmp}
+  
   if md5sum -c ${file_MD5} ; then
 
     if [[ ! -f ${file_Install} ]] ; then
@@ -370,6 +370,8 @@ fn_InstallLatest()
     else
       echo "None"
     fi
+
+    tar xvf ${file_Tar}
 
     if [[ -w ${file_Install} ]] ; then
       echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
