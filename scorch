@@ -105,9 +105,9 @@
 ## 1.36           marc   #36 Improved for multi dispatcher
 ## 1.37           marc   #23 curl install 
 ## 1.38           marc   Improved versions feature for correct MD5                    
-##
+## 1.39           marc   #39 Add scorch definition to CSV file
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.38"
+typeset str_ProgramVersion="1.39"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -401,7 +401,12 @@ exit 0
   fi
 fi
 
-fn_CreateFile "${file_CSV}"
+if [[ ! -f ${file_CSV} ]] ; then
+  fn_CreateFile "${file_CSV}"
+  echo "#DEF requesttime responsetime starttime endtime job time tasks failure who" >> ${file_CSV}
+  echo "#FS=," >> ${file_CSV}
+fi
+
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir "${dir_Tmp}" &&  exit 1
 
 if [[ "${b_Background}" ]] ; then

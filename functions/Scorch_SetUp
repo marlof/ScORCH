@@ -29,6 +29,7 @@
 ## fn_Trap()
 ## fn_Select()
 ## fn_IsNumber()
+## fn_Maintenance()
 
 
 
@@ -384,4 +385,11 @@ fn_InstallLatest()
   
 
   fn_PressEnter
+}
+
+fn_Maintenance()
+{
+  ## Check if a maintenance flag has been set
+  :
+
 }
