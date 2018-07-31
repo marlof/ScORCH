@@ -32,6 +32,8 @@ fn_Manager()
   hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
   trap ':' SIGWINCH
   while : ; do
+    fn_CheckMaint
+
     fn_ShowTop
     fn_ShowJobs superseded failed fixing new running starting pending queued completed
     fn_ShowLine "="
@@ -154,11 +156,9 @@ fn_ShowPrefs()
 #  esac
 #}
 
-
 fn_Admin()
 {
   while : ; do
-
   ${cmd_CLEAR}
   fn_ShowTop
   fn_ShowLine
@@ -171,6 +171,7 @@ fn_Admin()
   printf " P) Change Display and Timing preferences %s\n\n" ${file_Prefs}
   printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
   printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
+  printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
   printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
   #fn_ShowLine "-" "Message of the day"
   #fn_DisplayMOTD
@@ -183,6 +184,7 @@ fn_Admin()
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
   printf "${dis_ULOn}L${dis_ULOff}ocks | "
+  printf "${dis_ULOn}S${dis_ULOff}upend | "
   printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
@@ -195,6 +197,7 @@ fn_Admin()
     m | M ) fn_AdminMOTD  ;;
     p | P ) fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) fn_LockManager        ;;
+    s | S ) ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;
     x | X ) return 0 ;;

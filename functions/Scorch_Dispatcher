@@ -42,6 +42,7 @@ fn_Dispatcher()
     ## Repair any missing lock file for dispatcher
     ## [[ ! -L ${file_DispatchLock} ]] && ln -s ${str_User}_$$ "${file_DispatchLock}"
 	  ## Make sure all current jobs reporting a running state are actually running
+    fn_CheckMaint
 
     fn_CheckRunning
     sleep ${int_DispatchSleep}

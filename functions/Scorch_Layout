@@ -51,10 +51,10 @@ fn_SetLayout()
   int_Column2Width=8        # System reference number (like JIRA) or use ticket number
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
-  (( int_Column3Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
-  (( int_Column4Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
+  (( int_Column3Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
+  (( int_Column4Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
   (( int_Column5Width=$(find -L ${dir_Active} ! -name "*.rules" | ${cmd_AWK} -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
-  (( int_Column6Width=$(find -L ${dir_Active} | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
+  (( int_Column6Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
   IFS=$SAVEIFS
 #int_Column2Width=16
 #int_Column3Width=12 #${int_Column3Width:-20}       # The Action / Plugin

@@ -383,13 +383,18 @@ fn_InstallLatest()
     echo " Check network connection, disk space."
   fi
   
-
   fn_PressEnter
 }
 
-fn_Maintenance()
+fn_CheckMaint()
 {
-  ## Check if a maintenance flag has been set
-  :
-
+  if [[ -L ${file_Maint} ]] ; then
+    echo ""
+    echo "Maintenance mode - all sessions will be suspended"
+    echo "To reinstate ${str_ProgramName} remove maintenance file"
+    echo "  rm ${file_Maint}"
+    exit 1
+  else
+    echo "OK no ${file_Maint}"
+  fi
 }

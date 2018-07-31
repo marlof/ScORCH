@@ -106,8 +106,9 @@
 ## 1.37           marc   #23 curl install 
 ## 1.38           marc   Improved versions feature for correct MD5                    
 ## 1.39           marc   #39 Add scorch definition to CSV file
+## 1.40           marc   #37 Add maintenance mode
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.39"
+typeset str_ProgramVersion="1.40"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -175,7 +176,8 @@ typeset       int_SubTask=
 typeset       str_SubTask=
 typeset int_DispatchSleep=10
 typeset           hex_MD5=
-typeset       file_Cache=/tmp/mycache.$$
+typeset       file_Cache=${dir_Tmp}/mycache.$$
+typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
          
 typeset              URL="http://www.autoscorch.com/"
 typeset     file_Version="downloads/version.txt"
