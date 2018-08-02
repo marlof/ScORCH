@@ -107,8 +107,9 @@
 ## 1.38           marc   Improved versions feature for correct MD5                    
 ## 1.39           marc   #39 Add scorch definition to CSV file
 ## 1.40           marc   #37 Add maintenance mode
+## 1.41           marc   #34 Included task and tail quick mode fix
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.40"
+typeset str_ProgramVersion="1.41"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"

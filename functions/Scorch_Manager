@@ -379,7 +379,18 @@ fn_AdminFunctions()
 
         ## Amend Job rules
         a | A ) fnE_AmendRules        ;;
-        t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
+       # t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
+        t*    ) if (( b_Quick )); then
+                  fn_CatchWord ${char_Choice} "tail tasks"
+                else
+                  if [[ ${char_Choice} == "t" ]] ; then
+                    fn_ShowTasks "${file_Job}"
+                  elif [[ ${char_Choice} == "tail" ]] ; then
+                    trap "return 0" 2 ; tail -f "${file_Log}"
+                  fi
+                fi
+                  ;;
+
         x | X ) return 0 ;;
         *     ) return 0 ;;
       esac
