@@ -514,19 +514,19 @@ fn_JobInfo()
       typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
       echo " ${str_JobOwner}"
       echo " State at selection : ${str_JobState}"
-          basename ${file_ActiveJob}
-          ##pgrep -a ${$(basename ${file_ActiveJob})::15}
-          [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+      basename ${file_ActiveJob}
+      ##pgrep -a ${$(basename ${file_ActiveJob})::15}
+      [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
 
       echo ""
       ls -lL "${file_ActiveJob}"
       ls -lL "${file_Log}"
       echo ""
-          fn_ShowRules
-          fn_ShowLine "-" "Template"
-          sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
-          echo ""
-      fn_ShowLine "-" "Log Summary "
+      fn_ShowRules
+      fn_ShowLine "-" "Template"
+      sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
+      echo ""
+      fn_ShowLine "-" "Log Summary"
       tail -${int_Tail} "${file_Log}"
       echo ""
       fn_ShowLine "-"

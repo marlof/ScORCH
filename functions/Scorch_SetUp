@@ -207,6 +207,22 @@ fn_GetAnswer()
 }
 readonly -f fn_GetAnswer
 
+fn_GetYN()
+{
+  # Linrary function to get a Yes No answer
+  # =======================================
+  local chr_YN
+
+  printf "\n $1. Are you sure (y/n) [n]? "
+  read -e chr_YN
+  
+  case $chr_YN in
+    y | Y )  return 0 ;;
+    *     )  return 1 ;;
+  esac
+
+}
+
 fn_Range()
 {
   # Library function to turn a range of numbers into a list
@@ -390,7 +406,7 @@ fn_CheckMaint()
 {
   if [[ -L ${file_Maint} ]] ; then
     echo ""
-    echo "Maintenance mode - all sessions will be suspended"
+    echo "Maintenance mode - all dispatchers and manager sessions will be suspended"
     echo "To reinstate ${str_ProgramName} remove maintenance file"
     echo "  rm ${file_Maint}"
     exit 1

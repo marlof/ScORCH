@@ -126,7 +126,7 @@ fn_ShowPrefs()
 
     case ${char_Choice} in
       e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
-      d | D ) [[ -w ${file_Prefs} ]] && rm ${file_Prefs} && fn_SetPrefs ;;
+      d | D ) [[ -w ${file_Prefs} ]] && fn_GetYN "Reset preferences" && rm ${file_Prefs} && fn_SetPrefs ;;
       x | X ) return 0 ;;
       *     ) return 0 ;;
     esac
