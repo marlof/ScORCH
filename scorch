@@ -111,6 +111,7 @@
 ## 1.42           marc   Removed formatting space from "Log Summary"
 ##                       #40 Added confirmation function
 ##                           - default preferences confirmation
+##                       #41 Add alternative location for auto install files
 ## Determine the program name and the running directory
 typeset str_ProgramVersion="1.42dev"
 typeset  str_LatestVersion="check"
@@ -183,7 +184,10 @@ typeset           hex_MD5=
 typeset       file_Cache=${dir_Tmp}/mycache.$$
 typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
          
-typeset              URL="http://www.autoscorch.com/"
+typeset      str_Protocol="http://"
+typeset      dir_Location="www.autoscorch.com/"
+#typeset               URL="http://www.autoscorch.com/"
+typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="downloads/version.txt"
 
 

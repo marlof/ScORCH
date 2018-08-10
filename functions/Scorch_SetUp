@@ -106,6 +106,16 @@ export        cmd_Editor="vi"
 
 # Allow quick menu options (suggested value for novice=0 expert=1)
 export           b_Quick="0"
+
+# Set Protocol for installing new version
+export      str_Protocol="http://"
+
+# Set Location of version and tar file
+export      dir_Location="www.autoscorch.com/downloads/"
+export      file_Version="version.txt"
+export               URL="${str_Protocol}${dir_Location}"
+
+# Set tar ball name
 ' >> ${file_Prefs}
   fi
   source ${file_Prefs}
