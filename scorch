@@ -112,8 +112,9 @@
 ##                       #40 Added confirmation function
 ##                           - default preferences confirmation
 ##                       #41 Add alternative location for auto install files
+##                           http and local added
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.42dev"
+typeset str_ProgramVersion="1.42"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -185,10 +186,10 @@ typeset       file_Cache=${dir_Tmp}/mycache.$$
 typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
          
 typeset      str_Protocol="http://"
-typeset      dir_Location="www.autoscorch.com/"
+typeset      dir_Location="www.autoscorch.com/downloads"
 #typeset               URL="http://www.autoscorch.com/"
 typeset              URL="${str_Protocol}${dir_Location}"
-typeset     file_Version="downloads/version.txt"
+typeset     file_Version="version.txt"
 
 
 fn_ResetJobDefinitions()

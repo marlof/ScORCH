@@ -107,13 +107,13 @@ export        cmd_Editor="vi"
 # Allow quick menu options (suggested value for novice=0 expert=1)
 export           b_Quick="0"
 
-# Set Protocol for installing new version
-export      str_Protocol="http://"
+# Set Protocol for installing new version (http or local)
+export      str_Protocol="http"
 
-# Set Location of version and tar file
+# Set Location of version and tar file for HTTP
 export      dir_Location="www.autoscorch.com/downloads/"
 export      file_Version="version.txt"
-export               URL="${str_Protocol}${dir_Location}"
+#export               URL="${str_Protocol}${dir_Location}"
 
 # Set tar ball name
 ' >> ${file_Prefs}
@@ -217,7 +217,7 @@ fn_GetAnswer()
 }
 readonly -f fn_GetAnswer
 
-fn_GetYN()
+fn_Confirm()
 {
   # Linrary function to get a Yes No answer
   # =======================================
@@ -352,12 +352,68 @@ fn_IsNumber()
 fn_CheckLatest()
 {
   echo ""
-  printf "\n\n Checking $URL/${file_Version}\n"
-  str_LatestVersion=$(curl ${URL}/${file_Version})
-  fn_IsNumber ${str_LatestVersion} || str_LatestVersion="check"
-  file_Latest="${URL}/downloads/escorch.${str_LatestVersion}.tar"
-  #fn_PressEnter
-  #fn_InstallLatest
+  if [[ "${str_Protocol}" == "http" ]] ; then
+    printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
+    str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
+    fn_IsNumber ${str_LatestVersion}
+    if [[ $? == 0 ]] ; then
+      echo "$str_LatestVersion"
+    else
+      printf "\n\n"
+      printf " Error checking latest version - did not return a number.\n"
+      printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
+      curl ${str_Protocol}://${dir_Location}/${file_Version}
+      str_LatestVersion="check"
+      fn_PressEnter
+    fi
+    file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"
+  else
+    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2)
+  fi
+}
+
+fn_PullRelease()
+{
+  # Pull the release file from source
+  printf " Pulling release\n"
+  printf " ===============\n"
+  printf " Retrieving MD5      (${file_Latest}.md5.txt): "
+  str_Ouput=$(curl -s -o ${file_MD5} ${file_Latest}.md5.txt)
+  if [[ $? == 0 ]]  ; then
+    echo "OK"
+    echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+  else
+    echo "Error"
+    echo ${str_Ouput}
+    fn_PressEnter
+    return 1
+  fi
+
+  #str_MD5=${str_MD5% *}
+
+  printf " Retrieving tar file (${file_Latest}): "
+  cd ${dir_Base}
+  str_Ouput=$(curl -s -o ${file_Tar} ${file_Latest})
+  if [[ $? == 0 ]] ; then
+    echo "OK"
+  else
+    echo "Error"
+    echo ${str_Ouput}
+    fn_PressEnter
+    return 1
+  fi
+
+  printf " Verifying MD5       (${file_MD5}): "
+  md5sum -c ${file_MD5}
+  
+  if [[ $? == 0 ]] ; then
+    :
+  else
+    printf "\n Problem verifying file.\n"
+    head ${file_MD5}
+    printf "\n Check network connection, disk space."
+    fn_PressEnter
+  fi
 }
 
 fn_InstallLatest()
@@ -366,49 +422,74 @@ fn_InstallLatest()
   local     file_MD5=${dir_Base}/scorch.tar.md5
   local     file_Tar=${dir_Base}/scorch.tar
   local   dir_Backup=${dir_Base}/.${str_ProgramVersion}.backup
-  printf " Checking for MD5   : "
-  curl -s -o ${file_MD5} ${file_Latest}.md5
-  echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
-  cat ${file_MD5}
+
+  printf "\n Protocol: $str_Protocol\n\n"
+  # if protocol is http then pull release
+  if [[ "${str_Protocol}" == "http" ]] ; then 
+    URL="http://${dir_Location}"
+    fn_PullRelease
+  else
+    echo " Using local install method (${file_Tar})"
+    ls -l ${file_Tar}
+  fi
+
+  #printf " Checking for MD5   : "
+  # curl -s -o ${file_MD5} ${file_Latest}.md5.txt
+  #echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+  #cat ${file_MD5}
   
 
   #str_MD5=${str_MD5% *}
 
-  printf " Retrieving tar file:\n"
-  cd ${dir_Base}
-  curl -# -o ${file_Tar} ${file_Latest} && echo " Done" || echo " FAILED"
+  #printf " Retrieving tar file:\n"
+  #cd ${dir_Base}
+  #echo ""
+  #curl -# -o ${file_Tar} ${file_Latest} && echo " Done" || echo " FAILED"
 
-  printf " Verifying MD5      : "
+  #printf " Verifying MD5      : "
   
-  if md5sum -c ${file_MD5} ; then
-
-    if [[ ! -f ${file_Install} ]] ; then
-      touch ${file_Install}
-      chmod 770 ${file_Install}
+  if [[ ! -f ${file_Install} ]] ; then
+    touch ${file_Install}
+    chmod 770 ${file_Install}
+    if [[ ! -w ${file_Install} ]] ; then
+      printf " Error: Cannot write to install file ${file_Install}\n"
+      printf " Install aborted\n"
+      fn_PressEnter
+      return 1
     fi
-
-    # if MD5s match
-    printf "\n Checking files modified since last install... "
-    lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
-    if [[ ! -z $lst_Changed ]] ; then
-      mkdir -p -m 775 ${dir_Backup}
-      printf "\n Found files that can be backed up - (y/n response required)\n${lst_Changed}\n\n"
-      find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt -okdir cp {} ${dir_Backup}/. \;
-    else
-      echo "None"
-    fi
-
-    tar xvf ${file_Tar}
-
-    if [[ -w ${file_Install} ]] ; then
-      echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
-    fi
-  else
-    echo " Problem verifying file."
-    cat ${file_MD5}
-    echo " Check network connection, disk space."
   fi
-  
+
+  # Checking files modified since last install..
+  lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
+  if [[ ! -z $lst_Changed ]] ; then
+    mkdir -p -m 775 ${dir_Backup}
+    printf "\n\n"
+    printf " Warning: Found files that have been modified\n"
+    printf " ============================================\n"
+    printf " Backup directory: ${dir_Backup}\n"
+    printf " (y/n response required for each file)\n${lst_Changed}\n\n"
+    find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${file_Install} -okdir cp {} ${dir_Backup}/. \;
+  else
+    printf "\n\n No modifed files found\n"
+  fi
+
+  printf "\n\n"
+  printf " Extracting files\n"
+  printf " ================\n"
+  tar xvf ${file_Tar}
+
+  if [[ $? == 0 ]] ; then
+    echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
+  fi
+ # else
+ #   echo " Problem verifying file."
+ #   cat ${file_MD5}
+ #   echo " Check network connection, disk space."
+ # fi
+  printf "\n"
+  printf " Lastest installs\n"
+  printf " ================\n" 
+  tail -5 ${file_Install}
   fn_PressEnter
 }
 
