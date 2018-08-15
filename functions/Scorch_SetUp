@@ -502,6 +502,7 @@ fn_CheckMaint()
     echo "  rm ${file_Maint}"
     exit 1
   else
-    echo "OK no ${file_Maint}"
+    :
+    #echo "OK no ${file_Maint}"
   fi
 }

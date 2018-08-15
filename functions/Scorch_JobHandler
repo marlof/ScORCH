@@ -689,8 +689,8 @@ GetVar()
          print $2}'       "${file_Request}" )" 
   fi
 
-[[ $b_IgnoreCase ]] && str_Case=" -i " || str_Case=""
-grep ${str_Case} -w  '[[:space:]]*${pattern}[[:space:]]*:' /tmp/getvar.tmp
+#[[ $b_IgnoreCase ]] && str_Case=" -i " || str_Case=""
+#grep ${str_Case} -w  '[[:space:]]*${pattern}[[:space:]]*:' /tmp/getvar.tmp
 #
 
   ## If a value hasnt been found or is empty, use the default if one is set
