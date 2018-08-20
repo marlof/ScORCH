@@ -204,13 +204,13 @@ fn_Admin()
   fn_ShowLine "="
   fn_DisplayMOTD
   printf "\n"
-  printf "${dis_ULOn}B${dis_ULOff}uild Release | "
-  printf "${dis_ULON}C${dis_ULOff}heck Version | "
-  [[ "${str_LatestVersion}" != "check" ]] && printf "${dis_ULOn}I${dis_ULOff}nstall ${str_LatestVersion} | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}B${dis_ULOff}uild Release | "
+  printf "${dis_ULOn}C${dis_ULOff}heck Version | "
+  [[ "${str_LatestVersion}" != "check" ]] && (( b_Power == 1 )) && printf "${dis_ULOn}I${dis_ULOff}nstall ${str_LatestVersion} | "
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
-  printf "${dis_ULOn}L${dis_ULOff}ocks | "
-  printf "${dis_ULOn}S${dis_ULOff}upend | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}L${dis_ULOff}ocks | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | "
   printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
