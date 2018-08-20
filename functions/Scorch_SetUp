@@ -30,6 +30,7 @@
 ## fn_Select()
 ## fn_IsNumber()
 ## fn_Maintenance()
+## fn_FileOwner()
 
 
 
@@ -50,7 +51,19 @@ fn_CheckSetUp()
     if [[ ! -d "${!p_Variable}" ]] ; then
       printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
       [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
+    fi
+    [[ ${b_InstallForce} ]] && mkdir -p "${!p_Variable}" && chmod 770 "${!p_Variable}" && b_SetUp=
+  done
 
+  for p_Variable in ${arr_Directories} ; do
+    if [[ ! -w "${!p_Variable}" ]] ; then
+      # check if perms or group
+      if [[ ! -r "${!p_Variable}" ]] ; then
+        printf "\n\tNo write permissions to \"${!p_Variable}\"" && b_SetUp=1
+      else
+        printf "\n\tNo group access to \"${!p_Variable}\"" && b_SetUp=1
+      fi
+      #[[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
     fi
   done
 
@@ -76,7 +89,7 @@ fn_CheckSetUp()
 #  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
   if [[ ${b_SetUp} ]] ; then
-    printf "\n\n\n\tThere are missing files, directories or commands.\n"
+    printf "\n\n\n\tThere are missing files, directories, commands or permissions.\n"
     printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
     sleep 2
     exit 1
@@ -460,8 +473,9 @@ fn_InstallLatest()
   fi
 
   # Checking files modified since last install..
+
   lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
-  if [[ ! -z $lst_Changed ]] ; then
+  if [[ ! -z $lst_Changed ]] || [[ $(find -L ${dir_Base} -name ${str_ProgramName} -type f -newer ${file_Install}) ]] ; then
     mkdir -p -m 775 ${dir_Backup}
     printf "\n\n"
     printf " Warning: Found files that have been modified\n"
@@ -469,6 +483,7 @@ fn_InstallLatest()
     printf " Backup directory: ${dir_Backup}\n"
     printf " (y/n response required for each file)\n${lst_Changed}\n\n"
     find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${file_Install} -okdir cp {} ${dir_Backup}/. \;
+    find -L ${dir_Base} -name ${str_ProgramName} -type f -newer ${file_Install} -okdir cp {} ${dir_Backup}/. \;
   else
     printf "\n\n No modifed files found\n"
   fi
@@ -476,7 +491,7 @@ fn_InstallLatest()
   printf "\n\n"
   printf " Extracting files\n"
   printf " ================\n"
-  tar xvf ${file_Tar}
+  tar oxvf ${file_Tar}
 
   if [[ $? == 0 ]] ; then
     echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
@@ -505,4 +520,11 @@ fn_CheckMaint()
     :
     #echo "OK no ${file_Maint}"
   fi
+}
+
+fn_FileOwner()
+{
+  # Takes an argument of a filename (or dirname) and return the owner
+  local file_Name=$1
+  [[ -r ${file_Name} ]] && ls -ld ${file_Name} | awk -F" " '{print $3}' || echo "unknown"
 }

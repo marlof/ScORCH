@@ -76,7 +76,7 @@ fnE_MkEscorchtar()
 
   md5sum scorch.tar > scorch.tar.md5
   mv scorch.tar      escorch.${str_ProgramVersion}.tar
-  mv scorch.tar.md5  escorch.${str_ProgramVersion}.tar.md5
+  mv scorch.tar.md5  escorch.${str_ProgramVersion}.tar.md5.txt
   echo ${str_ProgramVersion} > version.txt
   echo "Done"
   sleep 3

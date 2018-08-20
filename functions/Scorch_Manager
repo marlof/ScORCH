@@ -156,6 +156,10 @@ fn_ShowPrefs()
 #  esac
 #}
 
+#typeset    str_ProgramName="$(basename "$0")"
+#typeset            dir_Run="$(dirname "$0")"
+#typeset           dir_Orig="$(pwd)/${dir_Run}"
+
 fn_Admin()
 {
   while : ; do
@@ -163,15 +167,37 @@ fn_Admin()
   fn_ShowTop
   fn_ShowLine
   printf "\n"
-  printf " B) Build a tar release                   ${dir_Base}/escorch.${str_ProgramVersion}.tar\n\n"
   printf " C) Check for latest online version       ${str_LatestVersion}\n\n"
-  [[ "${str_LatestVersion}" != "check" ]] && \
-  printf " I) Install latest version                ${str_LatestVersion}\n\n"
+
+  # POWER User Features
+  # fn_FileOwner ${dir_Base}:${str_ProgramName}\n $(fn_FileOwner ${dir_Base}/${str_ProgramName}) == ${str_User}\n\n"
+  if (( b_Power == 1 )) ; then
+    printf " B) Build a tar release                   ${dir_Base}/escorch.${str_ProgramVersion}.tar\n\n"
+    printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
+    [[ "${str_LatestVersion}" != "check" ]] && printf " I) Install latest version                ${str_LatestVersion}\n\n"
+    printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
+  else
+    printf " POWER User required:\n"
+    printf "   .) Build Tar\n"
+    printf "   .) Locks\n"
+    printf "   .) Install\n"
+    printf "   .) Maintenace\n\n"
+  fi
+
+
+
+#  if [[ "${str_LatestVersion}" != "check" ]] ; then
+#    if [[ "$(fn_FileOwner ${dir_Base}/${str_ProgramName})" == "${str_User}" ]] && (( b_Power == 1 )) ; then
+#      printf " I) Install latest version                ${str_LatestVersion}\n\n"
+#    else
+#      printf " .) Only a POWER user owner <$(fn_FileOwner ${dir_Base}/${str_ProgramName})> can install\n\n"
+#    fi
+#  fi
+
+
 
   printf " P) Change Display and Timing preferences %s\n\n" ${file_Prefs}
   printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
-  printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
-  printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
   printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
   #fn_ShowLine "-" "Message of the day"
   #fn_DisplayMOTD
@@ -191,13 +217,13 @@ fn_Admin()
   read ${str_Quick} -t ${int_Refresh} char_Choice
 
   case ${char_Choice} in
-    b | B ) fnE_MkEscorchtar ;;
-    c | C ) fn_CheckLatest ;;
-    i | I ) fn_InstallLatest ;;
-    m | M ) fn_AdminMOTD  ;;
-    p | P ) fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
-    l | L ) fn_LockManager        ;;
-    s | S ) ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
+    b | B ) (( b_Power == 1 ))      && fnE_MkEscorchtar ;;
+    c | C )                            fn_CheckLatest ;;
+    i | I ) (( b_Power == 1 ))      && fn_InstallLatest  ;;
+    m | M ) (( b_Restricted != 1 )) && fn_AdminMOTD  ;;
+    p | P )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+    l | L ) (( b_Power == 1 ))      && fn_LockManager        ;;
+    s | S ) (( b_Power == 1 ))      && ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;
     x | X ) return 0 ;;

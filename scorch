@@ -116,8 +116,10 @@
 ## 1.43           marc   #42 - Removed debug code for maintenance and grep
 ##                       tmp dir changed back to mutli version (local to program)
 ##                       /dev/shm/<cksum based> linked from tmp/memory
+##                       #44 - scorch added as extra auto backup file
+##                       #38 Permission improvements
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.43"
+typeset str_ProgramVersion="1.43dev"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -153,12 +155,12 @@ typeset        dir_Lock="${dir_Var}/locks/"
 typeset         dir_Tmp="${dir_Base}/tmp/"
 
 ## Memory tmp files for multi scorch use system
-printf "Setting up in memory tmp files: "
+#printf "Setting up in memory tmp files: "
 typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
-echo $dir_Memory
+printf " $dir_Memory\n\n"
 
-mkdir -p ${dir_Memory}
-chmod 775 ${dir_Memory}
+mkdir -p ${dir_Memory} 2>/dev/null
+chmod 775 ${dir_Memory} 2>/dev/null
 [[ ! -L ${dir_Base}/tmp/memory ]] && ln -s ${dir_Memory} ${dir_Base}/tmp/memory
 
 typeset dir_Tmp=${dir_Base}/tmp/memory/
@@ -311,6 +313,7 @@ typeset b_New=
 typeset b_Start=
 typeset b_Background=
 typeset b_Install=
+typeset b_InstallForce=
 typeset file_Template=
 typeset str_Action=
 typeset lst_GetVar=
@@ -344,6 +347,7 @@ if [ $# -ne 0 ] ; then
 
       ## Install Mode
       -install    ) b_Install=1 ;;
+      -repair     ) b_InstallForce=1 ;;
 
       ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac

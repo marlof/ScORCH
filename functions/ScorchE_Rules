@@ -208,15 +208,15 @@ fn_CheckAuth()
   ## The idea is that users will need to be allowed to use scorch as a reporting tool
   ## or be allowed access to certain systems/plugin directories
 
-  ##  #Username  : [ full | <blank> ] : [ all | <comma separated list of plugin dirs>]
-  ##     marc:full:all
+  ##  #Username  : [ F|FULL R|RESTRICTED P|POWER ] : [ all | <comma separated list of plugin dirs>]
+  ##     marc:POWER:all
   ##     root::all
-  ##     user::demo
+  ##     user::DEMO
   file_Users=${dir_Etc}/users
 
   if [[ ${b_Install} ]] ; then
     printf "\n\n\tInitialising....\n\n"
-    [ ! -f ${file_Users} ] && echo "${str_User}:FULL:ALL" > ${file_Users}
+    [ ! -f ${file_Users} ] && echo "${str_User}:POWER:ALL" > ${file_Users}
   fi
 
   printf "\nChecking authority: "
@@ -234,7 +234,7 @@ fn_CheckAuth()
   grep "^${str_User}:" ${file_Users}
   str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
   case ${str_Authority} in
-    P | POWER ) b_Power=1 ;      str_Authority="Power User" ;;
+    P | POWER ) b_Power=1      ; str_Authority="Power User" ;;
     R | REST* ) b_Restricted=1 ; str_Authority="View Only"  ;;
     F | FULL  )                  str_Authority="Normal"     ;;
     *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
