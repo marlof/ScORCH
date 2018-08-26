@@ -85,21 +85,27 @@ fn_ShowTop()
   ##(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
   (( int_DatePut = ${int_ScreenWidth} - 21 ))
 
+  int_DiskUsage_tmp=$(df "${dir_Base}" | tail -1)
+  int_DiskUsage="$(echo ${int_DiskUsage_tmp%\%*} | ${cmd_AWK} -F" " '{print $NF}')"
+  (( int_DiskUsage >= 90 )) && int_DiskUsage="${dis_FRed}${int_DiskUsage}${dis_Reset}"
+  (( int_DiskUsage >= 80 )) && int_DiskUsage="${dis_FYellow}${int_DiskUsage}${dis_Reset}" 
+  
+  #echo "${int_DiskUsage}%"
   ## Collect disk usage to display
   ##int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 44 ) print ""$5"" else print $5}')
-  int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 80 ) {
-                                        print "${dis_FRed}"$5"%${dis_Reset}" }
-                                          else {
-                                            print $5"%"
-                                                                          }
-                                      printf "" }')
+  #int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 80 ) {
+  #                                      print "${dis_FRed}"$5"%${dis_Reset}" }
+  #                                        else {
+  #                                          print $5"%"
+  #                                                                        }
+  #                                    printf "" }')
   ## Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')
   int_DispatcherPID=${int_DispatcherPID:-0}
-  printf " %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
+  printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-                 "${int_DiskUsage}" "${str_License}" "${str_Authority}"
+                 "df:${int_DiskUsage}%" "${str_License}" "${str_Authority}"
   [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
@@ -390,7 +396,8 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
 
       if ( task_tmp[4] == "R")      str_Progress="  >>>   "
       if ( task_tmp[4] == "C")      str_Progress="[ done ]"
-      if ( task_tmp[4] == "F")      str_Progress="[ fail ]"
+      if ( task_tmp[4] == "F")
+       {    str_Progress="[ fail ]"   }
       if ( task_tmp[4] == "S")      str_Progress="[ skip ]"
       if ( task_tmp[4] == "M")      str_Progress="[manual]"
       arr_Progress[task_tmp[3]]=str_Progress

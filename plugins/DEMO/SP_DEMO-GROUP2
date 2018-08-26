@@ -20,38 +20,23 @@ SP_DEMO-GROUP2()
   EndGroup
 
   StartGroup
-    Task "echo CFW-STOP"
-    breakTask "CON-WCC"
-    Task "echo EDS-VIEW-INFRA"
-    Task "echo RMB-APP"
+    Task "echo STOP-CONTROL-FRAMEWORK"
+    breakTask "Operations Confirmation"
+    Task "echo STOP-DB-A"
+    Task "echo STOP-DB-B"
   EndGroup
   StartGroup
-    Task "echo CON-APP"
-    Task "echo EDS-OES-CORE"
+    Task "echo INSTALL-APP-A"
+    Task "echo INSTALL-APP-B"
   EndGroup
   StartGroup
-    Task "echo EDS-CSS-CORE"
-    Task "echo EDS-DBS-ALTER"
-    Task "echo EDS-OES-CORE"
+    Task "echo START-DB-A"
+    Task "echo START-DB-B"
+    Task "echo START-APP-A"
+    Task "echo START-APP-B"
   EndGroup
   StartGroup
-    Task "echo CSS-WLST"
-    Task "echo EDS-ODS-CORE"
+    Task "echo START-CONTROL-FRAMEWORK"
+    breakTask "echo Release Manager Notify OPS"
   EndGroup
-  StartGroup
-    Task "echo CFW-START"
-    Task "echo EDS-NFR-CORE"
-    Task "echo OCH-SDM-CORE"
-  EndGroup
-  Task "echo CHECK-SDM"
-  StartGroup
-    Task "EDS-FAH-CORE"
-    Task "ODI-DBS-PRIV"
-  EndGroup
-  breakTask "ODI-TOP"
-  StartGroup
-    breakTask "ODI-APP"
-    Task ODI-DBS-CORE
-  EndGroup
-
 }

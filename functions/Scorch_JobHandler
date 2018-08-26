@@ -495,12 +495,28 @@ fn_PIDWait()
 
       else
         int_PID_RC=$?
-        #echo "Task ${int_Task} failed"
-        lst_FailedTasks="${lst_FailedTasks}${int_Task} "
-        echo "AUDIT:T:${int_Task}:F"
-        echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Running}"/${str_JobName}
-        echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
 
+
+# if ${int_Task} was Manual then "M" else "F"
+echo "DEVEL: Task ${int_Task} failed"
+echo "DEVEL: int_PID_RC:${int_PID_RC}"
+# fn_Task_14_SubTask(){   Manual "CON-WCC"        >> "${file_Log}.2" 2>&1  ;  }   #scorch_Task
+        if [[ $(grep ^fn_Task_${int_Task}_SubTask "${dir_Running}"/${str_JobName} | awk -F"\\t" '"'{print \$2}'"') =~ Manual ]] ; then
+
+          echo "AUDIT:T:${int_Task}:M"
+          echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Manual task ${int_Task}" >> "${dir_Running}"/${str_JobName}
+          echo "AUDIT:T:${int_Task}:M" >> "${dir_Running}"/${str_JobName}
+        else
+
+#          lst_FailedTasks="${lst_FailedTasks}${int_Task} "
+          echo "AUDIT:T:${int_Task}:F"
+          echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Running}"/${str_JobName}
+          echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
+
+#          lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
+        fi
+
+        lst_FailedTasks="${lst_FailedTasks}${int_Task} "
         lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
       fi
     done
