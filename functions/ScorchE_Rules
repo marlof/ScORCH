@@ -112,7 +112,7 @@ printf "${fn_Call}: "
           fn_PressEnter
           exit 1
         fi
-echo " $((int_TaskCount--)) tasks created" ; sleep 3
+        echo " $((int_TaskCount - 1)) tasks created" ; sleep 3
         fn_JobFooter "${file_Job}"
         echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))

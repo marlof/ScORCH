@@ -394,7 +394,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
       #    break
       #}
 
-      if ( task_tmp[4] == "R")      str_Progress="  >>>   "
+      if ( task_tmp[4] == "R")      str_Progress="  >>>  "
       if ( task_tmp[4] == "C")      str_Progress="[ done ]"
       if ( task_tmp[4] == "F")
        {    str_Progress="[ fail ]"   }

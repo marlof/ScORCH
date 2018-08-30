@@ -1,42 +1,41 @@
 SP_DEMO-GROUP2()
 {
   GetVar -pattern "Fail" -name FAIL -default ""
-  Task "echo first task"
   StartGroup
-    Task "sleep 35"
-    Task "sleep 8"
-    Task "printf \${RANDOM:4}"
-    Task "sleep 21"
+    Sleep  25
+    Sleep  8
+    Task   "printf \${RANDOM:4}"
+    Sleep  15
     (( FAIL==1 )) && Task "false"
   EndGroup
-  
-  Task "sleep 15"
+
+  Manual   "Release Manager to Notify OPS"
   
   StartGroup
-    Task "sleep 32"
-    Task "sleep 12"
-    Task "hostname"
-    Task "sleep 22"
+    Task   "echo STOP-CONTROL-FRAMEWORK" 
+    Manual "Backups on hold confirmation"
+    Task   "echo STOP-DB-A"
+    Task   "echo STOP-DB-B"
   EndGroup
+  
+  Task   "printf Simulate random failure \${RANDOM:4} "
 
   StartGroup
-    Task "echo STOP-CONTROL-FRAMEWORK"
-    breakTask "Operations Confirmation"
-    Task "echo STOP-DB-A"
-    Task "echo STOP-DB-B"
+    Task   "echo INSTALL-APP-A"
+    Task   "echo INSTALL-APP-B"
   EndGroup
+  
   StartGroup
-    Task "echo INSTALL-APP-A"
-    Task "echo INSTALL-APP-B"
+    Task   "echo START-DB-A"
+    Task   "echo START-DB-B"
+    Task   "echo START-APP-A"
+    Task   "echo START-APP-B"
   EndGroup
+  
   StartGroup
-    Task "echo START-DB-A"
-    Task "echo START-DB-B"
-    Task "echo START-APP-A"
-    Task "echo START-APP-B"
+    Task   "echo START-CONTROL-FRAMEWORK"
+    Manual "Release Manager Notify OPS"
   EndGroup
-  StartGroup
-    Task "echo START-CONTROL-FRAMEWORK"
-    breakTask "echo Release Manager Notify OPS"
-  EndGroup
+
+  Try "ls /tmp/file"
 }

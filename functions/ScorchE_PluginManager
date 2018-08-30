@@ -83,7 +83,7 @@ fnE_PluginManagerMenu()
 #    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
 
 
-  fn_ShowPlugins
+  #fn_ShowPlugins
   fn_ShowLine "-"
 
   printf "\n\n "

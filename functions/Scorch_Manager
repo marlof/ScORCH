@@ -24,6 +24,21 @@
 ## fn_AdminFunctions()
 ## fn_CatchWord()
 
+fn_SkipFailed()
+{
+  local lst_Tasks=""
+  local int_Task=$1
+  local int_Count=0
+  while (( int_Count <= int_Task )) ; do
+    echo "Debug:$int_Count"
+    grep  "^AUDIT:T:${int_Count}:F" ${file_Log} && lst_Tasks=(${lst_Tasks[*]} ${int_Count})
+    (( int_Count++ ))
+  done
+  for each_FailedTask in ${lst_Tasks[*]} ; do
+    echo "Debug:${each_FailedTask}"
+    echo "AUDIT:T:${each_FailedTask}:S" >> ${file_Log}
+  done
+}
 
 fn_Manager()
 {
@@ -55,12 +70,12 @@ fn_Manager()
 
 
       ## Job State transition
-      d | D )                          fn_Transition delete  ;;
-      q | Q ) fn_CheckDispatcher     ; fn_Transition queue   ;;
-      r | R ) fn_CheckDispatcher     ; fn_Transition resume  ;;
-      u | U )                          fn_Transition unqueue ;;
-      p | P )                          fn_Transition pause   ;;
-      i | I )                          fnE_PluginManagerMenu ;;
+      d | D ) fn_Transition delete  ;;
+      q | Q ) fn_Transition queue    ; fn_CheckDispatcher ;;
+      r | R ) fn_Transition resume   ; fn_CheckDispatcher ;;
+      u | U ) fn_Transition unqueue ;;
+      p | P ) fn_Transition pause   ;;
+#      i | I ) fnE_PluginManagerMenu ;;
 
       ## Misc
       #m | M ) fn_EditMOTD           ;;
@@ -72,27 +87,27 @@ fn_Manager()
       ## Releases
       [0-9]* ) (( b_Quick )) && fn_CatchWord ${char_Choice} "number" || fn_AdminFunctions ${char_Choice} ;;
 
-      o | O ) 
-         read -e -t ${int_Refresh} char_ChoiceExtra
-         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
-         case ${str_Choice} in
-            open       ) fnE_MkOpenScorch ;;
-         esac  ;;
+#      o | O ) 
+#         read -e -t ${int_Refresh} char_ChoiceExtra
+#         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+#         case ${str_Choice} in
+#            open       ) fnE_MkOpenScorch ;;
+#         esac  ;;
 
-      e | E )
-         read -e -t ${int_Refresh} char_ChoiceExtra
-         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
-         case ${str_Choice} in
-            enterprise ) fnE_MkEscorchtar ;;
-         esac  ;;
+#      e | E )
+#         read -e -t ${int_Refresh} char_ChoiceExtra
+#         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+#         case ${str_Choice} in
+#            enterprise ) fnE_MkEscorchtar ;;
+#         esac  ;;
 
-      s | S )
-         read -e -t ${int_Refresh} char_ChoiceExtra
-         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
-         fn_CheckDispatcher
-         case ${str_Choice} in
-            set )   fnE_Set ;;
-         esac  ;;
+#      s | S )
+#         read -e -t ${int_Refresh} char_ChoiceExtra
+#         str_Choice="${char_Choice,,}${char_ChoiceExtra,,}"
+#         fn_CheckDispatcher
+#         case ${str_Choice} in
+#            set )   fnE_Set ;;
+#         esac  ;;
 
       * ) fn_SetLayout ;;
 
@@ -176,12 +191,14 @@ fn_Admin()
     printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
     [[ "${str_LatestVersion}" != "check" ]] && printf " I) Install latest version                ${str_LatestVersion}\n\n"
     printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
+    printf " F) Function Plugins\n\n"
   else
     printf " POWER User required:\n"
     printf "   .) Build Tar\n"
     printf "   .) Locks\n"
     printf "   .) Install\n"
     printf "   .) Maintenace\n\n"
+    printf "   .) Function Plugins"
   fi
 
 
@@ -210,7 +227,7 @@ fn_Admin()
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
   (( b_Power == 1 )) && printf "${dis_ULOn}L${dis_ULOff}ocks | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | " && printf "${dis_ULOn}F${dis_ULOff}unctions | "
   printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
@@ -223,6 +240,9 @@ fn_Admin()
     m | M ) (( b_Restricted != 1 )) && fn_AdminMOTD  ;;
     p | P )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) (( b_Power == 1 ))      && fn_LockManager        ;;
+
+    f | F ) (( b_Power == 1 ))      && fnE_PluginManagerMenu ;;
+
     s | S ) (( b_Power == 1 ))      && ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;

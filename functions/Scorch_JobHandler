@@ -108,7 +108,8 @@ fn_CheckTask()
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       sleep .2
       echo "AUDIT:T:\${int_Task}:M" >> "\${dir_Failed}"/\${str_JobName}
-      echo "\$(${fn_LogDate}) +++Manual task. Resume point:\${int_Task}" >> "\${file_Log}"
+      (( int_Task+=1 ))
+      echo "\$(${fn_LogDate}) +++Manual task - resume to continue. Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
     fi
@@ -125,7 +126,7 @@ fn_CheckTask()
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       sleep .2
       echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
-      echo "\$(${fn_LogDate}) +++Failed task. Resume point:\${int_Task}" >> "\${file_Log}"
+      echo "\$(${fn_LogDate}) +++Failed task - skip or retry. Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
     fi
@@ -145,7 +146,7 @@ fn_CheckTask()
       mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       rm "\${dir_Pause}"/\${str_JobName}".pause"
       (( int_Task+=1 ))
-      echo "\$(${fn_LogDate}) Paused. automatically updated to Resume Point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
+      echo "\$(${fn_LogDate}) Paused. Automatically updated to Resume Point:\${int_Task}" >> "\${dir_Failed}"/\${str_JobName}
       echo "\$(${fn_LogDate}) Paused. Automatically updated to Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
@@ -165,7 +166,7 @@ fn_NiceTime()
 Manual()
 {
   printf "\n\n\t\$*\n\n"
-  echo "Skip this task to continue."
+  #echo "Skip this task to continue."
   return 99
 }
 
@@ -173,6 +174,38 @@ Sleep()
 {
   printf "\n\n\tSleeping for \$1 seconds\n"
   sleep \$1
+}
+
+fn_ListTasksRemaining()
+{
+  local lst_Tasks=""
+  local lst_FailedTasks=""
+  local lst_SkipTasks=""
+  local int_Task=\$(grep AUDIT:T \${file_Log} | cut -d: -f3 | sort -un | tail -1)
+  local int_Count=0
+  local str_Mode=\${1:-}
+  while (( int_Count <= int_Last )) ; do
+    #echo "Debug:\$int_Count"
+    grep -q "^AUDIT:T:\${int_Count}:[C|M|S|R]" \${file_Log} || lst_Tasks=(\${lst_Tasks[*]} \${int_Count})
+    #grep  "^AUDIT:T:\${int_Count}:F" \${file_Log} && lst_FailedTasks=(\${lst_FailedTasks[*]} \${int_Count})
+    (( int_Count++ ))
+  done
+  #echo "Debug:Missed: \${lst_Tasks}"
+  #echo "Debug:Failed: \${lst_FailedTasks}"
+  if [[ "\${str_Mode}" == "skip" ]] ; then
+    for each_FailedTask in \${lst_FailedTasks[*]} ; do
+      grep -q "^AUDIT:T:\${int_Count}:[C|M|S|R]" \${file_Log} && lst_SkipTasks=(\${lst_SkipTasks[*]} \${each_FailedTask})
+    done
+    echo "Debug:Skipped: \${lst_SkipTasks[*]}"
+    for each_SkipTask in \${lst_SkipTasks[*]} ; do
+      echo "AUDIT:T:\${each_FailedTask}:S" #>> \${file_Log}
+    done
+
+  else
+    echo "\${lst_Tasks[*]}"
+  fi
+  # Check if its not already complete
+  #echo "AUDIT:T:\${each_FailedTask}:S" >> \${file_Log}
 }
 
 EOF
@@ -186,50 +219,69 @@ fn_JobFooter()
   ## The file to be appended to is passed as a variable
 
   typeset local file_Job="${1}"
-  (( int_TaskCount-=1 ))
+  #(( int_TaskCount-=1 ))
 
   ## echo "Adding footer to ${file_Job}"
   cat >> "${file_Job}" << EOF
 
 int_StartTask=\${int_ResumePoint:-0}
 int_Last=${int_TaskCount}
+#
+# Task to run is any task that is not complete or wasnt a manual step
+# grep AUDIT $file that = F
 
 # If lst_ReRun is not blank
-lst_ReRun=\$(grep "^FAILED TASKS:" \${file_Log} | tail -1 | cut -d: -f2)
-if [[ ! -z \${lst_ReRun} ]] ; then
-  for int_ResumeTask in \${lst_ReRun} ; do
-    echo "Rerun task \${int_ResumeTask}"
-    declare -f fn_Task_\${int_ResumeTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
-    echo "AUDIT:T:\${int_ResumeTask}:R" >> "\${dir_Running}"/\${str_JobName}
+#lst_ReRun=\$(grep "^FAILED TASKS:" \${file_Log} | tail -1 | cut -d: -f2)
+#if [[ ! -z \${lst_ReRun} ]] ; then
+#  for int_ResumeTask in \${lst_ReRun} ; do
+#    echo "Rerun task \${int_ResumeTask}"
+#    declare -f fn_Task_\${int_ResumeTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
+#    echo "AUDIT:T:\${int_ResumeTask}:R" >> "\${dir_Running}"/\${str_JobName}
+#    sleep .2
+#    fn_Task_\${int_ResumeTask}
+#  done
+
+#  echo "Look for fn_PIDWait between Task \${int_ResumePoint} and Task \${int_Last}"
+#  while [ \${int_ResumePoint} -le \${int_Last} ] ; do
+#    grep "^fn_Task_\${int_ResumePoint}.*fn_PIDWait" \${dir_Running}/\${str_JobName} && echo Resume \${int_ResumePoint} && break
+#    (( int_ResumePoint++ ))
+#  done
+
+#  # Next PIDWait
+#  echo PID wait point is \${int_ResumePoint}
+#  int_StartTask=\${int_ResumePoint}
+#fi
+
+fn_ProcessTask()
+{
+    local int_StartTask=\$1
+    printf "===================\n" >> "\${file_Log}"
+    printf "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]\nAUDIT:T:\${int_StartTask}:R\n" >> "\${file_Log}"
+    declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
+    echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Running}"/\${str_JobName}
     sleep .2
-    fn_Task_\${int_ResumeTask}
+    fn_Task_\${int_StartTask}
+}
 
-    # grep "^fn_Task_\${int_ResumeTask}" \${file_Job}
-    # but only if AUDIT:4 is F
+if (( int_StartTask == 0 )) ; then
+
+  # Process normally
+  echo "Processing normally"
+  while (( int_StartTask <= int_Last )) ; do
+    fn_ProcessTask \${int_StartTask}
+    (( int_StartTask+=1 ))
   done
 
-  echo "Look for fn_PIDWait between Task \${int_ResumePoint} and Task \${int_Last}"
-  while [ \${int_ResumePoint} -le \${int_Last} ] ; do
-    grep "^fn_Task_\${int_ResumePoint}.*fn_PIDWait" \${dir_Running}/\${str_JobName} && echo Resume \${int_ResumePoint} && break
-    (( int_ResumePoint++ ))
+else
+
+  # Idempotant processing
+  echo "Processing \$(fn_ListTasksRemaining)"
+  for int_StartTask in \$(fn_ListTasksRemaining) ; do
+    fn_ProcessTask \${int_StartTask}
   done
 
-  # Next PIDWait
-  echo PID wait point is \${int_ResumePoint}
-  int_StartTask=\${int_ResumePoint}
 fi
 
-
-
-while (( int_StartTask <= int_Last )) ; do
-  printf "===================\n" >> "\${file_Log}"
-  printf "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]\nAUDIT:T:\${int_StartTask}:R\n" >> "\${file_Log}"
-  declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
-  echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Running}"/\${str_JobName}
-  sleep .2
-  fn_Task_\${int_StartTask}
-  (( int_StartTask+=1 ))
-done
 printf "===================\n" >> "\${file_Log}"
 
 printf "\$(${fn_LogDate}) Completed task:\${int_StartTask}\nAUDIT:T:\${int_StartTask}:C\n" >> "\${dir_Running}"/\${str_JobName}
@@ -250,7 +302,7 @@ int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3)
 (( int_Duration = int_Finish - int_Start ))
 
 printf "\$(${fn_LogDate}) Tasks[\${int_Last}] Time[\$(fn_NiceTime \${int_Duration})] " >> "\${file_Log}"
-(( int_ManualCount  > 0 )) && printf "Manual tasks[\${int_ManualCount}]"               >> "\${file_Log}"
+(( int_ManualCount  > 0 )) && printf "Manual tasks[\${int_ManualCount}] "              >> "\${file_Log}"
 (( int_FailureCount > 0 )) && printf "Failures[\${int_FailureCount}]"                  >> "\${file_Log}"
 printf "\n" >> "\${file_Log}"
 
@@ -467,18 +519,19 @@ StartGroup()
 typeset local int_PID=
 typeset local arr_PID=
 typeset local arr_FailedTasks=""
+typeset local arr_ManualTasks=""
 typeset local b_Background=1
 
 lst_PIDRunning=""
 lst_PIDResult=""
 lst_FailedTasks=""
-
+lst_ManualTasks=""
 
 fn_Count() ( set -f; set -- $1; echo $# )
 fn_PIDWait()
 {
-  echo "Get number of lst_PID: $(fn_Count "$lst_PID")"
-  echo "Waiting for lst_PID for <${lst_PID}>"
+  #echo "Get number of lst_PID: $(fn_Count "$lst_PID")"
+  #echo "Waiting for lst_PID for <${lst_PID}>"
   while [[ ${#lst_PID} -ne 0 ]] ; do
     # Allow some time for tasks to get going
     sleep 5
@@ -490,9 +543,11 @@ fn_PIDWait()
         lst_PIDRunning="${lst_PIDRunning}${int_Task}:$int_PID "
       elif wait ${int_PID} ; then
         lst_PIDResult="${lst_PIDResult}${int_Task}:0 "
-        echo "AUDIT:T:${int_Task}:C"
-        echo "AUDIT:T:${int_Task}:C" >> "${dir_Running}"/${str_JobName}
-
+        echo ">> SubTask ${int_Task} Output >>"
+        cat ${file_Log}.${int_Task} 
+        printf "\\nAUDIT:T:${int_Task}:C\\n"
+        printf "\\nAUDIT:T:${int_Task}:C\\n" >> "${dir_Running}"/${str_JobName}
+        echo "== End SubTask ${int_Task} Output ============"
       else
         int_PID_RC=$?
 
@@ -501,23 +556,32 @@ fn_PIDWait()
 echo "DEVEL: Task ${int_Task} failed"
 echo "DEVEL: int_PID_RC:${int_PID_RC}"
 # fn_Task_14_SubTask(){   Manual "CON-WCC"        >> "${file_Log}.2" 2>&1  ;  }   #scorch_Task
+# As each subtask completes, print out the logfile.subtask file
+
         if [[ $(grep ^fn_Task_${int_Task}_SubTask "${dir_Running}"/${str_JobName} | awk -F"\\t" '"'{print \$2}'"') =~ Manual ]] ; then
 
-          echo "AUDIT:T:${int_Task}:M"
+          lst_ManualTasks="${lst_ManualTasks}${int_Task} "
+          cat ${file_Log}.${int_Task}           
+          printf "\\nAUDIT:T:${int_Task}:M\\n"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Manual task ${int_Task}" >> "${dir_Running}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:M" >> "${dir_Running}"/${str_JobName}
         else
 
-#          lst_FailedTasks="${lst_FailedTasks}${int_Task} "
-          echo "AUDIT:T:${int_Task}:F"
+## Add CAT of log file_Log.int_Task
+
+          lst_FailedTasks="${lst_FailedTasks}${int_Task} "
+          echo ">> SubTask ${int_Task} FAILED ############"
+          cat ${file_Log}.${int_Task} 
+          printf "\\nAUDIT:T:${int_Task}:F\\n"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Running}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
+          echo "== End SubTask ${int_Task} Output ############"
 
-#          lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
+          lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
         fi
 
-        lst_FailedTasks="${lst_FailedTasks}${int_Task} "
-        lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
+        #lst_FailedTasks="${lst_FailedTasks}${int_Task} "
+        #lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
       fi
     done
 
@@ -549,6 +613,16 @@ echo "DEVEL: int_PID_RC:${int_PID_RC}"
     mv "${dir_Running}"/${str_JobName} "${dir_Failed}"/.
     exit 1
   fi
+
+  if [[ ! -z ${lst_ManualTasks} ]] ; then
+    arr_Manual=($lst_ManualTasks)
+    int_ResumeTask=${arr_Manual[0]}
+    echo "MANUAL TASKS: ${lst_ManualTasks}"
+    echo "Resume point:${int_ResumeTask}"
+    mv "${dir_Running}"/${str_JobName} "${dir_Failed}"/.
+    exit 99
+  fi
+
 }
 
 
@@ -590,6 +664,7 @@ Task()
     printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
     lst_PID=\"\${lst_PID} ${int_TaskCount}:\$!\";}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
     str_LogExtension=".${int_SubTask}"
+    str_LogExtension=".${int_TaskCount}"
     str_CheckTask=""
   else
     ## The task is a standard Task
@@ -606,7 +681,6 @@ Task()
 }
 readonly -f Task
 
-
 tryTask()
 {
   ## To make things simple if there was just one parameter passed, use Task "command" OR true
@@ -615,7 +689,7 @@ tryTask()
 
 Try()
 {
-  tryTask "$~"
+  tryTask "$*"
 }
 
 pauseTask()
