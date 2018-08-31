@@ -37,11 +37,7 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
-          str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
-##      if echo "${str_Line}" | grep -qi ACTION ; then
-##        (( int_GetCount+=1 ))
-##        file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-##      fi
+      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
@@ -97,7 +93,7 @@ fn_ProcessRequest()
         fi
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
-printf "${fn_Call}: "
+#printf "${fn_Call}: "
         ${fn_Call}
 
         int_ReturnCode=${PIPESTATUS[0]}
@@ -175,7 +171,7 @@ fnE_AmendRules()
                fn_GetAnswer
                echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
 
-          d | D ) rm ${file_ActiveJob}.rules
+          d | D ) rm ${file_ActiveJob}.rules 2>/dev/null
                   # if link to active job in pending mv job to queued
                            ;;
 
@@ -240,3 +236,4 @@ fn_CheckAuth()
     *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
   esac
 }
+readonly -f fn_CheckAuth

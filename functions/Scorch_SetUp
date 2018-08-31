@@ -203,7 +203,7 @@ fn_HouseKeeping()
   # Recover jobs jobs that have taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
   arr_Recover=$( cd "${dir_New}" && find -L . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
-  echo ${arr_Recover}
+  [[ ! -z ${arr_Recover} ]] && echo "Some jobs are taking a long time to be processed: ${arr_Recover}"
   for file_Recover in ${arr_Recover} ; do
     ( cd "${dir_Active}" && tar xf active.tar ${file_Recover} )
   done

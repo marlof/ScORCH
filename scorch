@@ -113,13 +113,15 @@
 ##                           - default preferences confirmation
 ##                       #41 Add alternative location for auto install files
 ##                           http and local added
-## 1.43           marc   #42 - Removed debug code for maintenance and grep
+## 1.43           marc   #42 Removed debug code for maintenance and grep
 ##                       tmp dir changed back to mutli version (local to program)
 ##                       /dev/shm/<cksum based> linked from tmp/memory
-##                       #44 - scorch added as extra auto backup file
+##                       #44 scorch added as extra auto backup file
 ##                       #38 Permission improvements
+## 1.44 180821    marc   Improvement to DF output
+##                       #43 Group Manual steps Completed
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.43"
+typeset str_ProgramVersion="1.44"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -155,16 +157,12 @@ typeset        dir_Lock="${dir_Var}/locks/"
 typeset         dir_Tmp="${dir_Base}/tmp/"
 
 ## Memory tmp files for multi scorch use system
-#printf "Setting up in memory tmp files: "
 typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
-printf " $dir_Memory\n\n"
-
-mkdir -p ${dir_Memory} 2>/dev/null
+mkdir -p ${dir_Memory}  2>/dev/null
 chmod 775 ${dir_Memory} 2>/dev/null
 [[ ! -L ${dir_Base}/tmp/memory ]] && ln -s ${dir_Memory} ${dir_Base}/tmp/memory
 
 typeset dir_Tmp=${dir_Base}/tmp/memory/
-#typeset         dir_Tmp="/dev/shm"
 typeset     dir_Plugins="${dir_Base}/plugins"
 typeset     str_Plugins="$(basename "${dir_Plugins}")"
 typeset   dir_Functions="${dir_Base}/functions"
@@ -190,8 +188,6 @@ typeset     dir_Pending="${dir_Job}/pending"
 typeset      dir_Active="${dir_Job}/active"
 typeset      dir_Manual="${dir_Job}/manual"
 
-##typeset      file_JobID="${dir_Var}/jobid"
-
 typeset           b_Group=
 typeset      b_Background=
 typeset       int_SubTask=
@@ -203,7 +199,6 @@ typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
          
 typeset      str_Protocol="http://"
 typeset      dir_Location="www.autoscorch.com/downloads"
-#typeset               URL="http://www.autoscorch.com/"
 typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="version.txt"
 
@@ -220,7 +215,6 @@ fn_ResetJobDefinitions()
      dir_Deleted="${dir_Job}/deleted"
     dir_Archived="${dir_Job}/archived"
       dir_Active="${dir_Job}/active"
-##      file_JobID="${dir_Var}/jobid"
 }
 
 ## Dispatcher definitions
@@ -286,6 +280,7 @@ fn_LoadFunctions()
         else
           printf "%10s\n" "ERROR" && b_Errors=1
         fi
+
       else
         echo "Cannot access <${str_EachFile}>"
       fi
@@ -408,11 +403,6 @@ if [[ ${file_Template} ]] ; then
       sleep 10
     done
 
-#    while [[ "$(find -L ${dir_Starting} ${dir_Pending} ${dir_Queued} -name $(basename ${file_Job}) )" ]] ; do
-#   fn_RunJobs
-#      sleep 10
-#    done
-
 echo "Now find the jobs final resting place - completed or failed or lost"
 find -L ${dir_Completed} -name $(basename ${file_Job}) && echo "SUCCESS" && exit 0
 find -L ${dir_Failed} -name $(basename ${file_Job}) && echo "FAILED" && exit 1
@@ -451,12 +441,10 @@ else
   fn_SetLayout
   [ "${b_Help}" ] && fn_Help   && exit 0
   [ "${b_New}" ]  && fn_NewJob && exit 0
-
   fn_Manager
   fn_CheckOwnJobs
 fi
 fn_HouseKeeping
-
 
 tput sgr0 2 >/dev/null
 exit 0

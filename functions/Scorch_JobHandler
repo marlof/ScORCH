@@ -226,31 +226,6 @@ fn_JobFooter()
 
 int_StartTask=\${int_ResumePoint:-0}
 int_Last=${int_TaskCount}
-#
-# Task to run is any task that is not complete or wasnt a manual step
-# grep AUDIT $file that = F
-
-# If lst_ReRun is not blank
-#lst_ReRun=\$(grep "^FAILED TASKS:" \${file_Log} | tail -1 | cut -d: -f2)
-#if [[ ! -z \${lst_ReRun} ]] ; then
-#  for int_ResumeTask in \${lst_ReRun} ; do
-#    echo "Rerun task \${int_ResumeTask}"
-#    declare -f fn_Task_\${int_ResumeTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
-#    echo "AUDIT:T:\${int_ResumeTask}:R" >> "\${dir_Running}"/\${str_JobName}
-#    sleep .2
-#    fn_Task_\${int_ResumeTask}
-#  done
-
-#  echo "Look for fn_PIDWait between Task \${int_ResumePoint} and Task \${int_Last}"
-#  while [ \${int_ResumePoint} -le \${int_Last} ] ; do
-#    grep "^fn_Task_\${int_ResumePoint}.*fn_PIDWait" \${dir_Running}/\${str_JobName} && echo Resume \${int_ResumePoint} && break
-#    (( int_ResumePoint++ ))
-#  done
-
-#  # Next PIDWait
-#  echo PID wait point is \${int_ResumePoint}
-#  int_StartTask=\${int_ResumePoint}
-#fi
 
 fn_ProcessTask()
 {
@@ -265,8 +240,6 @@ fn_ProcessTask()
 
 if (( int_StartTask == 0 )) ; then
 
-  # Process normally
-  echo "Processing normally"
   while (( int_StartTask <= int_Last )) ; do
     fn_ProcessTask \${int_StartTask}
     (( int_StartTask+=1 ))
@@ -274,8 +247,8 @@ if (( int_StartTask == 0 )) ; then
 
 else
 
-  # Idempotant processing
-  echo "Processing \$(fn_ListTasksRemaining)"
+  # Idempotent processing
+  # echo "Processing \$(fn_ListTasksRemaining)"
   for int_StartTask in \$(fn_ListTasksRemaining) ; do
     fn_ProcessTask \${int_StartTask}
   done
@@ -290,7 +263,7 @@ rm "\${LOCK}" 2>/dev/null
 
 int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Completed}"/\${str_JobName} | wc -l)
 int_ManualCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Manual task" "\${dir_Completed}"/\${str_JobName} | wc -l)
-#(( int_FailureCount+=0 ))
+int_ManualCount=\$(egrep "^AUDIT:T:.*M$" "\${dir_Completed}"/\${str_JobName} | wc -l)
 echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
 
 # CSV File
@@ -308,8 +281,6 @@ printf "\n" >> "\${file_Log}"
 
 echo \${str_Requested},\${int_Created},\${int_Start},\${int_Finish},\${str_JobName},\${int_Duration},\${int_Last},\${int_FailureCount},\${str_Owner} >> "${file_CSV}"
 touch -h "\${dir_Completed}/\${str_JobName}" # To reflect the correct finish time in the file
-
-#fn_NiceTime \$(( \${int_Finish} - \${int_Start}))
 
 # ADD TICKETING CLOSE/SYSTEM HERE
 
@@ -400,7 +371,6 @@ fn_ProcessRequest()
     b_Debug=1
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
     for ACTION in ${ACTION_LIST} ; do
-	    #echo "$ACTION is"
 	
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
@@ -451,7 +421,6 @@ fn_ProcessRequest()
           fi
         fi
 
-
       done
     done
     (( int_FileCount++ ))
@@ -467,23 +436,8 @@ fn_GetJobID()
   
   typeset local file_JobIDLock="${file_JobID}".lock
 
-#  if ( set -o noclobber; > "${file_JobIDLock}") 2> /dev/null ; then
-#    if [ -r "${file_JobID}" ] ; then
-#      int_JobID=$(cat "${file_JobID}")
-#    else
-#      int_JobID=0
-#    fi
-#    (( int_JobID+=1 ))
-#    echo ${int_JobID} > "${file_JobID}"
-#    rm -f "${file_JobIDLock}"
-#  else
-#    echo "Could not get exclusive lock"
-#    exit 1
-#  fi
-
   (
     flock -w 1 200
-    #cat $file_JobID
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
     else
@@ -538,7 +492,6 @@ fn_PIDWait()
     for str_TaskPID in $lst_PID ; do
       int_Task=${str_TaskPID%%:*}
       int_PID=${str_TaskPID#*:}
-      #echo $int_Task:$int_PID
       if kill -0 ${int_PID} 2>/dev/null ; then
         lst_PIDRunning="${lst_PIDRunning}${int_Task}:$int_PID "
       elif wait ${int_PID} ; then
@@ -551,13 +504,6 @@ fn_PIDWait()
       else
         int_PID_RC=$?
 
-
-# if ${int_Task} was Manual then "M" else "F"
-echo "DEVEL: Task ${int_Task} failed"
-echo "DEVEL: int_PID_RC:${int_PID_RC}"
-# fn_Task_14_SubTask(){   Manual "CON-WCC"        >> "${file_Log}.2" 2>&1  ;  }   #scorch_Task
-# As each subtask completes, print out the logfile.subtask file
-
         if [[ $(grep ^fn_Task_${int_Task}_SubTask "${dir_Running}"/${str_JobName} | awk -F"\\t" '"'{print \$2}'"') =~ Manual ]] ; then
 
           lst_ManualTasks="${lst_ManualTasks}${int_Task} "
@@ -567,8 +513,6 @@ echo "DEVEL: int_PID_RC:${int_PID_RC}"
           echo "AUDIT:T:${int_Task}:M" >> "${dir_Running}"/${str_JobName}
         else
 
-## Add CAT of log file_Log.int_Task
-
           lst_FailedTasks="${lst_FailedTasks}${int_Task} "
           echo ">> SubTask ${int_Task} FAILED ############"
           cat ${file_Log}.${int_Task} 
@@ -576,12 +520,8 @@ echo "DEVEL: int_PID_RC:${int_PID_RC}"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Running}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:F" >> "${dir_Running}"/${str_JobName}
           echo "== End SubTask ${int_Task} Output ############"
-
           lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
         fi
-
-        #lst_FailedTasks="${lst_FailedTasks}${int_Task} "
-        #lst_PIDResult="${lst_PIDResult}${int_Task}:$int_PID_RC "
       fi
     done
 
@@ -594,11 +534,8 @@ echo "DEVEL: int_PID_RC:${int_PID_RC}"
            echo "Task $int_Task failed"
          fi
        done
-
     else
-      
       echo " PID Running: ${lst_PIDRunning}"
-      #echo " PID Result : ${lst_PIDResult}"
     fi
     lst_PID=${lst_PIDRunning}
     lst_PIDRunning=""
@@ -674,9 +611,6 @@ Task()
   fi
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
-  ##else
-  ##  printf "fn_Task_${int_TaskCount}"
-  ##fi
   (( int_TaskCount++ ))
 }
 readonly -f Task

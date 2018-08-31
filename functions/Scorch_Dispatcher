@@ -26,17 +26,6 @@ fn_Dispatcher()
 {
   typeset local int_DispatchCount=0
 
-#  fn_CreateFile ${file_DispatchLog}
-# set | grep -i who
-#  if [[ ! -L ${file_DispatchLock} ]] ; then
-#    ln -s ${str_User}_$$ "${file_DispatchLock}"
-#  else
-#    rm "${file_DispatchLock}"
-#    #fn_CheckDispatcher
-#  fi
-  #pgrep -f "${str_ProgramName} -dispatcher" | wc -1 ; sleep 10
-  #[[ $(pgrep -f "${str_ProgramName} -dispatcher" | wc -l) -ne 1 ]] && echo "Already running" && return 0
-
   ## Run the dispatcher loop for a predetermined number of times
   while [ ${int_DispatchCount} -lt ${int_DispatchMax} ] ; do
     ## Repair any missing lock file for dispatcher
