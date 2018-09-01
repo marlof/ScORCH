@@ -334,7 +334,7 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
-	    str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
@@ -345,7 +345,7 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-	    [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
+        [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
         echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi
@@ -366,12 +366,12 @@ fn_ProcessRequest()
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     echo "${str_EachFile}"
-	
+
     fn_ExtractPairs
     b_Debug=1
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
     for ACTION in ${ACTION_LIST} ; do
-	
+
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
         int_TaskCount=0
@@ -468,8 +468,8 @@ StartGroup()
  # arr_PID=""
  # lst_PID=""
   if [[ ${b_StartGroup} = "" ]] ; then
-	printf '
-	
+    printf '
+
 typeset local int_PID=
 typeset local arr_PID=
 typeset local arr_FailedTasks=""
@@ -594,7 +594,7 @@ Task()
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
   ##[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
 
- if [[ "${b_Background}" ]] ; then
+  if [[ "${b_Background}" ]] ; then
     ## The task is part of a group
     ((  int_SubTask++ ))
     str_GroupTask="_SubTask"
@@ -844,7 +844,7 @@ fn_Transition()
                   fn_LogWhy ;;
 
        ## Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
-    
+
       esac
     done
   fi
@@ -868,7 +868,7 @@ fn_SetJobOwner()
   if grep "^str_Owner=" "${file_Job}" ; then
     fn_Audit "${file_Job}" "accepted ownership of the job"
     sed 's/^str_Owner=.*/str_Owner='${str_User}'/g' "${file_Job}" > "${file_Job}".tmp
-	  mv "${file_Job}".tmp "${file_Job}"
+    mv "${file_Job}".tmp "${file_Job}"
   fi
 }
 readonly -f fn_SetJobOwner
@@ -881,7 +881,7 @@ fn_CheckOwner()
     read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
       y | Y ) fn_SetJobOwner "${file_Job}" ;;
-	        * ) break ;;
+          * ) break ;;
     esac
   fi
 }

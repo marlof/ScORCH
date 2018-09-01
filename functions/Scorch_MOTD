@@ -55,15 +55,15 @@ fn_AdminMOTD()
     printf "${dis_ULOn}E${dis_ULOff}dit | "
     printf " e${dis_ULOn}X${dis_ULOff}it : "
 
-  read ${str_Quick} -t ${int_Refresh} char_Choice
+    read ${str_Quick} -t ${int_Refresh} char_Choice
 
-  case ${char_Choice} in
-    e | e ) fn_EditMOTD  ;;
-    x | X ) return 0 ;;
-    *     ) return 0 ;;
+    case ${char_Choice} in
+      e | e ) fn_EditMOTD  ;;
+      x | X ) return 0 ;;
+      *     ) return 0 ;;
 
-  esac
-  done  
+    esac
+  done
 
 }
 

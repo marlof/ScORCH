@@ -282,7 +282,7 @@ fn_ShowJobs3()
 
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
     [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
-        [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
+    [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 #       echo $int_ScreenWidth
 #echo "$(pwd)"
 #echo "${file_Cache}"
@@ -406,7 +406,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
       str_Task=$2
       if ( str_Task != "" ) {
         if ( $1 ~ "SubTask" )      { 
-        arr_SubTask[linenum] = "     . "        } else { arr_SubTask[linenum]=""}
+          arr_SubTask[linenum] = "     . "        } else { arr_SubTask[linenum]=""}
 
 
       arr_Task[linenum]=str_Task

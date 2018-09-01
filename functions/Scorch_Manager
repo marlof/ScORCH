@@ -112,7 +112,7 @@ fn_Manager()
       * ) fn_SetLayout ;;
 
     esac
-	fn_RunJobs
+  fn_RunJobs
   done
   tput smam
 }
@@ -261,13 +261,13 @@ fn_ViewJob()
   ${cmd_Editor} "${file_View}"
   if ! diff "${file_Orig}" "${file_View}" ; then
     printf "\n\nWarning. Not in edit mode. Changes will not be saved.\n"
-	  read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
-	  printf "\n\n"
-	  if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
-	    mv "${file_View}" /tmp/$(basename "${file_Orig}")
+    read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
+    printf "\n\n"
+    if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
+      mv "${file_View}" /tmp/$(basename "${file_Orig}")
       fn_Audit "${file_Orig}" "saved an edited copy of job and saved a copy in /tmp"
     fi
-	#fn_PressEnter
+  #fn_PressEnter
   fi
   [ -f "${file_View}" ] && rm -f "${file_View}"
 }
@@ -281,7 +281,7 @@ fn_EditJob()
   cp "${file_Orig}" "${file_Edit}"
   ${cmd_Editor} "${file_Edit}"
   if ! diff "${file_Orig}" "${file_Edit}" ; then
-	  mv "${file_Edit}" "${file_Orig}"
+    mv "${file_Edit}" "${file_Orig}"
     fn_Audit "${file_Orig}" "edited job"
   fi
   [ -f "${file_Edit}" ] && rm -f "${file_Edit}"
@@ -341,7 +341,7 @@ fn_AdminFunctions()
 
 
       case ${char_Choice} in
-	
+
         ## Abort Failed or Running jobs
         c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
 
@@ -351,12 +351,12 @@ fn_AdminFunctions()
         ## Edit job
         v | V ) fn_ViewJob "${file_ActiveJob}" ;;
         e | E ) fn_EditJob "${file_ActiveJob}" ;;
-		        #fn_CheckOwner "${file_ActiveJob}"
+                #fn_CheckOwner "${file_ActiveJob}"
                 #${cmd_Editor} "${file_ActiveJob}" ;;
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         ## Job State transition
-		
+
         ## Delete Job(s)
         d | D ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" deleted

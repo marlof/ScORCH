@@ -28,7 +28,7 @@ fn_GetRequest()
   if [ ! -z "${file_Template}" ] ; then
     echo "$($fn_LogDate): Processing file:${file_Template}"
     while read -r str_Line ; do
-          str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"

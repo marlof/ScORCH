@@ -255,8 +255,9 @@ fn_Range()
 
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
-#     typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
-#     typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
+      # Bash 3 varient
+      # typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
+      # typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
       typeset local  int_First=${int_EachItem%%-*}
       typeset local int_Last=${int_EachItem#*-}
 
@@ -330,7 +331,7 @@ fn_PressEnter()
     printf "\n\n"
     read -n 1 -p " Press any key to continue"
   else
-    printf "\nNon Interactive Mode\n"
+    printf "\nNon Interactive Mode - pressed any key to continue\n"
   fi
 }
 readonly -f fn_PressEnter
@@ -350,7 +351,7 @@ fn_Select()
 {
   typeset -a arr_Temp=
 }
-readonly fn_Select
+readonly -f fn_Select
 
 fn_IsNumber()
 {
@@ -361,6 +362,7 @@ fn_IsNumber()
     return 1
   fi
 }
+readonly -f fn_IsNumber
 
 fn_CheckLatest()
 {
@@ -384,6 +386,7 @@ fn_CheckLatest()
     str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2)
   fi
 }
+readonly -f fn_CheckLatest
 
 fn_PullRelease()
 {
@@ -428,6 +431,7 @@ fn_PullRelease()
     fn_PressEnter
   fi
 }
+readonly -f fn_PullRelease
 
 fn_InstallLatest()
 {
@@ -507,6 +511,7 @@ fn_InstallLatest()
   tail -5 ${file_Install}
   fn_PressEnter
 }
+readonly -f fn_InstallLatest
 
 fn_CheckMaint()
 {
@@ -521,6 +526,7 @@ fn_CheckMaint()
     #echo "OK no ${file_Maint}"
   fi
 }
+readonly -f fn_CheckMaint
 
 fn_FileOwner()
 {
@@ -528,3 +534,4 @@ fn_FileOwner()
   local file_Name=$1
   [[ -r ${file_Name} ]] && ls -ld ${file_Name} | awk -F" " '{print $3}' || echo "unknown"
 }
+readonly -f fn_FileOwner
