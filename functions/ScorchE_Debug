@@ -60,9 +60,7 @@ fnE_MkOpenScorch()
     md5sum    ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.md5
     sha256sum ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.sha256
   fi
-
-  sleep 5
-
+  sleep 3
 }
 
 fnE_MkEscorchtar()

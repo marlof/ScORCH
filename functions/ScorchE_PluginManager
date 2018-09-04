@@ -106,7 +106,6 @@ fnE_PluginManagerMenu()
           x | X ) return 0 ;;
           *     ) return 0 ;;
   esac
-
 }
 readonly -f fnE_PluginManagerMenu
 

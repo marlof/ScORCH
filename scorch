@@ -120,8 +120,9 @@
 ##                       #38 Permission improvements
 ## 1.44 180821    marc   Improvement to DF output
 ##                       #43 Group Manual steps Completed
+## 1.45 180904    marc   #45 Associative array to track TASK status
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.44"
+typeset str_ProgramVersion="1.45"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"

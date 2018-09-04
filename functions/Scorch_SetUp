@@ -132,8 +132,8 @@ export      file_Version="version.txt"
 ' >> ${file_Prefs}
   fi
   source ${file_Prefs}
-
 }
+readonly -f fn_SetPrefs
 
 fn_Help()
 {
@@ -194,18 +194,18 @@ fn_HouseKeeping()
   find -L "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Archive old active jobs
-  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Active}/active.tar" "{}" + 2>/dev/null )
+  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived.tar" "{}" + 2>/dev/null )
   find -L "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
   [[ -w ${file_Cache} ]] && rm ${file_Cache}
 
   # Touch active New etc jobs (Sometimes old jobs are still being used even after a long time)
-  # Recover jobs jobs that have taking a long time to progress
+  # Recover jobs jobs that are taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
   arr_Recover=$( cd "${dir_New}" && find -L . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
   [[ ! -z ${arr_Recover} ]] && echo "Some jobs are taking a long time to be processed: ${arr_Recover}"
   for file_Recover in ${arr_Recover} ; do
-    ( cd "${dir_Active}" && tar xf active.tar ${file_Recover} )
+    ( cd "${dir_Active}" && tar xf "${dir_Archived}/archived.tar" ${file_Recover} )
   done
 
   IFS=£{SAVEIFS}
@@ -243,8 +243,8 @@ fn_Confirm()
     y | Y )  return 0 ;;
     *     )  return 1 ;;
   esac
-
 }
+readonly -f fn_Confirm
 
 fn_Range()
 {
