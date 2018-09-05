@@ -121,8 +121,9 @@
 ## 1.44 180821    marc   Improvement to DF output
 ##                       #43 Group Manual steps Completed
 ## 1.45 180904    marc   #45 Associative array to track TASK status
+## 1.46 180905    marc   #47 Sort "skip" steps in new mode
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.45"
+typeset str_ProgramVersion="1.46"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -189,17 +190,17 @@ typeset     dir_Pending="${dir_Job}/pending"
 typeset      dir_Active="${dir_Job}/active"
 typeset      dir_Manual="${dir_Job}/manual"
 
-typeset           b_Group=
-typeset      b_Background=
-typeset       int_SubTask=
-typeset       str_SubTask=
+typeset          b_Group=
+typeset     b_Background=
+typeset      int_SubTask=
+typeset      str_SubTask=
 typeset int_DispatchSleep=10
-typeset           hex_MD5=
+typeset          hex_MD5=
 typeset       file_Cache=${dir_Tmp}/mycache.$$
 typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
          
-typeset      str_Protocol="http://"
-typeset      dir_Location="www.autoscorch.com/downloads"
+typeset     str_Protocol="http://"
+typeset     dir_Location="www.autoscorch.com/downloads"
 typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="version.txt"
 

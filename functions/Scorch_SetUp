@@ -325,6 +325,15 @@ fn_UpdateResumePoint()
 }
 readonly -f fn_UpdateResumePoint
 
+fn_Skip()
+{
+  # Updates the "ACTIVE" job adding a Task "S" for every Task "F"
+  typeset local file_Job="${1}"                             # The Job to update
+  
+
+
+}
+
 fn_PressEnter()
 {
   if [[ !  "${b_NonInteractive}" ]] ; then

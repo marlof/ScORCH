@@ -108,7 +108,7 @@ fn_ProcessRequest()
           fn_PressEnter
           exit 1
         fi
-        echo " $((int_TaskCount - 1)) tasks created" ; sleep 3
+        echo " $((int_TaskCount - 1)) tasks created"
         fn_JobFooter "${file_Job}"
         echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
@@ -121,6 +121,7 @@ fn_ProcessRequest()
 
       done
     done
+    sleep 2
     (( int_FileCount++ ))
     rm "${file_Request}"
   done

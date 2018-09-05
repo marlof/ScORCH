@@ -26,17 +26,19 @@
 
 fn_SkipFailed()
 {
-  local lst_Tasks=""
-  local int_Task=$1
-  local int_Count=0
-  while (( int_Count <= int_Task )) ; do
-    echo "Debug:$int_Count"
-    grep  "^AUDIT:T:${int_Count}:F" ${file_Log} && lst_Tasks=(${lst_Tasks[*]} ${int_Count})
+  int_Count=1
+  int_Last=$(grep "^AUDIT:T:*:" ${file_Job} | cut -d: -f 3 | sort -n | tail -1)
+  declare -A JOB
+  while (( int_Count <= int_Last )) ; do
+    echo JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" ${file_Job} | tail -1 | cut -d: -f4)
+    JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" ${file_Job} | tail -1 | cut -d: -f4)
     (( int_Count++ ))
   done
-  for each_FailedTask in ${lst_Tasks[*]} ; do
-    echo "Debug:${each_FailedTask}"
-    echo "AUDIT:T:${each_FailedTask}:S" >> ${file_Log}
+
+  int_Count=1
+  while (( int_Count <= int_Last )) ; do
+    [[ "F" == "$(echo ${JOB[T${int_Count}]})" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
+    (( int_Count++ ))
   done
 }
 
@@ -388,7 +390,7 @@ fn_AdminFunctions()
                 fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
                 fn_LogWhy
                 fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
-
+                fn_SkipFailed "${file_Job}"
                 #echo "AUDIT:T:${int_Task}:S" >> "${file_Jobh}"
 
                 mv "${file_Link}" "${dir_Queued}"
