@@ -122,8 +122,11 @@
 ##                       #43 Group Manual steps Completed
 ## 1.45 180904    marc   #45 Associative array to track TASK status
 ## 1.46 180905    marc   #47 Sort "skip" steps in new mode
+## 1.47 180906    marc   Added associative array check
+##                       #48 Manual tasks to be moved to manual directory 
 ## Determine the program name and the running directory
-typeset str_ProgramVersion="1.46"
+
+typeset str_ProgramVersion="1.47dev"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -135,7 +138,6 @@ typeset           str_User=$(whoami)
 typeset         file_Prefs=~/${str_ProgramName}.prefs
 ## User EDITOR preference
 typeset         cmd_Editor="${EDITOR:-vi}"
-echo "${COLUMNS}"
 
 fn_BaseDir()
 {
@@ -317,6 +319,8 @@ typeset lst_GetVar=
 typeset b_NonInteractive=
 typeset b_Sync=
 
+[[ ${BASH_VERSION%%.*} -lt 4 ]] && printf "$str_ProgramName uses associative arrays which require bash 4. Your version: $BASH_VERSION\n" && exit 1
+
 ## Check for argument list
 ## scorch can be run in several modes (install, new, file, dispatcher, manager and background)
 if [ $# -ne 0 ] ; then
@@ -351,9 +355,6 @@ if [ $# -ne 0 ] ; then
     shift
   done
 fi
-
-
-
 
 #HEADER
 #RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE

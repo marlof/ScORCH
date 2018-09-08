@@ -37,7 +37,7 @@ fn_SkipFailed()
 
   int_Count=1
   while (( int_Count <= int_Last )) ; do
-    [[ "F" == "$(echo ${JOB[T${int_Count}]})" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
+    [[ "F" == "${JOB[T${int_Count}]}" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
     (( int_Count++ ))
   done
 }
@@ -52,7 +52,7 @@ fn_Manager()
     fn_CheckMaint
 
     fn_ShowTop
-    fn_ShowJobs superseded failed fixing new running starting pending queued completed
+    fn_ShowJobs superseded manual failed fixing new running starting pending queued completed
     fn_ShowLine "="
     fn_DisplayMOTD
     printf "\n${dis_Reset}"

@@ -433,25 +433,6 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
 	  printf " "
     fn_ShowLine "="
 
-# TEST
-#echo test
-#int_Last=$(grep int_Last= ${file_Job} | tail -1 | cut -d= -f2)
-#echo ${int_Last}
-#for int_Count in $(seq 1  ${int_Last}) ; do
-#  if (( int_Last = int_Count )) ; then
-#    printf " >>>>  "
-#  elif (( int_Last < int_Count )) ; then
-#    printf "       "
-#  else
-#    printf "[done] "
-#  fi
-
-#  printf "${int_Count}: $(grep "AUDIT:T:${int_Count}" ${file_Job} | tail -1 | cut -d":" -f4) :"
-  # tail shows sub tasks
-#  grep fn_Task_${int_Count} ${file_Job} | tail -1 | cut -f2
-#done
-fn_ShowLine "="
-
     printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
     read ${str_Quick} -t ${int_RefreshRate} char_Choice
 
@@ -488,7 +469,7 @@ fn_ShowTasks()
     printf "\n Display tasks for which job(s)?\n\n"
 
     #fn_ShowJobs2 superseded starting failed fixing queued pending new running completed
-    fn_ShowJobs superseded starting failed fixing queued pending new running completed
+    fn_ShowJobs superseded manual starting failed fixing queued pending new running completed
     fn_ShowLine
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
@@ -561,7 +542,7 @@ fn_ContextMenu()
     printf " ${dis_ULOn}V${dis_ULOff}iew | ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
     case ${str_State} in
       queued  | pending ) b_QueuedJobs=1 ;;
-      failed            ) b_FailedJobs=1 ;;
+      failed  | manual  ) b_FailedJobs=1 ;;
       fixing            ) b_FailedJobs=1 ;;
       new               ) b_NewJobs=1 ;;
       running           ) b_RunningJobs=1 ;;

@@ -104,19 +104,20 @@ fn_CheckTask()
 
   if [ \${int_RC} -ne 0 ] ; then
     if [ \${int_RC} = 99 ] ; then
-      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
       echo "AUDIT:T:\${int_Task}:M" >> "\${file_Job}"
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Manual}"/.
       (( int_Task+=1 ))
       echo "\$(${fn_LogDate}) +++Manual task - resume to continue. Resume point:\${int_Task}" >> "\${file_Log}"
       rm "\${LOCK}" 2>/dev/null
       exit 1
+    else
+      echo "AUDIT:T:\${int_Task}:F" >> "\${file_Job}"
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${file_Job}"
+      echo "\$(${fn_LogDate}) +++Failed task - skip or retry. Resume point:\${int_Task}" >> "\${file_Log}"
+      rm "\${LOCK}" 2>/dev/null
+      exit 1
     fi
-    echo "AUDIT:T:\${int_Task}:F" >> "\${file_Job}"
-    mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
-    echo "\$(${fn_LogDate}) +++Failed task \${int_Task}" >> "\${file_Job}"
-    echo "\$(${fn_LogDate}) +++Failed task - skip or retry. Resume point:\${int_Task}" >> "\${file_Log}"
-    rm "\${LOCK}" 2>/dev/null
-    exit 1
   else
     echo "AUDIT:T:\${int_Task}:C" >> "\${file_Job}"
     printf "\$(${fn_LogDate}) Completed task [\${int_Task}/\${int_Last}]\n" >> "\${file_Log}"
@@ -128,7 +129,7 @@ fn_CheckTask()
       rm "\${dir_Pause}"/\${str_JobName}".pause"
     else
       echo "AUDIT:T:\${int_Task}:P" >> "\${file_Job}"
-      mv "\${dir_Running}"/\${str_JobName} "\${dir_Failed}"/.
+      mv "\${dir_Running}"/\${str_JobName} "\${dir_Manual}"/.
       rm "\${dir_Pause}"/\${str_JobName}".pause"
       (( int_Task+=1 ))
       echo "\$(${fn_LogDate}) Paused. Automatically updated to Resume Point:\${int_Task}" >> "\${file_Job}"
@@ -293,8 +294,9 @@ printf "\$(${fn_LogDate}) Completed task:\${int_StartTask}\nAUDIT:T:\${int_Start
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}" 2>/dev/null
 
-int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Active}"/\${str_JobName} | wc -l)
-int_ManualCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Manual task" "\${dir_Active}"/\${str_JobName} | wc -l)
+#int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Active}"/\${str_JobName} | wc -l)
+int_FailureCount=\$(egrep "^AUDIT:T:.*F$" "\${dir_Active}"/\${str_JobName} | wc -l)
+#int_ManualCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Manual task" "\${dir_Active}"/\${str_JobName} | wc -l)
 int_ManualCount=\$(egrep "^AUDIT:T:.*M$" "\${dir_Active}"/\${str_JobName} | wc -l)
 echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
 
@@ -813,12 +815,12 @@ fn_Transition()
   case ${str_Transition} in
 
     ## Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
-    resume  ) fn_ShowJobs failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    queue   ) fn_ShowJobs manual failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    resume  ) fn_ShowJobs manual failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
 
     ## Jobs not requiring the dispatcher
-    delete  ) fn_ShowJobs failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
-    unqueue ) fn_ShowJobs failed superseded starting queued ; str_Target="${dir_New}"     ;;
+    delete  ) fn_ShowJobs manual failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
+    unqueue ) fn_ShowJobs manual failed superseded starting queued ; str_Target="${dir_New}"     ;;
     pause   ) fn_ShowJobs running starting queued pending   ; str_Target="${dir_Active}" ;;
 
   esac
