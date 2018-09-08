@@ -124,6 +124,7 @@
 ## 1.46 180905    marc   #47 Sort "skip" steps in new mode
 ## 1.47 180906    marc   Added associative array check
 ##                       #48 Manual tasks to be moved to manual directory 
+##                       #49 Maintenance file (and cache) moved to memory dir
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="1.47dev"
@@ -198,8 +199,8 @@ typeset      int_SubTask=
 typeset      str_SubTask=
 typeset int_DispatchSleep=10
 typeset          hex_MD5=
-typeset       file_Cache=${dir_Tmp}/mycache.$$
-typeset       file_Maint=${dir_Tmp}/${str_ProgramName}.maintenance
+typeset       file_Cache=${dir_Memory}/mycache.$$
+typeset       file_Maint=${dir_Memory}/${str_ProgramName}.maintenance
          
 typeset     str_Protocol="http://"
 typeset     dir_Location="www.autoscorch.com/downloads"
