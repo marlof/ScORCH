@@ -128,7 +128,7 @@
 ##                       #50 --action, --file and --help output improved
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.47dev"
+typeset str_ProgramVersion="1.47"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
