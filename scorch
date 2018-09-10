@@ -125,6 +125,7 @@
 ## 1.47 180906    marc   Added associative array check
 ##                       #48 Manual tasks to be moved to manual directory 
 ##                       #49 Maintenance file (and cache) moved to memory dir
+##                       #50 --action, --file and --help output improved
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="1.47dev"
@@ -148,6 +149,37 @@ fn_BaseDir()
   [ -d "${1}" ] || return 1
   cd "${1}" && pwd || return 1
 }
+
+fn_Help()
+{
+  # Help
+  echo "${str_ProgramName}"
+  echo " # Options"
+  echo "    -p <alternative plugin dir>   Use a different plugin directory"
+  echo " "
+  echo " # Help"
+  echo "    -h | --help                          Show help"
+  echo "    -v | --verbose                       Display version"
+  echo " "
+  echo " # Internal Modes"
+  echo "    -dispatcher                          Run in dispatcher mode"
+  echo "    -new                                 Load new job from input"
+  echo "    -file <file template> [-s]           Load new job from file [ and move to start ]"
+  echo " "
+  echo " # Admin and development "
+  echo "    -p <dir>                             Use Plugins from given directory"
+  echo "    -f <dir>                             Use Functions from given directory"
+  echo " "
+  echo " # Command Line Advanced Options"
+  echo "    -a | --action <ActionName>           Action Name"
+  echo "    -o | --option <keyname>:<keyvalue>   A keypair for the action"
+  echo "    -s | --start [-sync]                 Start [only return to prompt when job completes or fails]"
+  echo ""
+  echo " # Example"
+  echo "    scorch -a SAFEDEMO -o key1:value1 -o key2:val2 -s"
+  echo "    scorch --action DRINK-TEA --start -sync"
+}
+readonly -f fn_Help
 
 ## The running directory will become the str_BaseDir and will be dependant on a relative or absolute path
 typeset        dir_Base=$(fn_BaseDir "${dir_Run}")
@@ -258,6 +290,7 @@ fn_LoadFunctions()
   ## Load Functions from a directory based on a search criteria
   ## $1 Directory
   ## $2 Search string
+  ## $3 Display false|true
   ##   Next
   ##   -d    dir
   ##   -pre  pre search
@@ -276,12 +309,12 @@ fn_LoadFunctions()
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*")
     for str_EachFile in ${arr_Functions} ; do
       if [ -r "${str_EachFile}" ] ; then
-        [[ ${b_Display} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
+        [[ ${b_NonInteractive} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
 
         # Bash the function file for errors before loading it
         bash "${str_EachFile}" && . "${str_EachFile}"
         if [[ $? = 0 ]] ; then
-          [[ ${b_Display} ]] || printf "%10s\n" "OK"
+          [[ ${b_NonInteractive} ]] || printf "%10s\n" "OK"
         else
           printf "%10s\n" "ERROR" && b_Errors=1
         fi
@@ -307,7 +340,6 @@ fn_CheckLicense()
   return 1
 }
 
-typeset b_Help=
 typeset b_Dispatcher=
 typeset b_New=
 typeset b_Start=
@@ -328,28 +360,28 @@ if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
 
-      -h          ) b_Help=1 ;;
-      -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+      -h | --help    ) fn_Help ; exit 0 ;; #b_Help=1 ;;
+      -v | --version ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
 
       ## API Mode
-      -a          ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_NonInteractive=1 ;;
-      -o          ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ; b_NonInteractive=1 ;;
-      -s          ) b_Start=1 ;;
-      -sync       ) b_Sync=1 ;;
-      -dispatcher ) b_Dispatcher=1 ;;
+      -a | --action  ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_NonInteractive=1 ;;
+      -o | --option  ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ; b_NonInteractive=1 ;;
+      -s | --start   ) b_Start=1 ;;
+      -sync          ) b_Sync=1 ;;
+      -dispatcher    ) b_Dispatcher=1 ;;
 
       ## Internal Mode
-      -file       ) shift ; file_Template="$1" ; b_NonInteractive=1 ;;
-      -new        ) b_New=1 ;;
-      -background ) b_Background=1 ;;
+      -f | --file    ) shift ; file_Template="$1" ; b_NonInteractive=1 ;;
+      -new           ) b_New=1 ;;
+      -background    ) b_Background=1 ;;
 
       ## Development / Alternative Mode
-      -p          ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
-      -j          ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
+      -p             ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
+      -j             ) shift ; dir_Job="$(fn_BaseDir "${1}")" ; fn_ResetJobDefinitions ;;
 
       ## Install Mode
-      -install    ) b_Install=1 ;;
-      -repair     ) b_InstallForce=1 ;;
+      -install       ) b_Install=1 ;;
+      -repair        ) b_InstallForce=1 ;;
 
       ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
@@ -443,7 +475,6 @@ if [[ "${b_Background}" ]] ; then
   fn_RunJobs # one more try just to mop up
 else
   fn_SetLayout
-  [ "${b_Help}" ] && fn_Help   && exit 0
   [ "${b_New}" ]  && fn_NewJob && exit 0
   fn_Manager
   fn_CheckOwnJobs

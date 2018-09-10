@@ -70,6 +70,7 @@ readonly -f fn_SetLayout
 
 fn_ShowTop()
 {
+  [[ ! -z $b_NonInteractive ]] && return
   ## Display the name of the program and any interesting facts about the environment
   ## ===============================================================================
   typeset local int_TitleWidth

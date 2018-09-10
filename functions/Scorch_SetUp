@@ -68,19 +68,21 @@ fn_CheckSetUp()
   done
 
   typeset local arr_Files="${file_DispatchLog}"
-  printf "\n\n"
 #  which gawk  2>/dev/null || printf "\n\tgawk not installed. Ubuntu: sudo apt-get install gawk\n"
 #  which pgrep 2>/dev/null || printf "\n\tpgrep not installed. Ubuntu: sudo apt-get install pgrep\n"
 
-  arr_Commands="gawk pgrep"
-  str_Install="sudo apt-get install"
-  for str_Command in ${arr_Commands} ; do
-    printf "\tChecking for ${str_Command}:\t"
-    which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
-  done
+  if [[ ! ${b_NonInteractive} ]] ; then
+    printf "\n\n"
+    arr_Commands="gawk pgrep"
+    str_Install="sudo apt-get install"
+    for str_Command in ${arr_Commands} ; do
+      printf "\tChecking for ${str_Command}:\t"
+      which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
+    done
+  fi
 
   cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
-  printf "\n\tcmd_AWK: ${cmd_AWK}\n"
+  [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: ${cmd_AWK}\n"
 
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo \"\""
@@ -134,36 +136,6 @@ export      file_Version="version.txt"
   source ${file_Prefs}
 }
 readonly -f fn_SetPrefs
-
-fn_Help()
-{
-  # Help
-  echo "${str_ProgramName}"
-  echo " # Options"
-  echo "    -p <alternative plugin dir>   Use a different plugin directory"
-  echo " "
-  echo " # Help"
-  echo "    -h                            Show help"
-  echo "    -v                            Display version"
-  echo " "
-  echo " # Internal Modes                 "
-  echo "    -dispatcher                   Run in dispatcher mode"
-  echo "    -new                          Load new job from input"
-  echo "    -file <file template> [-s]    Load new job from file [ and move to start ]"
-  echo " "
-  echo " # Admin and development "
-  echo "    -p <dir>                      Use Plugins from given directory"
-  echo "    -f <dir>                      Use Functions from given directory"
-  echo " "
-  echo " # Command Line Advanced Options"
-  echo "    -a <ActionName>               Action Name"
-  echo "    -o <keyname>:<keyvalue>       A keypair for the action"
-  echo "    -s [-sync]                    Start [only return to prompt when job completes or fails]"
-  echo ""
-  echo " # Example"
-  echo "    scorch -a SAFEDEMO -o key1:value1 -o key2:val2 -s"
-}
-readonly -f fn_Help
 
 fn_HouseKeeping()
 {
@@ -324,15 +296,6 @@ fn_UpdateResumePoint()
   [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint
-
-fn_Skip()
-{
-  # Updates the "ACTIVE" job adding a Task "S" for every Task "F"
-  typeset local file_Job="${1}"                             # The Job to update
-  
-
-
-}
 
 fn_PressEnter()
 {
