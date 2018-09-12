@@ -1,5 +1,10 @@
 pipeline {
-  agent none
+  agent {
+    node {
+      label 'Collect'
+    }
+    
+  }
   stages {
     stage('Create Tar') {
       steps {
