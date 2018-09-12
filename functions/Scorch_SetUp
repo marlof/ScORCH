@@ -347,10 +347,10 @@ fn_CheckLatest()
       echo "$str_LatestVersion"
     else
       printf "\n\n"
-      printf " Error checking latest version - did not return a number.\n"
-      printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
-      curl ${str_Protocol}://${dir_Location}/${file_Version}
-      str_LatestVersion="check"
+      printf " Latest version <${str_LatestVersion} may not have be released.\n"
+      #printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
+      #curl ${str_Protocol}://${dir_Location}/${file_Version}
+      #str_LatestVersion="check"
       fn_PressEnter
     fi
     file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"

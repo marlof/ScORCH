@@ -126,9 +126,10 @@
 ##                       #48 Manual tasks to be moved to manual directory 
 ##                       #49 Maintenance file (and cache) moved to memory dir
 ##                       #50 --action, --file and --help output improved
+## 1.48 180912    marc   Jenkins build test
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.47"
+typeset str_ProgramVersion="1.48dev"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -367,7 +368,7 @@ if [ $# -ne 0 ] ; then
       -a | --action  ) shift ; file_Template=$(mktemp) ; str_Action=$1 ; b_NonInteractive=1 ;;
       -o | --option  ) shift ; [[ ! $lst_GetVar ]] && lst_GetVar=$1 || lst_GetVar="${lst_GetVar};$1" ; b_NonInteractive=1 ;;
       -s | --start   ) b_Start=1 ;;
-      -sync          ) b_Sync=1 ;;
+      -sync | --sync ) b_Sync=1 ;;
       -dispatcher    ) b_Dispatcher=1 ;;
 
       ## Internal Mode
@@ -414,6 +415,8 @@ if [[ ${str_Action} ]] ; then
   echo "Action:${str_Action}" > ${file_Template}
   echo "${lst_GetVar}" | tr ";" "\n" >> ${file_Template}
   cat ${file_Template}
+  fn_CheckDispatcher
+  fn_RunJobs
 fi
 
 if [[ ${file_Template} ]] ; then
@@ -426,15 +429,15 @@ if [[ ${file_Template} ]] ; then
     while : ; do
       str_JobState=$(fn_JobState $(basename ${file_Job}))
       case $str_JobState in
-        new      ) echo "You must use -s to also start sync jobs" ; exit 1 ;;
+        new       ) echo "You must use -s (--start) to start sync jobs" ; exit 1 ;;
         
-        queued   ) echo "Checking dispatcher" ; fn_CheckDispatcher  ; sleep 5 ; fn_RunJobs ;;
-        starting ) echo "Running Own Jobs" ; sleep 5 ; fn_RunJobs ;;
-        queued | pending | running ) : ;;
+        queued    ) echo "Checking dispatcher" ; fn_CheckDispatcher     ; fn_RunJobs ;;
+        starting  ) echo "Running Own Jobs"                             ; fn_RunJobs ;;
+        pending | running ) : ;;
         
-        failed ) echo "$(basename ${file_Job}) FAILED" ; exit 1 ;;
-        completed ) echo "$(basename ${file_Job}) Completed" ; exit 0 ;;
-        *   ) echo "What is ${str_JobState}" ; exit 1 ;;
+        failed    ) echo "$(basename ${file_Job}) FAILED"               ; exit 1 ;;
+        completed ) echo "$(basename ${file_Job}) Completed"            ; exit 0 ;;
+        *         ) echo "What is ${str_JobState}"                      ; exit 1 ;;
       esac
       sleep 10
     done
