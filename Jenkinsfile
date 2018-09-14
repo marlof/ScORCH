@@ -1,15 +1,11 @@
-pipeline {
-  agent {
-    node {
-      label 'Collect'
-    }
-    
-  }
-  stages {
-    stage('Create Tar') {
-      steps {
-        sh 'tar cf scorch.tar scorch python functions plugins/DEMO'
-      }
-    }
-  }
+node {
+  checkout scm
+  
+  stage 'test'
+  sh 'make test'
+  
+  stage 'publish'
+  sh 'make publish'
 }
+  
+  
