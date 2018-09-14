@@ -4,7 +4,7 @@
     <groupId>test</groupId>
     <artifactId>scorch</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>tar</packaging>
     <licenses>
         <license>
             <name>MIT License</name>
