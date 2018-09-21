@@ -115,13 +115,21 @@ fn_ProcessRequest()
         b_StartGroup=""
 
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
-           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
+          mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
         fi
-        [[ ${b_Start} ]] && mv "${file_Job}" "${dir_Queued}/."
+        if [[ ${b_Start} ]] ; then
+          nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
+
+          if [[ ${b_Sync} ]] ; then
+            mv "${file_Job}" "${dir_Queued}/." 
+            "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 
+          else
+            mv "${file_Job}" "${dir_Queued}/." && ${str_ProgramName} -background &
+          fi
+        fi
 
       done
     done
-    sleep 2
     (( int_FileCount++ ))
     rm "${file_Request}"
   done

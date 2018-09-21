@@ -1,13 +1,13 @@
 #!/bin/bash
 
 typeset CURL=$(which curl)
-typeset JIRA_SERVER='http://jira:32768'
+typeset JIRA_SERVER='http://jira-nas:32770'
 typeset JIRA_ISSUE_URL=${JIRA_SERVER}/rest/api/2/issue
 typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
 
 typeset TICKET=$1
 #typeset AUTH='user:sphere'
-typeset AUTH='marc:test123'
+typeset AUTH='demo:test123'
 
 typeset PYTHON=$(which python)
 

@@ -336,6 +336,18 @@ fn_IsNumber()
 }
 readonly -f fn_IsNumber
 
+fn_IsAlreadyRunning()
+{
+  local str_Process="${1}"
+  if [[ ! -z ${str_Process} ]] ; then
+    ps -fu ${str_User} | grep -v grep | grep -s "${str_Process}" && return 0 || return 1
+  else
+    ps -fu ${str_User}
+    return 1
+  fi
+}
+readonly -f fn_IsAlreadyRunning
+
 fn_CheckLatest()
 {
   echo ""
@@ -347,7 +359,7 @@ fn_CheckLatest()
       echo "$str_LatestVersion"
     else
       printf "\n\n"
-      printf " Latest version <${str_LatestVersion} may not have be released.\n"
+      printf " Latest version <${str_LatestVersion}> may not have be released.\n"
       #printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
       #curl ${str_Protocol}://${dir_Location}/${file_Version}
       #str_LatestVersion="check"
