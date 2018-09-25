@@ -106,7 +106,7 @@ fn_ShowTop()
   printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-                 "df:${int_DiskUsage}%" "${str_License}" "${str_Authority}"
+         "df:${int_DiskUsage}%" "${str_License}" "${str_Authority}"
   [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
@@ -574,9 +574,10 @@ fn_ContextMenu()
   [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   #[[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
-  ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}C${dis_ULOff}ancel | "
+  ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}H${dis_ULOff}angup | "
 
-  printf "${dis_ULOn}A${dis_ULOff}dmin | e${dis_ULOn}X${dis_ULOff}it : "
+  [[ ! "${str_State}" ]] && printf "${dis_ULOn}A${dis_ULOff}dmin |"
+  printf "e${dis_ULOn}X${dis_ULOff}it : "
 
 }
 readonly -f fn_ContextMenu

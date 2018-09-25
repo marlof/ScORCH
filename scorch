@@ -128,9 +128,13 @@
 ##                       #50 --action, --file and --help output improved
 ## 1.48 180912    marc   Jenkins build test
 ##                       #51 IsAlreadyRunning function created for background file jobs
+## 1.49 180922    marc   Improvement to #51
+##                       #55 Fixing "." in menus - issue not reproduced
+##                       #56 Double "A" in Specific Job Menu - Admin option removed 
+##                       #57 Rules Engine checks
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.48"
+typeset str_ProgramVersion="1.49dev"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"

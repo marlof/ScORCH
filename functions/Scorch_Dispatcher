@@ -41,7 +41,7 @@ fn_Dispatcher()
     if [[ "${arr_PendingJobs}" ]] ; then
 
       for file_EachJob in ${arr_PendingJobs} ; do
-
+        echo "Checking rules for $file_EachJob"
         if [ -r "${dir_Active}/$(basename ${file_EachJob})".rules ] ; then
           ## Check for Parent
           arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename ${file_EachJob})".rules | cut -d: -f2)
@@ -53,11 +53,13 @@ fn_Dispatcher()
                mv ${dir_Pending}/${file_EachJob} ${dir_Failed}
             fi
 
+            str_ParentState=$(basename $(dirname $(find -L ${dir_Job} -name ${file_EachParent} | grep -v "/active/")))
+
             case ${str_ParentState} in
               completed ) fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules" ;;
               superseded | failed )                          b_ParentComplete=1 ;;
               running | starting | pending | queued | new  ) b_ParentComplete=1 ;;
-              *       )   fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} missing. Moving job to failed state."   "rules"
+              *       )   fn_Audit "${file_EachJob}" "RULES: Parent job ${file_EachParent} missing. Moving job to failed state."   "rules"
                           b_ParentComplete=1
                           mv "${dir_Pending}/${file_EachJob}" "${dir_Failed}" ;;
 

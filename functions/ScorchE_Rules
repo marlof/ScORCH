@@ -153,7 +153,7 @@ readonly -f fnE_Rules
 fnE_RulesMenu()
 {
   ## printf "\n\n Rules menu "
-  printf " ${dis_ULOn}A${dis_ULOff}mend rules |"
+  printf " ${dis_ULOn}C${dis_ULOff}hange rules |"
 }
 readonly -f fnE_RulesMenu
 

@@ -453,7 +453,7 @@ fn_ProcessRequest()
             mv "${file_Job}" "${dir_Queued}/." 
             "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 
           else
-            mv "${file_Job}" "${dir_Queued}/." && ${str_ProgramName} -background
+            mv "${file_Job}" "${dir_Queued}/."
           fi
         fi
 
@@ -890,7 +890,7 @@ fn_CheckOwnJobs()
 {
   # dir_Starting=starting ; dir_Queued=queued ; dir_Pending=pending ; str_JobPrefix=Job ; str_Owner=marc
   if [ "$(find -L "${dir_Starting}/." "${dir_Queued}/." "${dir_Pending}/." -name "${str_JobPrefix}*" -exec grep -l ^str_Owner="${str_Owner}" {} \; )" ] ; then
-    if [[ ! $(fn_IsAlreadyRunning "${str_ProgramName} -background") ]] ; then
+    if [[ ! $(fn_IsAlreadyRunning "${str_ProgramName} -background -j ${dir_Job}") ]] ; then
       printf "\n\n%s\n" "You have queued jobs that have not yet been started."
       read ${str_Quick} -p "Do you want to run a version in background to complete them? [y/n] " char_Answer
       printf "\n\n"
