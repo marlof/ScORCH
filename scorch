@@ -129,7 +129,7 @@
 ## 1.48 180912    marc   Jenkins build test
 ##                       #51 IsAlreadyRunning function created for background file jobs
 ## 1.49 180922    marc   Improvement to #51
-##                       #55 Fixing "." in menus - issue not reproduced
+##                       #55 Fixing "." errors in range calls
 ##                       #56 Double "A" in Specific Job Menu - Admin option removed 
 ##                       #57 Rules Engine checks
 ## Determine the program name and the running directory

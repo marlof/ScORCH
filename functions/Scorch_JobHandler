@@ -838,6 +838,11 @@ fn_Transition()
   arr_Answer=$(fn_Range "${str_Answer}")
   if [ "${arr_Answer}" != "x " ] ; then
     for int_Choice in ${arr_Answer} ; do
+      if ! fn_IsNumber "${int_Choice}" ; then
+        printf " Number ranges required not <${int_Choice}>"
+        fn_PressEnter
+        return 0 
+      fi
 	    if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
         printf "Out of range" 
         fn_PressEnter
