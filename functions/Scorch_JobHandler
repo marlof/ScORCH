@@ -626,7 +626,8 @@ Task()
   typeset local   str_Task2=${3}
   typeset local str_AltTask=
 
-  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
+#  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
+  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) | tee -a \"\${file_Log}\"" >> "${file_Job}"
   ##[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
 
   if [[ "${b_Background}" ]] ; then
@@ -645,7 +646,8 @@ Task()
     str_CheckTask="fn_CheckTask \$? \${int_StartTask};"
   fi
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
-  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+#  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   (( int_TaskCount++ ))
 }
 readonly -f Task
