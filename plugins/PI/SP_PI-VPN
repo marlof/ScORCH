@@ -1,0 +1,412 @@
+SP_PI-VPN()
+{
+  # Set up a home VPN
+  GetVar -pattern "Download" -name DOWNLOAD -default "" -upper # TRUE | FALSE | NULL
+
+  Task "ifconfig"
+  Task "_INET_FULL=\$(ifconfig | grep "inet " | head -1)"
+  Task "INET=\$(echo ${_INET_FULL#*addr:})"
+  Task "BCAST=\$(echo ${_INET_FULL#*Bcast:})"
+  Task "MASK=\$(echo ${_INET_FULL#*Mask:})"  Task "echo Instructions from http://www.bbc.co.uk/news/technology-33548728"
+  pauseTask 60
+
+}
+
+ifconfig()
+{
+echo "eth0      Link encap:Ethernet  HWaddr b8:27:eb:43:7f:9c
+          inet addr:192.168.0.32  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::ceff:ec81:4de3:56b8/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:75252 errors:0 dropped:135 overruns:0 frame:0
+          TX packets:3697 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:4352754 (4.1 MiB)  TX bytes:291641 (284.8 KiB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:200 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:200 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:16656 (16.2 KiB)  TX bytes:16656 (16.2 KiB)"
+}
+
+
+fn_GetIF()
+{
+  _INET_FULL=$(ifconfig | grep "inet " | head -1)
+  INET=$(echo ${_INET_FULL#*addr:} | cut -d" "  -f1)
+  BCAST=$(echo ${_INET_FULL#*Bcast:} | cut -d" " -f1)
+  MASK=$(echo ${_INET_FULL#*Mask:})
+  echo "Instructions from http://www.bbc.co.uk/news/technology-33548728"
+}
+
+
+fn_GetIP()
+{
+  _INET_FULL=$(ip -4 -o addr | grep -v "lo *inet" | head -1)
+  INET=$(echo ${_INET_FULL#*inet } | cut -d" "  -f1 | cut -d"/" -f1)
+  BCAST=$(echo ${_INET_FULL#*brd } | cut -d" " -f1)
+  MASK=$(echo ${_INET_FULL#*inet } | cut -d" " -f1 | cut -d"/" -f2)
+  MASK=$(cdr2mask ${MASK})
+}
+
+cdr2mask ()
+{
+   # Number of args to shift, 255..255, first non-255 byte, zeroes
+   set -- $(( 5 - ($1 / 8) )) 255 255 255 255 $(( (255 << (8 - ($1 % 8))) & 255 )) 0 0 0
+   [ $1 -gt 1 ] && shift $1 || shift
+   echo ${1-0}.${2-0}.${3-0}.${4-0}
+}
+
+
+help()
+{
+ip -4 maddress
+
+ip -o -4 a | grep -v 
+
+
+echo 'Instructions
+#N.B. If you have trouble getting the NOOBS installation manager to work, you can also install Raspbian by copying the disk image of the operating system onto your micro SD card. Follow the #instructions at https://www.raspberrypi.org/downloads/ to do this.
+#Change the default password
+#Before you go any further, make sure you change the default password, or anyone who knows the default will be able to access your home network.
+#You can do this from the options screen you are shown the first time you boot up your Raspberry Pi after Raspbian is installed.
+#When you next reboot your Raspberry Pi the login will be pi and the password whatever you have set.#
+#
+#Give your Raspberry Pi a static IP address
+#The IP address is what tells devices where to find your Raspberry Pi on your home network.
+#Networks usually issue a dynamic IP address, which can change each time you power up the device. If you want to be able to consistently connect to your Raspberry Pi from outside your home #network you need to fix its IP address so that it is always the same - a static IP address.
+#Connect your Raspberry Pi to your router with an Ethernet cable.
+#At command prompt type:
+#ifconfig
+#A bunch of information will come up and you need to note down what it says for your set against the following:
+#inet addr [Current IP Address]
+#bcast [Broadcast Range]
+#mask [Subnet Mask]
+#Next at the command prompt type:
+#sudo route -n
+#This tells you information about your router. Note down:
+#Gateway
+#Destination
+#You now have all the information you need about your current IP set up and can edit the network configuration file to make the IP static.
+#At command prompt type:
+#sudo nano /etc/network/interfaces
+#Look for the line that reads 
+
+#iface eth0 inet dhcp     or iface eth0 inet manual
+
+#The dhcp bit is requesting a dynamic IP or if your file says manual it is a manual setting, so use the arrow keys on your keyboard to move the cursor so you can delete this and replace it with #static.
+#Next put your cursor at the end of this line and hit Enter, then add the following lines directly below the line you just altered, filling the [square brackets] with the information you just noted down.
+#address [your current IP address]
+#netmask [your subnet mask]
+#network [your destination]
+#broadcast [your broadcast range]
+#gateway [your gateway]
+#To save the file press CTRL and X together, when prompted to save type y and hit Enter to accept the file name without changing it.
+#At the command prompt type:
+#sudo reboot
+#Your Raspberry Pi will now restart with the new, static IP address.
+
+#Set up an easy control system
+#To save switching around cables if you do not have a spare HDMI monitor and keyboard you can download a free utility that lets you control your Raspberry Pi through a pop up window on another computer.
+#This is called an SSH. The tool is called PuTTY (j.mp/DLPutty).
+#Double click the PuTTY.exe file you download and it opens a dialogue box where you can enter the new static IP address you have given your Raspberry Pi. The first time you do this it will ask you to confirm accessing the device.
+#You can now login and do everything you need to through this dialogue box on your computer, which means your Raspberry Pi never needs a monitor or keyboard to keep running. This is known as running it headless.
+#Update your Raspberry Pi
+#One last piece of housekeeping to ensure you are running the latest software and drivers.
+#At command prompt type:
+#sudo apt-get update
+#Wait for the updates to finish downloading and then type:
+#sudo apt-get upgrade
+#Wait until the upgrade completes.
+#You are now ready to make your VPN
+#The Raspbian operating system we just installed comes with OpenVPN ready to unpack, which is the software we will be using to make our VPN.
+#At command prompt type:
+#sudo apt-get install openvpn
+#You will be asked to confirm your instruction then the software will be unpacked and installed.
+
+#Generating keys#
+#Just like the unique key that unlocks your front door, your VPN needs keys generated to make sure that only authorised devices can connect to it.
+#OpenVPN comes with Easy_RSA, a simple package for using the RSA encryption method to generate your unique keys.
+#The next series of commands need to be done in the root directory. You will notice at the moment the command prompt sits in a directory labelled as pi@raspberrypi: ~ $.
+#Typing sudo before a command tells the operating system to execute the command in the root directory, but if you want to save yourself some typing you can go ahead and type:
+#sudo -s
+#You will now see your command prompt sits at root@raspberrypi:
+#Now, at the command type on one line:
+#cp -r /usr/share/doc/openvpn/examples/easy-rsa/2.0 /etc/openvpn/easy-rsa
+#Make sure you have spaces in the right places (before /usr and /etc). This instruction copies all of the files from the easy-rsa 2.0 directory into a directory in your openvpn installation.
+#N.B. You can copy lines of text using right-click and then when you right click inside the PuTTY window it should paste, saving you a lot of typing. Be aware though, some formatting errors can occur when copying and pasting large blocks of text so if you do not get the result you are expecting, resort to typing the details in by hand.
+#Next type:
+#cd /etc/openvpn/easy-rsa
+#This changes the directory your command prompt sits at to your openvpn/easy-rsa directory.
+#You now need to edit the text in the file we just copied over. Nano is a simple text editor in Raspbian you are going to see a lot of over the next few pages. To open the file inside this text editor type:
+#nano /etc/openvpn/easy-rsa/vars
+#In the text that opens find the line that begins: export EASY_RSA=
+#You need to move the cursor down to edit this line to read:
+#export EASY_RSA=/etc/openvpn/easy-rsa
+#N.B. Make sure you remove any extraneous speech marks as anything other than the exact text above here will stop your keys from saving in the right place.
+#Next move your cursor down until you see the line: export KEY_SIZE=1024
+#If you want to be extra secure you can change the value here to 2048 bit encryption, although the key you eventually build will take significantly longer to generate. If you choose to do this edit that line to read:
+#export KEY_SIZE=2048
+#Keep scrolling to the end of the file and you will see a bunch of export parameters such as Country, Province and City etc. You can choose to change these to set new defaults (this will potentially save you some typing in various later stages), but doing so will not affect the workings of your VPN.
+#Type CTRL and X then Y then ENTER to save this file.
+#Build your certificates
+#You are now set up to build the certificates your VPN will use to grant authority to devices you want to connect with. To open the easy-rsa directory, at the command prompt type:
+#cd /etc/openvpn/easy-rsa
+#Next type:
+#source ./vars
+#This loads the vars document you edited earlier.
+#Next type:
+#./clean-all
+#This will remove any previous keys in the system.
+#Next type:
+#./build-ca
+#This final line builds your certificate authority. The Raspberry Pi will now ask you to complete some additional export values, like Country, Province, City, Organisation etc. (if you changed these in the previous stage you will see your own choices already set as default).
+#It is not necessary for these values to be accurate so just hit Enter each instance to use default value if you are feeling slack.
+#Name the server
+#Once you have entered through the fields and returned to the command prompt you need to name your server. Call it whatever you like but do not forget it.
+#Type:
+#./build-key-server [ServerName]
+#… replacing [ServerName] with your choice of name.
+#You will now be given some more fields to enter values. You can change these or leave them as the defaults, but pay attention to three fields:
+#Common Name MUST be the server name you picked.
+#A challenge password? MUST be left blank.
+#Sign the certificate? [y/n] Obviously, you must type y.
+#Finally when prompted with the question:
+#1 out of 1 certificate requests certified, commit? [y/n]
+#Type y
+#Build keys for each user
+#Your server is now set up and you need to build keys for all the devices you want to be able to connect.
+#You can cut corners here and just build one key to use on all devices. Only one device can connect using each key at a time though, so if you want simultaneous connections you will need a different key for each one.
+#To assign a user a key type:
+#./build-key-pass [UserName]
+#… substituting the [UserName] with your desired text - for example to make a key to connect my android to the VPN I chose the name KateAndroid
+#You will get some more prompts now:
+#Enter PEM pass phrase
+#… choose a password you will remember! It asks you to input this twice to eliminate errors.
+#A challenge password? MUST be left blank.
+#Sign the certificate? [y/n]
+#Hit y
+#Next type:
+#cd keys
+#then (using my example username, which you should change for your own):
+#openssl rsa -in KateAndroid.key -des3 -out KateAndroid.3des.key
+#This last line adds an extra layer of encryption to make it harder for hackers to break in.
+#You will be asked to enter pass phrase for KateAndroid.key - this is the phrase you entered in the previous step.
+#You will then be asked to enter and repeat a new PEM pass phrase for the des3 key. I used the same pass phrase for both so you only have one to remember. You will need the 3des.key pass phrase #at the end of this process when you import your files to your devices.
+#Repeat these steps for all the usernames you want to build a key for.
+#You have now created your client certificates. Type:
+#cd ..
+#Generate the Diffie-Hellman key exchange.
+#This is the code that lets two entities with no prior knowledge of one another share secret keys over a public server. Type:
+#./build-dh
+#The screen will slowly fill with dots as the key is built from random numbers. It will take at least an hour if you upped your encryption to 2048-bit. If you left it at 1024-bit it could take #as little as five minutes.
+#Denial of Service (DoS) attack protection
+#OpenVPN protects against this kind of attack by generating a static pre-shared hash-based message authentication code (HMAC) key. This means the server will not try to authenticate an access #request if it does not detect this key. To generate the static HMAC key type:
+#openvpn --genkey --secret keys/ta.key
+#N.B. If you are using copy and paste it probably will not work on this line as the double - seems not to translate in the same way if you do not type it in.
+#Configuring your server
+#Now you have created all the locks and keys you need to tell your Raspberry Pi where you want to put the doors and who you want to give the keys to - essentially instructing the OpenVPN which #keys to use, where you are going to be connecting from and which IP address and port to use.
+#To do this you must create a server configuration file. At command prompt type:
+#nano /etc/openvpn/server.conf
+#This opens an empty file.
+#Fill it with this text, taking care to change the details where indicated with a comment in # CAPS LOCK. (Placing a # in front of a sentence in the code like this tells the system it is a #comment and to ignore it when building the program). Also when changing the YOUR SERVER NAME sections I refer to the server name that was given to the build-key-server command earlier on.
+#local 192.168.2.0 # SWAP THIS NUMBER WITH YOUR RASPBERRY PI IP ADDRESS
+#dev tun
+#proto udp
+#port 1194
+#ca /etc/openvpn/easy-rsa/keys/ca.crt
+#cert /etc/openvpn/easy-rsa/keys/XX.crt # SWAP XX WITH YOUR SERVER NAME
+#key /etc/openvpn/easy-rsa/keys/XX.key # SWAP XX WITH YOUR SERVER NAME
+#dh /etc/openvpn/easy-rsa/keys/dh1024.pem # IF YOU CHANGED YOUR ENCRYPTION TO 2048, CHANGE THAT HERE
+#server 10.8.0.0 255.255.255.0
+## server and remote endpoints
+#ifconfig 10.8.0.1 10.8.0.2
+## Add route to Client routing table for the OpenVPN Server
+#push route 10.8.0.1 255.255.255.255
+## Add route to Client routing table for the OpenVPN Subnet
+#push route 10.8.0.0 255.255.255.0
+## your local subnet
+#push route 192.168.0.10 255.255.255.0 # SWAP THE IP NUMBER WITH YOUR RASPBERRY PI IP ADDRESS
+## Set primary domain name server address to the SOHO Router
+## If your router does not do DNS, you can use Google DNS 8.8.8.8
+#push dhcp-option DNS 192.168.0.1 # THIS SHOULD ALREADY MATCH YOUR OWN ROUTER ADDRESS AND SHOULD NOT NEED TO BE CHANGED
+## Override the Client default gateway by using 0.0.0.0/1 and
+## 128.0.0.0/1 rather than 0.0.0.0/0. This has the benefit of
+## overriding but not wiping out the original default gateway.
+#push redirect-gateway def1
+#client-to-client
+#duplicate-cn
+#keepalive 10 120
+#tls-auth /etc/openvpn/easy-rsa/keys/ta.key 0
+#cipher AES-128-CBC
+#comp-lzo
+#user nobody
+#group nogroup
+#persist-key
+#persist-tun
+#status /var/log/openvpn-status.log 20
+#log /var/log/openvpn.log
+#verb 1
+#Hit CTRL and X then Y and ENTER to save.
+#There is one last edit to make in the server configuration files to make sure your Raspberry Pi knows you want it to forward Internet traffic through our new network.
+#Type:
+#nano /etc/sysctl.conf
+#Near the top it says, Uncomment the next line to enable packet forwarding for IPv4.
+#You want to remove the # from the start of the next line to inform OpenVPN you want it to take that text into consideration.
+#The line should then read:
+#net.ipv4.ip_forward=1
+#Hit CTRL and X, then Y and ENTER to save.
+#Finally you need to action the change you just made in the sysctl.conf file. To do this type:
+#sysctl -p
+#You have now made a functioning server that can access the internet.
+#Pass through the firewall
+#Raspbian has a built-in firewall that will block incoming connections, so we need to tell it to allow traffic from OpenVPN to pass through.
+#To create a file that will run each time you start up your Raspberry Pi issuing this permission type:
+#nano /etc/firewall-openvpn-rules.sh
+#Inside this new file type:
+##!/bin/sh
+#iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j SNAT --to-source 192.168.0.10
+## SWAP THE IP NUMBER WITH YOUR RASPBERRY PI IP ADDRESS
+#CTRL and X then Y and ENTER to save.
+#Newly created files are not executable by default, so we will need to change the permissions and ownership of this file you just created. To do this type:
+#chmod 700 /etc/firewall-openvpn-rules.sh
+#then:
+#chown root /etc/firewall-openvpn-rules.sh
+#This script gives OpenVPN permission to breach the firewall and we now need to add it into the interfaces setup code so it runs on boot. Type:
+#nano /etc/network/interfaces
+#Find the line that says: iface eth0 inet static. We want to add a line below the list of numbers that follow it. This line needs to be added at an indent so hit TAB first:
+#pre-up /etc/firewall-openvpn-rules.sh
+#CTRL and X then Y and ENTER to save.
+#Finally, reboot your Raspberry Pi by typing:
+#Reboot
+#N.B. Each time you reboot your Raspberry Pi you will need to relaunch PuTTY to connect to it.
+#Ensure you have a static public IP address
+#We have created locks and keys for devices to use to connect to your VPN, but before we hand those keys out we need to tell them where to find the front door. This is your public IP address,# #which should be kept a secret as it identifies your location on the internet.
+#You can find out your public IP by asking Google. Just type whats my IP address? into the search box.
+#If this address changes each time you log on you do not have a static IP address so will need to use a dynamic domain name system (DDNS) service to give yourself a domain name to put in place #of the IP address.
+#There is a free service at https://www.changeip.com Then on your Raspberry Pi, you need to run something called DDclient to update your DDNS registry automatically.
+#At the command prompt type:
+#sudo apt-get install ddclient
+#This will launch a wizard for configuring ddclient. Dont worry too much about what you enter here as we will be entering the config file straight away.
+#To edit the DDClient configuration with the correct setting type:
+#sudo nano /etc/ddclient.conf
+#Every service will have slightly different configuration, - if you are using changeip.com this blog post will tell you how to edit your settings successfully #https://blogdotmegajasondotcom.wordpress.com/2011/03/14/use-ddclient-with-changeip-com/
+#CTRL and X then Y and ENTER to save.
+#Finally, to set this program running type:
+#sudo ddclient
+#N.B. If you reboot your Raspberry Pi youll need to type sudo ddclient to start running it again.
+#Create profile scripts for the devices you want to connect
+#We have created keys for clients (computers and devices) to use to connect to your VPN, but we have not told the clients where to find the server, how to connect, or which key to use.
+#If you created several different client keys for each of the devices you want to grant access, it would be a lot of trouble to generate a new configuration file for each client from scratch.
+#Luckily Eric Jodoin of the SANS institute has written a script to generate them automatically.
+#First type:
+#sudo nano /etc/openvpn/easy-rsa/keys/Default.txt
+#Fill in the blank text file with the following:
+#client
+#dev tun
+#proto udp
+#remote [YOUR PUBLIC IP ADDRESS] 1194 #REPLACE YOUR DYNAMIC DNS VALUE FROM CHANGEIP.COM
+#resolv-retry infinite
+#nobind
+#persist-key
+#persist-tun
+#mute-replay-warnings
+#ns-cert-type server
+#key-direction 1
+#cipher AES-128-CBC
+#comp-lzo
+#verb 1
+#mute 20
+#CTRL and X then Y and ENTER to save.
+#Next, to create the script that makes your profile keys type:
+#nano /etc/openvpn/easy-rsa/keys/MakeOVPN.sh
+#In this file you need to add the text that Jodoin wrote to create the script:
+##!/bin/bash
+## Default Variable Declarations
+#DEFAULT=Default.txt
+#FILEEXT=.ovpn
+#CRT=.crt
+#KEY=.3des.key
+#CA=ca.crt
+#TA=ta.key
+##Ask for a Client name
+#echo Please enter an existing Client Name:
+#read NAME
+##1st Verify that clients Public Key Exists
+#if [ ! -f $NAME$CRT ]; then
+#echo [ERROR]: Client Public Key Certificate not found: $NAME$CRT
+#exit
+#fi
+#echo Clients cert found: $NAME$CR
+##Then, verify that there is a private key for that client
+#if [ ! -f $NAME$KEY ]; then
+#echo [ERROR]: Client 3des Private Key not found: $NAME$KEY
+#exit
+#fi
+#echo Clients Private Key found: $NAME$KEY
+##Confirm the CA public key exists
+#if [ ! -f $CA ]; then
+#echo [ERROR]: CA Public Key not found: $CA
+#exit
+#fi
+#echo CA public Key found: $CA
+##Confirm the tls-auth ta key file exists
+#if [ ! -f $TA ]; then
+#echo [ERROR]: tls-auth Key not found: $TA
+#exit
+#fi
+#echo tls-auth Private Key found: $TA
+##Ready to make a new .opvn file - Start by populating with the default file
+#cat $DEFAULT > $NAME$FILEEXT
+##Now, append the CA Public Cert
+#echo "<ca>" >> $NAME$FILEEXT
+#cat $CA >> $NAME$FILEEXT
+#echo "</ca>" >> $NAME$FILEEXT
+##Next append the client Public Cert
+#echo "<cert>" >> $NAME$FILEEXT
+#cat $NAME$CRT | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> $NAME$FILEEXT
+#echo "</cert>" >> $NAME$FILEEXT
+##Then, append the client Private Key
+#echo "<key>" >> $NAME$FILEEXT
+#cat $NAME$KEY >> $NAME$FILEEXT
+#echo "</key>" >> $NAME$FILEEXT
+##Finally, append the TA Private Key
+#echo "<tls-auth>" >> $NAME$FILEEXT
+#cat $TA >> $NAME$FILEEXT
+#echo "</tls-auth>" >> $NAME$FILEEXT
+#echo "Done! $NAME$FILEEXT Successfully Created."
+##Script written by Eric Jodoin
+#\ No newline at end of file
+#CTRL and X then Y and ENTER to save.
+#N.B. I was not able to successfully copy and paste the entire script accurately in one go, but taking it one section at a time worked no problem).
+#Next you need to give this script permission to run. Type:
+#cd /etc/openvpn/easy-rsa/keys/
+#The to give it root privileges type:
+#chmod 700 MakeOVPN.sh
+#Finally, execute the script with:
+#./MakeOVPN.sh
+#As it runs, it will ask you to input the usernames names of the clients for you generated keys for earlier (in my case KateAndroid). Type that when prompted and you should see the line:
+#Done! KateAndroid.ovpn Successfully Created.
+#Repeat this step for each additional username you added client.
+#Export your client keys for use on the connecting devices
+#You now need to copy those keys onto the devices you want to use them. If you are using PuTTY on a Windows machine you can use a software package called WinSCP to do this. For Mac, try Fugu.
+#First, to grant yourself read/write access to the folder at the command prompt type:
+#chmod 777 /etc/openvpn
+#chmod 777 /etc/openvpn/easy-rsa
+#chmod 777 /etc/openvpn/easy-rsa/keys
+#chmod 777 /etc/openvpn/easy-rsa/keys/[ClientName].ovpn
+#Be sure to undo this when youre done copying files by typing:
+#chmod 600 /etc/openvpn
+#and repeating for each step with the chmod 600 command, which removes read/write access again.
+#You can now launch the software you are using to copy the files off your Raspberry Pi to navigate to the openvpn folder and copy the files labelled "KateAndroid.ovpn" etc.
+#You can also open the command prompt on the machine in your network you would like to copy the files to and type:
+#scp pi@[ip-address-of-your-pi]:/etc/openvpn/easy-rsa/keys/[ClientName].ovpn [ClientName].ovpn
+#Install the OpenVPN Connect app on your device
+#You are now ready to download and install the OpenVPN Connect app on your Android or iPhone - they are available through the stores as a free download. You will need to import the profile keys #you just made as the final piece of the VPN connection puzzle.
+#When prompted for a pass phrase here it is the 3des.key one you will need to enter.
+#'
+}

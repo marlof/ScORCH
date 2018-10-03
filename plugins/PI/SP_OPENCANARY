@@ -1,0 +1,25 @@
+SP_OPENCANARY()
+{
+  Task "netstat -plutn"
+  Task "netstat -plut"
+  Task "sudo service --status-all"
+  Task "sudo systemctl disable avahi-daemon"
+  Task "sudo systemctl disable bluetooth"
+  Task "sudo systemctl disable rsync"
+  Try  "sudo systemctl disable motion"
+  Task "sudo apt-get update"
+  Task "sudo apt-get --assume-yes install git python-virtualenv python-pip python-dev libssl-dev libffi-dev samba"
+  Task "virtualenv -p python2 canary-env"
+  Manual "Run the following commands to create and use a Python virtual environment
+  source ./canary-env/bin/activate
+  git clone https://github.com/thinkst/opencanary
+  cd opencanary
+  python setup.py install"
+  Task "sudo mkdir -p /etc/opencanaryd"
+  Task "sudo cp ~/opencanary/opencanary/data/settings.json /etc/opencanaryd/opencanary.conf"
+  Task "cat /etc/opencanaryd/opencanary.conf"
+  Task "sudo cp /etc/opencanaryd/opencanary.conf /etc/opencanaryd/opencanary.conf.orig"
+  Manual "Open the following file and change all true values with false execpt telnet 23 true
+  sudo vi /etc/opencanaryd/opencanary.conf"
+  Task "cp ~/opencanary/bin/opencanary.tac ~/canary-env/bin/."
+}

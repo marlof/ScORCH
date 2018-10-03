@@ -1,0 +1,48 @@
+SP_DEMO-KEYPAIR()
+{
+  # Use   GetVar   to pass your own key pair values to the plugin
+  # =============================================================
+  GetVar -pattern "Pause" -name "PAUSE" -default "60" # Task will pause for (x) seconds
+  GetVar -pattern "Fail"  -name "FAIL"  -default "0" # Fails a task if value is 1 
+  
+  # Use   Task    to run a command
+  # ==============================
+  Task "hostname"
+  
+  # Use values you get for free or passed via GetVar key pairs
+  # ==========================================================
+  Task "sleep ${PAUSE}"
+  Manual "Testing VAR"
+  GetVar -pattern "Key" -name "KEY"
+
+  [[ -z $KEY ]] && echo "Need a KEY pair" && return 1
+  
+  # Use   OR "<other task>"   to run another command if the first Task fails
+  # ========================================================================
+  Task "printf \${RANDOM:4}" OR "echo RANDOM failed"
+  
+  # Task "false" can be used to force a failure  
+  # ===========================================
+  if [ ${FAIL} -ne 0 ] ; then
+    Task "false"
+  fi
+
+  # Prerequisite jobs can be called using "LABEL:" and "PARENT:"
+  # ============================================================
+  # System : DEMO
+  # Action : HOSTNAME
+  # Label  : ABC
+  #
+  # System : DEMO
+  # Action : RANDOM
+  # Parent : ABC
+  echo "${PARENT_LIST}" ; sleep 2
+  if [[ ! -z ${PARENT_LIST} ]] ; then
+    for str_EachParent in ${PARENT_LIST} ; do
+      Task "echo parent ${str_EachParent}"
+    done
+  fi
+  [[ ! -z ${LABEL}       ]] && Task "echo the label of the action is ${LABEL}"
+  
+  Task "df -k"
+}

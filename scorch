@@ -133,9 +133,10 @@
 ##                       #56 Double "A" in Specific Job Menu - Admin option removed 
 ##                       #57 Rules Engine checks
 ##                       #58 output redirect changed to tee -a
+## 1.50 181001    marc   #59 Improvement to memory shm link
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.49"
+typeset str_ProgramVersion="1.50"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -202,11 +203,12 @@ typeset         dir_Tmp="${dir_Base}/tmp/"
 
 ## Memory tmp files for multi scorch use system
 typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
-mkdir -p ${dir_Memory}  2>/dev/null
+mkdir -p  ${dir_Memory} 2>/dev/null
 chmod 775 ${dir_Memory} 2>/dev/null
-[[ ! -L ${dir_Base}/tmp/memory ]] && ln -s ${dir_Memory} ${dir_Base}/tmp/memory
 
-typeset dir_Tmp=${dir_Base}/tmp/memory/
+typeset         dir_Tmp=${dir_Base}/tmp/memory/
+[[ ! -L ${dir_Base}/tmp/memory ]] && ln -s ${dir_Memory} ${dir_Tmp}
+
 typeset     dir_Plugins="${dir_Base}/plugins"
 typeset     str_Plugins="$(basename "${dir_Plugins}")"
 typeset   dir_Functions="${dir_Base}/functions"

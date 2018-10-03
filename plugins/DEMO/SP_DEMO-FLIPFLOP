@@ -1,0 +1,27 @@
+SP_DEMO-FLIPFLOP()
+{
+  GetVar -pattern "Fail" -name FAIL -default ""
+  Task "echo The first group will fail until the second group has run"
+  Task "sleep 10"
+
+  StartGroup
+    Task "sleep 5 ; rm /tmp/demo1"
+    Task "sleep 8 ; touch /tmp/demo1"
+    Task "sleep 3 ; rm /tmp/demo2"
+    Task "sleep 9 ; touch /tmp/demo2"
+    (( FAIL==1 )) && Task "false"
+  EndGroup
+  
+  Task "sleep 15"
+  
+  StartGroup
+    Task "sleep 9 ; touch /tmp/demo3"
+    Task "sleep 3 ; rm /tmp/demo4"
+    Task "sleep 9 ; touch /tmp/demo4"
+    Task "sleep 4 ; rm /tmp/demo3"
+    Task "sleep 10"
+  EndGroup
+
+  Task "sleep 5"
+
+}
