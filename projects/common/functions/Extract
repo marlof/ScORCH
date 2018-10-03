@@ -1,0 +1,100 @@
+#!/bin/bash
+Message(){ echo INFO :  $@;}
+Verbose(){ (( b_Verbose == 1)) && echo DEBUG:  $@;}
+Error(){   echo ERROR:  $@;exit 1;}
+
+Extract_Help()
+{
+  typeset local EXIT=${1:0}
+  echo "$FUNCNAME: -f <file> [-d <Destination>] [-v]| -h "
+  Message "#sudo apt-get install unzip"
+  Message "#sudo apt-get install zip"  
+  return ${EXIT}
+}
+
+Extract()
+{
+  DEST=.
+  typeset local FILE= DEST= b_Verbose= str_FileType= RC=
+  while [ $# -gt 0 ] ; do
+    str_Arg="${1}"
+    case ${str_Arg} in
+      -v | --verbose  ) b_Verbose=1       ;;
+      -h | --help     ) Extract_Help      ;;
+      -f | --file     ) shift ; FILE=$1   ;;	
+      -d | --dest*    ) shift ; DEST=$1   ;; 
+      *               ) Extract_Help 1 ; break   ;;
+    esac
+	shift
+  done
+  
+  [[ -z $DEST ]] && DEST=$(pwd)
+  Verbose "Default destination set ($DEST)"
+  
+  Verbose "Check the file ($FILE) is readable"
+  [[ -r ${FILE} ]] || Error "File ($FILE) is not readable"
+  
+  Verbose "Check the destination ($DEST) is writeable"
+  [[ -w ${DEST} ]] || Error "Destination ($DEST) is not writeable"
+
+  Message "Extract files"
+  O_PWD=$(pwd)
+  cd "${DEST}"
+  str_FileType=$(file ${FILE} | cut -d" " -f2-3)
+  Verbose "FileType <${str_FileType}>"
+  case ${str_FileType} in
+    gzip?*compressed  ) cp -f ${FILE} ${DEST} ; gunzip ${DEST}/$(basename ${FILE}) ; RC=$? ;;
+	POSIX?*tar        ) tar xvf      ${FILE} -C ${DEST}      ; RC=$? ;;
+	compress?*data    ) uncompress   ${FILE}                 ; RC=$? ;;
+	Zip?*archive      ) unzip        ${FILE}                 ; RC=$? ;;
+	cpio?*archive     ) cpio -idv  < ${FILE} 		         ; RC=$? ;;
+	*                 ) echo unknown ${FILE}                 ; RC=1  ;;
+	
+  esac
+  cd ${O_PWD}
+  Verbose "Return code = ${RC}"
+}
+
+#set
+#env
+
+# If called as script then call the function
+[[ ! -z ${BASH_SOURCE} ]] &&  Extract $@  
+  
+  # File archive and compressed formats
+  # Archive only
+  # a ar    archive
+  # cpio    cpio							ls [<file>] | cpio -ov > <file>.cpip   cpio -iv < <file>
+  # shar    shell
+  # lbr	    lbr
+  # mar
+  # tar                                     tar cvf <file>.tar   tar tvf <file>.tar
+  
+  # Compression Only
+  # bz2
+  # F
+  # gz                                      gzip <file>          gzip -t <file>.gz              "gzip compressed"
+  # lz
+  # lzma
+  # lzo
+  # rz
+  # z       deflate
+  # Z       compress
+  
+  # Mixed
+  # 7z
+  # s7z
+  # ace
+  # afa
+  # alz
+  # apk
+  # arc
+  # arj
+  # b1
+  # ba
+  # ear
+  # jar
+  # tar.gz tgz tar.Z tar.bz2 tbz2           tar tvfz <file>      tar cvfz <file>.tar.gz        "gzip compressed, from Unix"
+  # war
+  # zip zipx								zip -T <file>        zip <file>.zip <file>         "Zip archive"
+  

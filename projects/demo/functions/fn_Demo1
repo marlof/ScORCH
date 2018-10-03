@@ -1,0 +1,5 @@
+fn_Demo1()
+{
+  Message "Sleeping for $TIME seconds"
+  sleep $TIME
+}

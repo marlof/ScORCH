@@ -1,0 +1,28 @@
+#DEF hostname	project		site	environment	function	owner
+host1			DEMO		uk1		DEV1		SCORCH		devlead
+host1			DEMO		uk1		DEV2		SCORCH		devlead
+host2			DEMO		uk1		DEV2		SCORCH		devlead
+
+host1			DEMO    	uk1		ST1			SCORCH		marc
+host2			DEMO		uk1		ST1			SCORCH		marc
+host3			DEMO		uk1		ST1			SCORCH		marc
+host4			DEMO		uk1		ST1			SCORCH		marc
+
+host1			DEMO    	uk1		ST2			SCORCH		marc
+host2			DEMO		uk1		ST2			SCORCH		marc
+host3			DEMO		uk1		ST2			SCORCH		marc
+host4			DEMO		uk1		ST2			SCORCH		marc
+
+host1			DEMO    	uk1		QA1			SCORCH		testlead
+host2			DEMO		uk1		QA1			SCORCH		testlead
+host1			DEMO		uk2		QA1			SCORCH		testlead
+host2			DEMO		uk2		QA1			SCORCH		testlead
+
+host1			DEMO    	uk1		PROD1		SCORCH		testlead
+host2			DEMO		uk1		PROD1		SCORCH		testlead
+host1			DEMO		uk2		PROD1		SCORCH		testlead
+host2			DEMO		uk2		PROD1		SCORCH		testlead
+host1			DEMO		uk3		PROD1		SCORCH		testlead
+host2			DEMO		uk3		PROD1		SCORCH		testlead
+
+localhost		DEMO		-		DEV			-			marc

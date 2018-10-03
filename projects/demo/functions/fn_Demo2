@@ -1,0 +1,6 @@
+fn_Demo2()
+{
+  [[ "$FLAG" ]] && Message "FLAG set" || Message "Not FLAG"
+  Message "Sleep set at $TIME seconds"
+  sleep $TIME
+}

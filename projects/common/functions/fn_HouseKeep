@@ -1,0 +1,17 @@
+fn_HouseKeep()
+{
+  # Use passed parameters of use defaults
+  DAYS=${DAYS:-90}
+  ENV=${ENV:-localhost}
+
+  # Make a CMDB call to determine all hosts in the ENV
+  HOSTS=$(scorchdb -hostname +environment ${ENV})
+
+  # Loop for all the returned hosts and run the command
+  Message "Checking for log files older than ${DAYS} days.\n"
+  for EACH_HOST in ${HOSTS} ; do
+    Message "Processing logs on ${EACH_HOST}"
+    ssh $EACH_HOST find ${LOG_DIR} -name *.log -ctime +${DAYS} -exec gzip {} \;
+  done
+}
+

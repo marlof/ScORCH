@@ -1,0 +1,33 @@
+#DEF hostname	project		site	environment	function	owner
+localhost                       COMMON          uk1             localhost       DEMO            marc
+
+# DEV1
+uk1-dev-host1			COMMON		uk1		DEV1		SCORCH		devlead
+uk1-dev-host1			COMMON		uk1		DEV2		SCORCH		devlead
+uk1-dev-host2			COMMON		uk1		DEV2		SCORCH		devlead
+
+# System test 1
+uk1-st1-host1			COMMON    	uk1		ST1			SCORCH		marc
+uk1-st1-host2			COMMON		uk1		ST1			SCORCH		marc
+uk1-st1-host3			COMMON		uk1		ST1			SCORCH		marc
+uk1-st1-host4			COMMON		uk1		ST1			SCORCH		marc
+
+# System test 2
+uk1-st2-host1			COMMON    	uk1		ST2			SCORCH		marc
+uk1-st2-host2			COMMON		uk1		ST2			SCORCH		marc
+uk1-st2-host3			COMMON		uk1		ST2			SCORCH		marc
+uk1-st2-host4			COMMON		uk1		ST2			SCORCH		marc
+
+# Quality Assurance dual site
+uk1-qa1-host1			COMMON    	uk1		QA1			SCORCH		testlead
+uk1-qa1-host2			COMMON		uk1		QA1			SCORCH		testlead
+uk1-qa1-host3			COMMON		uk2		QA1			SCORCH		testlead
+uk1-qa1-host4			COMMON		uk2		QA1			SCORCH		testlead
+
+# Production dual site with failover
+uk1-host1			COMMON    	uk1		PROD1		SCORCH		testlead
+uk1-host2			COMMON		uk1		PROD1		SCORCH		testlead
+uk1-host1			COMMON		uk2		PROD1		SCORCH		testlead
+uk1-host2			COMMON		uk2		PROD1		SCORCH		testlead
+uk1-host1			COMMON		uk3		PROD1		SCORCH		testlead
+uk1-host2			COMMON		uk3		PROD1		SCORCH		testlead
