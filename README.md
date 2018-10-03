@@ -1,5 +1,5 @@
-ScORCH
-======
+ScORCH Suite
+============
 
 DevOps Software Orchestration
 
