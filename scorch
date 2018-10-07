@@ -134,9 +134,11 @@
 ##                       #57 Rules Engine checks
 ##                       #58 output redirect changed to tee -a
 ## 1.50 181001    marc   #59 Improvement to memory shm link
+## 1.51 181004    marc   #60 showline improved output for CR
+##                       #59 Improved for first install
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.50"
+typeset str_ProgramVersion="1.51.2"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -206,8 +208,13 @@ typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
 mkdir -p  ${dir_Memory} 2>/dev/null
 chmod 775 ${dir_Memory} 2>/dev/null
 
-typeset         dir_Tmp=${dir_Base}/tmp/memory/
-[[ ! -L ${dir_Base}/tmp/memory ]] && ln -s ${dir_Memory} ${dir_Tmp}
+if [[ ! -L ${dir_Base}/tmp/memory ]] ; then
+  if [[ -w ${dir_Tmp} ]] ; then
+    ln -s ${dir_Memory} ${dir_Tmp}/memory
+    typeset         dir_Tmp=${dir_Base}/tmp/memory/
+  fi
+fi
+
 
 typeset     dir_Plugins="${dir_Base}/plugins"
 typeset     str_Plugins="$(basename "${dir_Plugins}")"

@@ -26,6 +26,7 @@
 # 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
 # 1.10      Marc Loftus     12/06/2018      Adding Pause and Rules flags
 # 1.11      Marc Loftus     15/06/2018      Adding elasped time
+# 1.12      Marc Loftus     04/10/2018      Fixed issues with showline stealing CR
 ############################################################################################################
 str_ProgramVersion = '1.11'
 
@@ -87,7 +88,7 @@ def fn_ShowLine(cha_LineChar,str_LineTitle):
     ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
         This can actually show a row of strings but they my not fill the whole depending on string width '''
     parity=(len(cha_LineChar))
-    print( cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity)))
+    print( "%s"% cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity) - 1 ) )
 
 def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location

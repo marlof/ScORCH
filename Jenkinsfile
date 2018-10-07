@@ -2,10 +2,13 @@ node {
   checkout scm
   
   stage 'test'
-  sh 'make test'
+  sh 'echo test'
+  
+  stage 'package'
+  sh 'tar tvf test.tar LICENSE README.md'
   
   stage 'publish'
-  sh 'make publish'
+  sh 'echo publish'
 }
   
   
