@@ -11,7 +11,7 @@
       <outputDirectory></outputDirectory>
         <fileMode>0755</fileMode>
     </fileSet>
-  </fileSetes>
+  </fileSets>
 </assembly>
 
 
