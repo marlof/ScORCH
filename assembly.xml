@@ -13,6 +13,3 @@
     </fileSet>
   </fileSets>
 </assembly>
-
-
-# mvn archetype:generate -DgroupId=com.webmarcit.scorchsuite -DartifactId=scorch -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=true
