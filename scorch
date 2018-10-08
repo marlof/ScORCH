@@ -136,6 +136,7 @@
 ## 1.50 181001    marc   #59 Improvement to memory shm link
 ## 1.51 181004    marc   #60 showline improved output for CR
 ##                       #59 Improved for first install
+##      181008    marc   #62 Bug fix to #58 require ${PIPESTATUS[0]}
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="1.51.2"

@@ -643,7 +643,7 @@ Task()
     ## The task is a standard Task
     str_GroupTask=""
     str_LogExtension=""
-    str_CheckTask="fn_CheckTask \$? \${int_StartTask};"
+    str_CheckTask="fn_CheckTask \${PIPESTATUS[0]} \${int_StartTask};"
   fi
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 #  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"

@@ -12,4 +12,4 @@ dis_BYellow="${str_ANSI}43m"
 dis_ULOn="${str_ANSI}4m"
 dis_ULOff="${str_ANSI}24m"
 # Reset
-dis_Reset="${str_ANSI}0m"
+dis_Reset="${str_ANSI}0m" 	

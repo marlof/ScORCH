@@ -497,29 +497,33 @@ readonly -f fn_ShowTasks
 
 fn_JobInfo()
 {
-      ${cmd_CLEAR}
-      fn_ShowTop
-      fn_ShowLine "-" "Job Details"
-      typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
-      echo " ${str_JobOwner}"
-      echo " State at selection : ${str_JobState}"
-      basename ${file_ActiveJob}
-      ##pgrep -a ${$(basename ${file_ActiveJob})::15}
-      [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+  ${cmd_CLEAR}
+  fn_ShowTop
+  fn_ShowLine "-" "Job Details"
+  typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+  echo " ${str_JobOwner}"
+  echo " State at selection : ${str_JobState}"
+  basename ${file_ActiveJob}
+  ##pgrep -a ${$(basename ${file_ActiveJob})::15}
+  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+  echo ""
+  ls -lL "${file_ActiveJob}"
+  ls -lL "${file_Log}"
+  echo ""
+  fn_ShowRules
+  fn_ShowLine "-" "Template"
+  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
+  echo ""
+  fn_ShowLine "-" "Log Summary"
+  tail -${int_Tail} "${file_Log}"
+  echo ""
+  if [[ "${str_JobState}" = "completed" ]] ; then
+    fn_ShowLine "-" "Issues"
+    grep "REASON:" ${file_ActiveJob}
+  fi
+  fn_ShowLine "-" 
 
-      echo ""
-      ls -lL "${file_ActiveJob}"
-      ls -lL "${file_Log}"
-      echo ""
-      fn_ShowRules
-      fn_ShowLine "-" "Template"
-      sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
-      echo ""
-      fn_ShowLine "-" "Log Summary"
-      tail -${int_Tail} "${file_Log}"
-      echo ""
-      fn_ShowLine "-"
-      printf "\n${dis_Reset}"
+  printf "\n${dis_Reset}"
 }
 
 fn_ContextMenu()
