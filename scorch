@@ -137,9 +137,10 @@
 ## 1.51 181004    marc   #60 showline improved output for CR
 ##                       #59 Improved for first install
 ##      181008    marc   #62 Bug fix to #58 require ${PIPESTATUS[0]}
+##      181009    marc   #63 Try fix (or outstanding)
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.51.2"
+typeset str_ProgramVersion="1.51.3"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"

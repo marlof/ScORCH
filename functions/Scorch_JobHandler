@@ -17,14 +17,19 @@
 ## These functions handle aspects or creating and processing new jobs, tasks and task groups
 ## fn_JobHeader()
 ## fn_CheckTask()
+## fn_NiceTime()
+## fn_ListTasksRemaining()
 ## fn_JobFooter()
-## fn_NewJob()
+## fn_ProcessTask()
 ## fn_GetRequest()
 ## fn_GetRequestor()
 ## fn_GetSent()
+## fn_NewJob()
 ## fn_ProcessRequest()
 ## fn_GetJobID()
 ## fn_ExtractPairs()
+## fn_Count()
+## fn_PIDWait
 ##
 ##   StartGroup
 ##   EndGroup
@@ -151,14 +156,22 @@ fn_NiceTime()
 
 Manual()
 {
-  printf "\n\n\t\$*\n\n"
+  printf "\n\t\$*\n\n"
   return 99
 }
 
 Sleep()
 {
-  printf "\n\n\tSleeping for \$1 seconds\n"
+  printf "\n\tSleeping for \$1 seconds\n"
   sleep \$1
+}
+
+Try()
+{
+  \$1 >> \${file_Log} 
+  if [[ \$? != 0 ]] ; then
+    echo "TRY FAILED..... But will keep calm and carry on."
+  fi
 }
 
 fn_ListTasksRemaining()
@@ -647,7 +660,11 @@ Task()
   fi
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 #  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
-  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
+  case ${str_Task1} in
+    Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; }\n" >> "${file_Job}" ;;
+    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+  esac
   (( int_TaskCount++ ))
 }
 readonly -f Task
@@ -655,7 +672,7 @@ readonly -f Task
 tryTask()
 {
   ## To make things simple if there was just one parameter passed, use Task "command" OR true
-  Task "$*" OR true
+  Task "Try \"$*\""
 }
 
 Try()

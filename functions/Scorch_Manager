@@ -15,6 +15,7 @@
 ##
 
 ## These functions manage the manager/view screen
+## fn_SkipFailed()
 ## fn_Manager()
 ## fn_ShowPrefs()
 ## fn_Admin()

@@ -1,9 +1,11 @@
 SP_DEMO-RANDOM()
 {
   Task "hostname"
-  pauseTask 34
+  Sleep 30 
   Task "printf \${RANDOM:4}"
-  pauseTask 
-  breakTask
-  Task "got here ok"
+  Sleep 10 
+  Manual "This is a manual step - put the kettle on"
+  Try "got here ok"
+  Task "false" OR "true"
+  Task "false" OR "false"
 }

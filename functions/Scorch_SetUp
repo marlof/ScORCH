@@ -17,9 +17,9 @@
 ## These functions check the layout is correct and provides common initialisation functions
 ## fn_CheckSetup()
 ## fn_SetPrefs()
-## fn_Help()
 ## fn_HouseKeeping()
 ## fn_GetAnswer()
+## fn_Confirm()
 ## fn_Range()
 ## fn_RangeTUI()
 ## fn_CreateFile()
@@ -29,7 +29,10 @@
 ## fn_Trap()
 ## fn_Select()
 ## fn_IsNumber()
-## fn_Maintenance()
+## fn_IsAlreadyRunning()
+## fn_CheckLatest()
+## fn_InstallLatest()
+## fn_CheckMaint()
 ## fn_FileOwner()
 
 
