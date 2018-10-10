@@ -44,7 +44,7 @@
 # =================
 typeset local     file_DB=txtdb				              # The default DB file name
 typeset local dir_Project=~/scorch/ScORCH/projects	# Default root directory for files to be searched for
-typeset              c_FS=" "				                # The field seperator character
+typeset              c_FS="" 				                # The field seperator character
 
 
 # System variables
@@ -134,14 +134,15 @@ fn_GetDetail()
 typeset local file_DB=${1}
 # Find the defined columns names in the text file and turn it into an array
 # =========================================================================
-[[ -z ${str_Columns} ]] && typeset local str_Columns=$(grep "^#DEF" ${file_DB} 2>/dev/null | head -1)
-[[ -z ${c_FS} ]] && grep "^#FS" ${file_DB} 2>/dev/null | head -1
-#typeset local c_tmpFS=$(grep "^#FS" ${file_DB} 2>/dev/null | head -1)
+[[ -z ${str_Columns} ]] && str_Columns=$(grep "^#DEF" ${file_DB} 2>/dev/null | head -1)
+[[ -z ${c_FS} ]]        && grep "^#FS" ${file_DB} 2>/dev/null | head -1
+[[ -z ${c_FS} ]] && c_tmpFS=$(grep "^#FS" ${file_DB} 2>/dev/null | head -1) && c_FS="$(echo ${c_tmpFS#\#FS=} | sed 's/[^[:print:]]//g' )"
 #[ ! -z "${c_tmpFS}" ]     && str_FS="-F${c_tmpFS#\#FS=}"
 [   -z "${str_Columns}" ] && echo "Cannot find a column definition in file:${file_DB}" && exit 1
 arr_Columns=(${str_Columns#\#DEF})
-str_FS=" -F${c_FS#\#FS=}"
-
+#echo "<${c_FS}>"
+str_FS=" -F${c_FS}"
+#sleep 3
 
 # If --list is present, show the columns defined
 # ==============================================
