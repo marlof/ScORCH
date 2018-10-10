@@ -141,7 +141,7 @@ typeset local file_DB=${1}
 [   -z "${str_Columns}" ] && echo "Cannot find a column definition in file:${file_DB}" && exit 1
 arr_Columns=(${str_Columns#\#DEF})
 #echo "<${c_FS}>"
-str_FS=" -F${c_FS}"
+[[ -z ${c_FS} ]] && str_FS="" || str_FS=" -F${c_FS}"
 #sleep 3
 
 # If --list is present, show the columns defined
