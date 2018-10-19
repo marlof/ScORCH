@@ -13,6 +13,8 @@ fnE_PluginManagerMenu()
   fn_ShowLine "-" "Plugin Manager"
   echo ""
 
+  int_Count=1
+
   find -L ${dir_Plugins} -name "sp_*"
   find -L ${dir_Plugins} -name "SP_*" | ${cmd_AWK} \
       -v            state=${str_State} \
@@ -44,64 +46,37 @@ fnE_PluginManagerMenu()
       system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
 
       if ( $2 != "" ) {
-        printf "%7s|", $2
+        printf "%7s|\n", $2
       }
       else {
-        printf "%7s|", substr($3,1,7)
+        printf "%7s|\n", substr($3,1,7)
       }
-      int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
-                   - int_Column4Width  - int_Column5Width 
-      ##printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
-      printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
+      
 
-      if ( state == "running" ) {
-#       system("date -d \"1970-01-01 + $seconds seconds\" \"+%Hh%Mm%Ss\"")
-#       printf '%02dh:%02dm:%02ds\n' $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
-# Looking for the last AUDIT:START point
-        cmd = "grep ^AUDIT:START "dir_Log"/$(basename "$0").log | tail -1 | cut -d: -f3"
-        cmd | getline starttime
-        cmd = "date +%s"
-        cmd | getline currenttime
-        secs = currenttime - starttime
-        close(cmd)
-        printf "%02d:%02d:%02d", secs/3600, secs%3600/60, secs%60
-        printf "|"
-        int_LogWidth = int_LogWidth - 9
-      }
-      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
-#     system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
-      system("echo arr_States["linenum"]="state" >> "file_Cache)
-      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
-
+    
+     
       linenum++
     }
     END {
       system("echo int_Count="linenum" >> "file_Cache )
     }'
-    ##. ${file_Cache}
-#       cat "${file_Cache}"
-#    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
-
 
   #fn_ShowPlugins
   fn_ShowLine "-"
 
   printf "\n\n "
-  printf " ${dis_ULOn}O${dis_ULOff}N | O${dis_ULOn}F${dis_ULOff}F  | e${dis_ULOn}X${dis_ULOff}it : "
+  printf " ${dis_ULOn}O${dis_ULOff}N | O${dis_ULOn}F${dis_ULOff}F | e${dis_ULOn}X${dis_ULOff}it : "
 
   read ${str_Quick} -t 60 char_Choice
 
   case ${char_Choice} in
 
-          a | A ) fn_ShowJobs2 failed running starting pending queued new
-               fn_ShowLine
-               fn_GetAnswer
-               echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
+          O | o ) echo "On ${str_Answer}" ;;
 
-          d | D ) rm ${file_ActiveJob}.rules
+          F | f ) echo "OFF ${str_Answer}"
                   # if link to active job in pending mv job to queued
                            ;;
-
+          [0-9]* ) echo "${str_Answer}" ;; 
           ## Edit job
           x | X ) return 0 ;;
           *     ) return 0 ;;

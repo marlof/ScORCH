@@ -564,8 +564,8 @@ fn_ContextMenu()
     [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
     [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
-    [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_FailedJobs=1 && b_NewJobs=1
-    [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_FailedJobs=1 && b_NewJobs=1
+    [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_NewJobs=1 && b_FailedJobs=1 
+    [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
     #printf "${dis_ULOn}C${dis_ULOff}SV | "
 
@@ -575,12 +575,13 @@ fn_ContextMenu()
   [[ "${b_RunningJobs}" ]]  || [[ "${b_QueuedJobs}" ]]    && printf "${dis_ULOn}P${dis_ULOff}ause | "
   [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
-  [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
+  [[ "${b_NewJobs}"     ]]  || [[ "${b_FailedJobs}"  ]]   && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
   #[[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}H${dis_ULOff}angup | "
+  [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}D${dis_ULOff}elete | "
 
-  [[ ! "${str_State}" ]] && printf "${dis_ULOn}A${dis_ULOff}dmin |"
+  [[ ! "${str_State}" ]]  && printf "${dis_ULOn}A${dis_ULOff}dmin | "
   printf "e${dis_ULOn}X${dis_ULOff}it : "
 
 }
