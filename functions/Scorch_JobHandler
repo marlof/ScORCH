@@ -216,45 +216,6 @@ fi
 }
 
 EOF
-#  local lst_Tasks=""
-#  local lst_FailedTasks=""
-#  local lst_SkipTasks=""
-#  local int_Task=\$(grep AUDIT:T \${file_Log} | cut -d: -f3 | sort -un | tail -1)
-#  local int_Count=0
-#  local str_Mode=\${1:-}
-#  while (( int_Count <= int_Last )) ; do
-#    #echo "Debug:\$int_Count"
-#    grep -q "^AUDIT:T:\${int_Count}:[C|M|S|R]" \${file_Log} || lst_Tasks=(\${lst_Tasks[*]} \${int_Count})
-#    #grep  "^AUDIT:T:\${int_Count}:F" \${file_Log} && lst_FailedTasks=(\${lst_FailedTasks[*]} \${int_Count})
-#    (( int_Count++ ))
-#  done
-#  #echo "Debug:Missed: \${lst_Tasks}"
-#  #echo "Debug:Failed: \${lst_FailedTasks}"
-#  if [[ "\${str_Mode}" == "skip" ]] ; then
-#    for each_FailedTask in \${lst_FailedTasks[*]} ; do
-#      grep -q "^AUDIT:T:\${int_Count}:[C|M|S|R]" \${file_Log} && lst_SkipTasks=(\${lst_SkipTasks[*]} \${each_FailedTask})
-#    done
-#    echo "Debug:Skipped: \${lst_SkipTasks[*]}"
-#    for each_SkipTask in \${lst_SkipTasks[*]} ; do
-#      echo "AUDIT:T:\${each_FailedTask}:S" #>> \${file_Log}
-#    done
-#
-#  else
-#    echo "\${lst_Tasks[*]}"
-#  fi
-#  # Check if its not already complete
-#  #echo "AUDIT:T:\${each_FailedTask}:S" >> \${file_Log}
-#    if [ \${b_Background} ] ; then
-#      echo "FAILED Task \${int_Task} - But this is a subtask so this is never called"
-#      set -x
-#      lst_PID[\${int_Task}]="ERROR"
-#      echo "failed task is lst_PID[\${int_Task}] : \${lst_PID[\${int_Task}]}"
-#      echo "AUDIT:T:\${int_Task}:F" >> "\${dir_Running}"/\${str_JobName}
-#      exit 1
-#      set +x
-#    else
-#    fi
-
 }
 readonly -f fn_JobHeader
 
@@ -307,9 +268,7 @@ printf "\$(${fn_LogDate}) Completed task:\${int_StartTask}\nAUDIT:T:\${int_Start
 mv "\${dir_Running}"/\${str_JobName} "\${dir_Completed}"/.
 rm "\${LOCK}" 2>/dev/null
 
-#int_FailureCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Failed task" "\${dir_Active}"/\${str_JobName} | wc -l)
 int_FailureCount=\$(egrep "^AUDIT:T:.*F$" "\${dir_Active}"/\${str_JobName} | wc -l)
-#int_ManualCount=\$(egrep "[0-9]{6}-[0-9]{6}.+++Manual task" "\${dir_Active}"/\${str_JobName} | wc -l)
 int_ManualCount=\$(egrep "^AUDIT:T:.*M$" "\${dir_Active}"/\${str_JobName} | wc -l)
 echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
 
@@ -354,7 +313,7 @@ fn_NewJob()
   fn_GetRequestor
   fn_GetSent
   fn_ProcessRequest
-  fn_CheckDispatcher
+  fn_CheckDispatcher 
 }
 readonly -f fn_NewJob
 
@@ -587,7 +546,7 @@ fn_PIDWait()
     fi
     lst_PID=${lst_PIDRunning}
     lst_PIDRunning=""
-    echo "$(fn_Count "$lst_PID") tasks remaining"
+    echo "$(fn_Count "$lst_PID") tasks remaining in subgroup"
   done
 
   if [[ ! -z ${lst_FailedTasks} ]] ; then
@@ -767,21 +726,11 @@ GetVar()
          print $2}'       "${file_Request}" )" 
   fi
 
-#[[ $b_IgnoreCase ]] && str_Case=" -i " || str_Case=""
-#grep ${str_Case} -w  '[[:space:]]*${pattern}[[:space:]]*:' /tmp/getvar.tmp
-#
-
   ## If a value hasnt been found or is empty, use the default if one is set
   ## ======================================================================
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
-##         tmp=${1:1}               # Strip off leading '/' . . .
-##          str_Name=${tmp%%:*}     # Extract name.
-##          str_Value=${tmp##*:}         # Extract value.
-##          eval $str_Name=${str_Value}
-
-## echo "${str_Name}=\"${str_Value}\""
   eval "${str_Name}=\"${str_Value}\""
 }
 readonly -f GetVar

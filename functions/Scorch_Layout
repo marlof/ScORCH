@@ -379,22 +379,6 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
     if ( $1 ~ "^AUDIT:T") {
       split($1,task_tmp,":")
 
-      # switch turned off due to issues with some nix versions
-      #switch (task_tmp[4]) {
-      #  case "R":
-      #    str_Progress = " >>>  " 
-      #    break
-      #  case "C":
-      #    str_Progress = "[done]"
-      #    break
-      #  case "F":
-      #    str_Progress = "[fail]"
-      #    break
-      #  default:
-      #    str_Progress = "  ??? "
-      #    break
-      #}
-
       if ( task_tmp[4] == "R")      str_Progress="  >>>  "
       if ( task_tmp[4] == "C")      str_Progress="[ done ]"
       if ( task_tmp[4] == "F")
@@ -409,12 +393,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
         if ( $1 ~ "SubTask" )      { 
           arr_SubTask[linenum] = "     . "        } else { arr_SubTask[linenum]=""}
 
-
       arr_Task[linenum]=str_Task
-      #arr_Last=system("echo hello")
-
-      #arr_Last=system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
-
       linenum++
     } }
   }
@@ -469,7 +448,6 @@ fn_ShowTasks()
   else
     printf "\n Display tasks for which job(s)?\n\n"
 
-    #fn_ShowJobs2 superseded starting failed fixing queued pending new running completed
     fn_ShowJobs superseded manual starting failed fixing queued pending new running completed
     fn_ShowLine
     fn_GetAnswer range
@@ -483,8 +461,6 @@ fn_ShowTasks()
           return 0
         fi
 
-        ## awk replaces
-        ##   grep "#${str_ProgramName}_Task" "${dir_Job}"/${arr_States[${int_Answer}]}/${arr_Jobs[${int_Answer}]} | rev | cut -d">" -f4- | rev | more
         fn_FormatTasks "${dir_Active}/${arr_Jobs[${int_Answer}]}"
       done
     else
@@ -559,16 +535,12 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    #[[ "$(ls \"${dir_Lock}\" 2>/dev/null)" ]] && printf "${dis_ULOn}L${dis_ULOff}ock | "
-    #echo "echo ${arr_States[@]} | grep -i queued)"
     [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
     [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
     [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_NewJobs=1 && b_FailedJobs=1 
     [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
-    #printf "${dis_ULOn}C${dis_ULOff}SV | "
-
   fi
 
   [[ "${b_QueuedJobs}"  ]]                                && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
@@ -576,7 +548,6 @@ fn_ContextMenu()
   [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
   [[ "${b_NewJobs}"     ]]  || [[ "${b_FailedJobs}"  ]]   && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
-  #[[ "${str_State}"     ]]                                || printf "${dis_ULOn}M${dis_ULOff}OTD | "
   [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}H${dis_ULOff}angup | "
   [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}D${dis_ULOff}elete | "

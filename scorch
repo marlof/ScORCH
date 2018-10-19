@@ -138,9 +138,12 @@
 ##                       #59 Improved for first install
 ##      181008    marc   #62 Bug fix to #58 require ${PIPESTATUS[0]}
 ##      181009    marc   #63 Try fix (or outstanding)
+##      181018    marc   #64 "d" context missing for New State jobs
+##      181019    marc   #65 admin job numbering fixed
+##                       #68 creation of file for motd added to install
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.51.3"
+typeset str_ProgramVersion="1.51.5"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -187,6 +190,8 @@ fn_Help()
   echo "    -o | --option <keyname>:<keyvalue>   A keypair for the action"
   echo "    -s | --start [-sync]                 Start [only return to prompt when job completes or fails]"
   echo ""
+  echo " # Setup"
+  echo "    -install                             Setup directories and files for first use"
   echo " # Example"
   echo "    scorch -a SAFEDEMO -o key1:value1 -o key2:val2 -s"
   echo "    scorch --action DRINK-TEA --start -sync"
@@ -256,6 +261,8 @@ typeset     str_Protocol="http://"
 typeset     dir_Location="www.autoscorch.com/downloads"
 typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="version.txt"
+typeset        file_MOTD="${dir_Etc}/motd"
+
 
 
 fn_ResetJobDefinitions()

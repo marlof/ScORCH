@@ -49,6 +49,7 @@ fn_CheckSetUp()
                                  dir_Running dir_Superseded dir_Manual dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
+  [[ ${b_Install} ]] && fn_CreateFile $file_MOTD
 
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d "${!p_Variable}" ]] ; then
