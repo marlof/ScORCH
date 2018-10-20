@@ -9,78 +9,75 @@
 fnE_PluginManagerMenu()
 {
   typeset local char_Choice=
-  fn_ShowTop
-  fn_ShowLine "-" "Plugin Manager"
-  echo ""
+  while : ; do
 
-  int_Count=1
+    fn_ShowTop
+    fn_ShowLine "-" "Plugin Manager"
+    echo ""
 
-  find -L ${dir_Plugins} -name "sp_*"
-  find -L ${dir_Plugins} -name "SP_*" | ${cmd_AWK} \
-      -v            state=${str_State} \
-      -v             user=${str_User} \
-      -v          linenum=${int_Count} \
-      -v          dir_Log="${dir_Log}" \
-      -v       dir_Active="${dir_Active}" \
-      -v       file_Cache="${file_Cache}" \
-      -v           Colour=${str_StatusColour} \
-      -v  int_ScreenWidth=${int_ScreenWidth} \
-      -v int_Column1Width=${int_Column1Width} \
-      -v int_Column2Width=${int_Column2Width} \
-      -v int_Column3Width=${int_Column3Width} \
-      -v int_Column4Width=${int_Column4Width} \
-      -v int_Column5Width=${int_Column5Width} \
-      -v int_Column6Width=${int_Column6Width} \
-      -v int_MaxShown=${int_MaxShown} 'BEGIN {
-       FS = "_"
-    }
-    linenum <= int_MaxShown {
-      printf Colour
+    int_Count=1
 
-      ## Check Owner of job
-      ##system("echo " user
-      ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
-      ##system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
-      system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
-      printf "%3s", linenum
-      system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
+    typeset -a arr_Plugins
+    arr_Plugins=( $(find -L ${dir_Plugins} -name "XSP_*") $(find -L ${dir_Plugins} -name "SP_*") )
 
-      if ( $2 != "" ) {
-        printf "%7s|\n", $2
-      }
-      else {
-        printf "%7s|\n", substr($3,1,7)
-      }
-      
+    for each_Plugin in ${arr_Plugins[@]} ; do
+      printf "%3s "  ${int_Count}
+      if [[ "$(basename ${each_Plugin})" =~ "XSP" ]] ; then 
+        printf "[X] %s\n" $(basename ${each_Plugin})
+      else
+        printf "[ ] %s\n" $(basename ${each_Plugin})
+      fi
+      (( int_Count++ ))
+    done
 
-    
-     
-      linenum++
-    }
-    END {
-      system("echo int_Count="linenum" >> "file_Cache )
-    }'
+    lst_Plugins="$(find -L ${dir_Plugins} -name "XSP_*") $(find -L ${dir_Plugins} -name "SP_*")"
 
-  #fn_ShowPlugins
-  fn_ShowLine "-"
+    fn_ShowLine "-"
 
-  printf "\n\n "
-  printf " ${dis_ULOn}O${dis_ULOff}N | O${dis_ULOn}F${dis_ULOff}F | e${dis_ULOn}X${dis_ULOff}it : "
+    printf "\n\n "
+    printf " ${dis_ULOn}T${dis_ULOff}oggle | e${dis_ULOn}X${dis_ULOff}it : "
 
-  read ${str_Quick} -t 60 char_Choice
+    read ${str_Quick} -t 60 char_Choice
 
-  case ${char_Choice} in
+    case ${char_Choice} in
 
-          O | o ) echo "On ${str_Answer}" ;;
+          T | t ) printf "\n\n Select plugins to toggle" 
+                  fn_GetAnswer range
+                  str_Answer=$(fn_Range "${str_Answer}")
 
-          F | f ) echo "OFF ${str_Answer}"
-                  # if link to active job in pending mv job to queued
-                           ;;
+                  if [ "${str_Answer}" != "x " ] ; then
+                    echo "<${str_Answer}>"
+                    for int_Answer in ${str_Answer} ; do
+                      if [[ ${int_Answer} -le 0 ]] || [[ ${int_Answer} -ge ${int_Count} ]] ; then
+                        printf "Out of range"
+                        fn_PressEnter
+                        return 0
+                        fi
+
+                        # Arrays start at 0 not 1
+                        (( int_Answer-- ))
+                        dir_Plugin=$(dirname ${arr_Plugins[$int_Answer]})
+                        file_Plugin=$(basename ${arr_Plugins[$int_Answer]})
+
+                        if [[ "${file_Plugin}" =~ "XSP" ]] ; then 
+                          mv ${arr_Plugins[$int_Answer]} ${dir_Plugin}/${file_Plugin:1}
+                        else
+                          mv ${arr_Plugins[$int_Answer]} ${dir_Plugin}/X${file_Plugin}
+                        fi
+
+                     done
+                  else
+                    echo "Nothing chosen"
+                    fn_PressEnter
+                  fi
+                  ;;
           [0-9]* ) echo "${str_Answer}" ;; 
           ## Edit job
+
           x | X ) return 0 ;;
           *     ) return 0 ;;
-  esac
+    esac
+  done
 }
 readonly -f fnE_PluginManagerMenu
 
