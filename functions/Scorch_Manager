@@ -191,7 +191,7 @@ fn_Admin()
     printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
     printf " F) Function Plugins\n\n"
   else
-    printf " POWER User required:\n"
+    printf " POWER User permissions required:\n"
     printf "   .) Build Tar\n"
     printf "   .) Locks\n"
     printf "   .) Install\n"

@@ -142,9 +142,12 @@
 ##      181019    marc   #65 admin job numbering fixed
 ##                       #68 creation of file for motd added to install
 ## 1.52 181021    marc   #66 Plugin manager added
+##                           + view of plugins
+##                       Codename Amarok
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.52"
+typeset str_ProgramVersion="1.52.1"
+typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
