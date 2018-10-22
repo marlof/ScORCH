@@ -514,10 +514,14 @@ fn_PIDWait()
         if [[ $(grep ^fn_Task_${int_Task}_SubTask "${dir_Running}"/${str_JobName} | awk -F"\\t" '"'{print \$2}'"') =~ Manual ]] ; then
 
           lst_ManualTasks="${lst_ManualTasks}${int_Task} "
+          echo ">> SubTask ${int_Task} MANUAL ############"
           cat ${file_Log}.${int_Task}           
           printf "\\nAUDIT:T:${int_Task}:M\\n"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Manual task ${int_Task}" >> "${dir_Active}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:M" >> "${dir_Active}"/${str_JobName}
+          echo "== End SubTask ${int_Task} Output ############"
+          lst_PIDResult="${lst_PIDResult}${int_Task}:99 "
+
         else
 
           lst_FailedTasks="${lst_FailedTasks}${int_Task} "
@@ -533,14 +537,18 @@ fn_PIDWait()
     done
 
     if [[ ${#lst_PIDRunning} -eq 0 ]] ; then
-       echo "${lst_PIDResult}"
-       for str_TaskResult in ${lst_PIDResult} ; do
-         int_Task=${str_TaskResult%%:*}
-         int_Result=${str_TaskResult#*:}
-         if [[ "$int_Result" -ne 0 ]] ; then
+      echo "${lst_PIDResult}"
+      for str_TaskResult in ${lst_PIDResult} ; do
+        int_Task=${str_TaskResult%%:*}
+        int_Result=${str_TaskResult#*:}
+        if [[ "$int_Result" -ne 0 ]] ; then
+          if [[ "$int_Result" == 99 ]] ; then
+            echo "Task $int_Task is a manual tast"
+          else
            echo "Task $int_Task failed"
-         fi
-       done
+          fi
+        fi
+      done
     else
       echo " PID Running: ${lst_PIDRunning}"
     fi
@@ -563,13 +571,10 @@ fn_PIDWait()
     int_ResumeTask=${arr_Manual[0]}
     echo "MANUAL TASKS: ${lst_ManualTasks}"
     echo "Resume point:${int_ResumeTask}"
-    mv "${dir_Running}"/${str_JobName} "${dir_Failed}"/.
+    mv "${dir_Running}"/${str_JobName} "${dir_Manual}"/.
     exit 99
   fi
-
 }
-
-
 
 ' >> "${file_Job}"
 	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PID}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
@@ -599,7 +604,8 @@ Task()
   typeset local str_AltTask=
 
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
-  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) | tee -a \"\${file_Log}\"" >> "${file_Job}"
+#  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) | tee -a \"\${file_Log}\"" >> "${file_Job}"
+  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} "
   ##[[ "${b_StartGroup}" ]] && (( int_SubTask++ )) && str_SubTask=".${int_SubTask}" 
 
   if [[ "${b_Background}" ]] ; then
@@ -620,7 +626,7 @@ Task()
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 #  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   case ${str_Task1} in
-    Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
     Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; }\n" >> "${file_Job}" ;;
     *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac
