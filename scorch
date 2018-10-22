@@ -144,6 +144,7 @@
 ## 1.52 181021    marc   #66 Plugin manager added
 ##                           + view of plugins
 ##                       Codename Amarok
+##                       #69 File fixed
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="1.52.1"
