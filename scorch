@@ -147,7 +147,7 @@
 ##                       #69 File fixed
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.52.1"
+typeset str_ProgramVersion="1.52.2"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
