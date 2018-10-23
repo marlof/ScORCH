@@ -148,9 +148,10 @@
 ##                       #70 fixed
 ## 1.53 181022    marc   #72 Manual message when in sub-group
 ##                       #73 Filter added to job name - user request
+##                       Quiet grep for check owner
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.53.1"
+typeset str_ProgramVersion="1.53.2"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

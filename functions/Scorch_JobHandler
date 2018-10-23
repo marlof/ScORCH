@@ -896,7 +896,7 @@ readonly -f fn_SetJobOwner
 fn_CheckOwner()
 {
   typeset local file_Job="${1}"
-  if ! grep "^str_Owner=${str_User}" "${file_Job}" ; then
+  if ! grep -q "^str_Owner=${str_User}" "${file_Job}" ; then
     printf "\n\nYou do not own this job\n\nCurrent owner: $(grep "^str_Owner=" "${file_Job}")\n\n"
     read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
