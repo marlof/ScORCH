@@ -27,8 +27,9 @@
 # 1.10      Marc Loftus     12/06/2018      Adding Pause and Rules flags
 # 1.11      Marc Loftus     15/06/2018      Adding elasped time
 # 1.12      Marc Loftus     04/10/2018      Fixed issues with showline stealing CR
+# 1.13      Marc Loftus     23/10/2018      #73 Adding filter option
 ############################################################################################################
-str_ProgramVersion = '1.11'
+str_ProgramVersion = '1.13'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
@@ -94,7 +95,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
     arr_str_DirList  = (listdir(join(dir_Job,str_State)))                   #   Create an "ls" list for the directory
-    arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*')   #   Create an "ls $jobdir/Job*"
+    arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     global b_More
     global int_More
     global int_Count
@@ -181,7 +182,9 @@ def fn_ShowJobs(str_State,temp,maxnum):
                   str_Time=str(datetime.timedelta(seconds=str_Time))
                   print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%+s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_Time, str_LastLine, colours.RESET))
                 else:
-                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine[:int_Width], colours.RESET))
+                    if re.search(jobfilter,str_File):
+                        print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine[:int_Width], colours.RESET))
+
                 int_Count = int_Count + 1
             else:
                 b_More = True
@@ -191,6 +194,8 @@ def fn_ShowJobs(str_State,temp,maxnum):
 
 def main(argv):
     outputfile = os.devnull
+    global jobfilter
+    jobfilter = ""
     args = sys.argv[1:]
     global int_More
     while len(args):
@@ -203,6 +208,9 @@ def main(argv):
         elif args[0] == '-n':
             maxnum = int(args[1])
             args = args[2:]
+        elif args[0] == '-f':
+            jobfilter = args[1]
+            args = args[2:] 
         else:
             list_Dir.append(args[0])
             args = args[1:] # shift

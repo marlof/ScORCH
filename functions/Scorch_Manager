@@ -24,6 +24,7 @@
 ## fn_Cancel()
 ## fn_AdminFunctions()
 ## fn_CatchWord()
+## fn_Filter()
 
 fn_SkipFailed()
 {
@@ -42,6 +43,15 @@ fn_SkipFailed()
     (( int_Count++ ))
   done
 }
+
+fn_Filter()
+{
+  printf "\n\n"
+  [[ ! -z ${str_Filter} ]] && printf " Current filter <${str_Filter}> (press enter to clear)\n\n"
+  read -t ${int_Refresh} -p " Job name filter string: " str_Filter
+  #str_Filter=$(echo ${str_Filter})
+}
+readonly -f fn_Filter
 
 fn_Manager()
 {
@@ -80,6 +90,7 @@ fn_Manager()
 
       ## Misc
       t | T ) fn_ShowTasks          ;;
+      f | F ) fn_Filter             ;;
       x | X ) break ;;
 
       ## Releases
