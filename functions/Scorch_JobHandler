@@ -515,7 +515,7 @@ fn_PIDWait()
 
           lst_ManualTasks="${lst_ManualTasks}${int_Task} "
           echo ">> SubTask ${int_Task} MANUAL ############"
-          cat ${file_Log}.${int_Task}           
+          [[ -r ${file_Log}.${int_Task} ]] && cat ${file_Log}.${int_Task} || echo "Task produced no output"
           printf "\\nAUDIT:T:${int_Task}:M\\n"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Manual task ${int_Task}" >> "${dir_Active}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:M" >> "${dir_Active}"/${str_JobName}
@@ -526,7 +526,7 @@ fn_PIDWait()
 
           lst_FailedTasks="${lst_FailedTasks}${int_Task} "
           echo ">> SubTask ${int_Task} FAILED ############"
-          cat ${file_Log}.${int_Task} 
+          [[ -r ${file_Log}.${int_Task} ]] && cat ${file_Log}.${int_Task} || echo "Task produced no output"
           printf "\\nAUDIT:T:${int_Task}:F\\n"
           echo "$(date +%%y%%m%%d-%%H%%M%%S) +++Failed task ${int_Task}" >> "${dir_Active}"/${str_JobName}
           echo "AUDIT:T:${int_Task}:F" >> "${dir_Active}"/${str_JobName}
@@ -628,7 +628,8 @@ Task()
   case ${str_Task1} in
     Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
     Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; }\n" >> "${file_Job}" ;;
-    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+#    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac
   (( int_TaskCount++ ))
 }
