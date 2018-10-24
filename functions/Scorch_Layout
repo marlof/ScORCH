@@ -86,8 +86,9 @@ fn_ShowTop()
 
   int_DiskUsage_tmp=$(df "${dir_Base}" | tail -1)
   int_DiskUsage="$(echo ${int_DiskUsage_tmp%\%*} | ${cmd_AWK} -F" " '{print $NF}')"
-  (( int_DiskUsage >= 90 )) && int_DiskUsage="${dis_FRed}${int_DiskUsage}${dis_Reset}"
-  (( int_DiskUsage >= 80 )) && int_DiskUsage="${dis_FYellow}${int_DiskUsage}${dis_Reset}" 
+  str_DiskUsage=$int_DiskUsage
+  (( int_DiskUsage >= 80 )) && str_DiskUsage="${dis_FYellow}${int_DiskUsage}${dis_Reset}" 
+  (( int_DiskUsage >= 90 )) && str_DiskUsage="${dis_FRed}${int_DiskUsage}${dis_Reset}"
   
   #echo "${int_DiskUsage}%"
   ## Collect disk usage to display
@@ -104,7 +105,7 @@ fn_ShowTop()
   printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-         "df:${int_DiskUsage}%" "${str_License}" "${str_Authority}"
+         "df:${str_DiskUsage}%" "${str_License}" "${str_Authority}"
   [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
@@ -359,11 +360,11 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
-    [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
-    [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
-    [[ "$(echo ${arr_States[@]} |  grep -i failed)"            ]] && b_NewJobs=1 && b_FailedJobs=1 
-    [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
+    [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending|manual")"  ]] && b_QueuedJobs=1
+    [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")"        ]] && b_RunningJobs=1
+    [[ "$(echo ${arr_States[@]} |  grep -i new)"                      ]] && b_NewJobs=1
+    [[ "$(echo ${arr_States[@]} |  grep -i failed)"                   ]] && b_NewJobs=1 && b_FailedJobs=1 
+    [[ "$(echo ${arr_States[@]} |  grep -i fixing)"                   ]] && b_NewJobs=1 && b_FailedJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
   fi
 
