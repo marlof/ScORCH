@@ -58,6 +58,7 @@ fn_JobHeader()
   echo "Creating ${file_Job}"
   fn_CreateFile "${dir_Active}/$(basename ${file_Job})" blank
   ln -s "${dir_Active}/$(basename "${file_Job}")" "${file_Job}"
+  fn_CreateFile "${file_Job}"
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
@@ -391,6 +392,8 @@ fn_ProcessRequest()
         str_Call=${fn_Call#SP_}
         [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
+        fn_CreateFile "${file_Job}"
+        fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 

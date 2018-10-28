@@ -152,9 +152,10 @@
 ##                       Tee option #58 doesnt work very well - changed back
 ##                       #74 Resume from Manual state 
 ##                       #75 coloured disk space fixed
+## 1.54 181027    marc  #78 Scorch Group testing
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.53.4"
+typeset str_ProgramVersion="1.54"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -167,6 +168,9 @@ typeset           str_User=$(whoami)
 typeset         file_Prefs=~/${str_ProgramName}.prefs
 ## User EDITOR preference
 typeset         cmd_Editor="${EDITOR:-vi}"
+
+# Uncomment for group directory and file creation
+# export str_Group=scorch
 
 fn_BaseDir()
 {
@@ -262,7 +266,7 @@ typeset      dir_Manual="${dir_Job}/manual"
 
 typeset      str_Filter=""
 
-typeset          b_Group=
+typeset        str_Group=${str_Group:-}
 typeset     b_Background=
 typeset      int_SubTask=
 typeset      str_SubTask=
@@ -431,6 +435,9 @@ fi
 #HEADER
 #RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
+## As sson as function is defined, use it to set tmp 
+fn_Mkdir ${dir_Memory}
+
 echo $(fn_CheckLicense) && ENTERPRISE=1
 if [[ ! -z $ENTERPRISE ]] ; then
   fn_LoadFunctions "${dir_Functions}" "ScorchE_"

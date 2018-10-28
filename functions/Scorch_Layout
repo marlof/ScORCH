@@ -102,10 +102,10 @@ fn_ShowTop()
   ## Output the program name, the dispatcher PID and the date
   typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')
   int_DispatcherPID=${int_DispatcherPID:-0}
-  printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s" \
+  printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s| Group:%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
-         "df:${str_DiskUsage}%" "${str_License}" "${str_Authority}"
+         "df:${str_DiskUsage}%" "${str_License}" "${str_Authority}" "${str_Group}"
   [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 

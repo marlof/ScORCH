@@ -23,6 +23,7 @@
 ## fn_Range()
 ## fn_RangeTUI()
 ## fn_CreateFile()
+## fn_Mkdir()
 ## fn_GetResumePoint()
 ## fn_UpdateResumePoint()
 ## fn_PressEnter()
@@ -49,14 +50,14 @@ fn_CheckSetUp()
                                  dir_Running dir_Superseded dir_Manual dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
-  [[ ${b_Install} ]] && mkdir -p $(dirname ${file_MOTD}) && fn_CreateFile $file_MOTD
+  [[ ${b_Install} ]] && fn_Mkdir $(dirname ${file_MOTD}) && fn_CreateFile $file_MOTD
 
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d "${!p_Variable}" ]] ; then
       printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
-      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
+      [[ ${b_Install} ]] && fn_Mkdir "${!p_Variable}" && b_SetUp=
     fi
-    [[ ${b_InstallForce} ]] && mkdir -p "${!p_Variable}" && chmod 770 "${!p_Variable}" && b_SetUp=
+    [[ ${b_InstallForce} ]] && fn_Mkdir "${!p_Variable}" && b_SetUp=
   done
 
   for p_Variable in ${arr_Directories} ; do
@@ -67,7 +68,6 @@ fn_CheckSetUp()
       else
         printf "\n\tNo group access to \"${!p_Variable}\"" && b_SetUp=1
       fi
-      #[[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
     fi
   done
 
@@ -94,6 +94,19 @@ fn_CheckSetUp()
 
 #  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
+  if [[ ! -z ${str_Group} ]] ; then
+    # Check str_Group is ont of groups
+    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
+      :
+    else
+      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
+      printf "\n Your available groups are:\n "
+      groups
+      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator.\n"
+      exit 1
+    fi
+  fi
+
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories, commands or permissions.\n"
     printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
@@ -108,6 +121,7 @@ readonly -f fn_CheckSetUp
 fn_SetPrefs()
 {
   if [[ ! -f ${file_Prefs} ]] ; then
+    fn_CreateFile ${file_Prefs} blank
     echo '
 ## Layout Option
 ## =============
@@ -132,9 +146,7 @@ export      str_Protocol="http"
 # Set Location of version and tar file for HTTP
 export      dir_Location="www.autoscorch.com/downloads/"
 export      file_Version="version.txt"
-#export               URL="${str_Protocol}${dir_Location}"
 
-# Set tar ball name
 ' >> ${file_Prefs}
   fi
   source ${file_Prefs}
@@ -276,10 +288,28 @@ fn_CreateFile()
   typeset local b_Blank="${2}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
-  chmod 664 "${file_Name}"
+  chmod 660 "${file_Name}"
   [[ "${b_Blank}" ]] && > "${file_Name}"
+  if [[ ! -z ${str_Group} ]] ; then
+    #echo "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
+    chgrp ${str_Group} ${file_Name} || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
+  else
+    :
+    #echo "Creating default file $file_Name <${str_Group}>"
+  fi
 }
 readonly -f fn_CreateFile
+
+fn_Mkdir()
+{
+  typeset local dir_Name="${1}"
+  mkdir -p -m 770 "${dir_Name}"
+  if [[ ! -z ${str_Group} ]] ; then
+    #echo "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
+    chgrp ${str_Group} ${dir_Name} || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+  fi
+}
+readonly -f fn_Mkdir
 
 fn_GetResumePoint()
 {
@@ -295,6 +325,8 @@ fn_UpdateResumePoint()
   typeset local int_ResumePoint="${2:-0}"                   # The new start task
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
   (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
+  fn_CreateFile "${file_Job}"
+  fn_CreateFile "${file_Job}".tmp blank
   sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ "${file_Job}" > "${file_Job}".tmp
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/dev/null
   [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
@@ -314,6 +346,7 @@ readonly -f fn_PressEnter
 
 fn_Trap()
 {
+  fn_CreateFile "${file_ProgLog}"
   echo "${fn_LogDate} ${1}" >> "${file_ProgLog}"
   fn_HouseKeeping
   exit 1
@@ -382,6 +415,7 @@ fn_PullRelease()
   printf " Pulling release\n"
   printf " ===============\n"
   printf " Retrieving MD5      (${file_Latest}.md5.txt): "
+  fn_CreateFile ${file_MD5}
   str_Ouput=$(curl -s -o ${file_MD5} ${file_Latest}.md5.txt)
   if [[ $? == 0 ]]  ; then
     echo "OK"
@@ -454,7 +488,7 @@ fn_InstallLatest()
   #printf " Verifying MD5      : "
   
   if [[ ! -f ${file_Install} ]] ; then
-    touch ${file_Install}
+    fn_CreateFile ${file_Install}
     chmod 770 ${file_Install}
     if [[ ! -w ${file_Install} ]] ; then
       printf " Error: Cannot write to install file ${file_Install}\n"
@@ -468,7 +502,7 @@ fn_InstallLatest()
 
   lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
   if [[ ! -z $lst_Changed ]] || [[ $(find -L ${dir_Base} -name ${str_ProgramName} -type f -newer ${file_Install}) ]] ; then
-    mkdir -p -m 775 ${dir_Backup}
+    fn_Mkdir ${dir_Backup}
     printf "\n\n"
     printf " Warning: Found files that have been modified\n"
     printf " ============================================\n"
@@ -486,6 +520,7 @@ fn_InstallLatest()
   tar oxvf ${file_Tar}
 
   if [[ $? == 0 ]] ; then
+    fn_CreateFile ${file_Install}
     echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
   fi
  # else
