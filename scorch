@@ -152,10 +152,11 @@
 ##                       Tee option #58 doesnt work very well - changed back
 ##                       #74 Resume from Manual state 
 ##                       #75 coloured disk space fixed
-## 1.54 181027    marc  #78 Scorch Group testing
+## 1.54 181027    marc   #78 Scorch Group testing
+## 1.55 181028    marc   Formatting improvememt
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.54"
+typeset str_ProgramVersion="1.55"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

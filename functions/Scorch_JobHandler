@@ -281,7 +281,7 @@ int_Start=\$(grep  "^AUDIT:START"  \${file_Log} | tail -1 | cut -d: -f3)
 int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3) 
 (( int_Duration = int_Finish - int_Start ))
 
-printf "\$(${fn_LogDate}) Tasks[\${int_Last}] Time[\$(fn_NiceTime \${int_Duration})] " >> "\${file_Log}"
+printf "\$(${fn_LogDate}) Tasks[%2s] Time[\$(fn_NiceTime \${int_Duration})] " \${int_Last} >> "\${file_Log}"
 (( int_ManualCount  > 0 )) && printf "Manual tasks[\${int_ManualCount}] "              >> "\${file_Log}"
 (( int_FailureCount > 0 )) && printf "Failures[\${int_FailureCount}]"                  >> "\${file_Log}"
 printf "\n" >> "\${file_Log}"
@@ -414,6 +414,7 @@ fn_ProcessRequest()
         fi
         echo " $((int_TaskCount - 1)) tasks created"
         fn_JobFooter "${file_Job}"
+        chmod 770 "${file_Job}"
         echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         (( int_JobCount+=1 ))
         b_StartGroup=""
