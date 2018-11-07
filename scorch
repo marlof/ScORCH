@@ -157,7 +157,7 @@
 ## 1.56 181107    marc   #79 Manual state defined
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.55"
+typeset str_ProgramVersion="1.56"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
