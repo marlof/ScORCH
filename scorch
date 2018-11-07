@@ -154,6 +154,7 @@
 ##                       #75 coloured disk space fixed
 ## 1.54 181027    marc   #78 Scorch Group testing
 ## 1.55 181028    marc   Formatting improvememt
+## 1.56 181107    marc   #79 Manual state defined
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="1.55"
@@ -482,6 +483,7 @@ if [[ ${file_Template} ]] ; then
         pending | running ) : ;;
         
         failed    ) echo "$(basename ${file_Job}) FAILED"               ; exit 1 ;;
+        manual    ) echo "$(basename ${file_Job}) MANUAL STEP"          ; exit 99 ;;
         completed ) echo "$(basename ${file_Job}) Completed"            ; exit 0 ;;
         *         ) echo "What is ${str_JobState}"                      ; exit 1 ;;
       esac
