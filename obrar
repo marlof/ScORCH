@@ -54,10 +54,11 @@
 # History
 # 1.0	160201    marc        First running demo
 # 1.1 180519    marc        Updated for first time install
-# 1.2 180520    marc        Find updated 
+# 1.2 180520    marc        Find updated
+# 1.3 181107    marc        #77 Install no longer duplicates tag line
 
 # Program settings
-typeset str_ProgramVersion="1.2"
+typeset str_ProgramVersion="1.3"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
@@ -286,8 +287,9 @@ fn_CheckSetUp()
     touch ${dir_Project}/demo/${str_Etc}/${file_Config}
 
     # Create DEMO tag
-    printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | ${str_FunctionIdentifier}Demo1" >> ${dir_Project}/demo/${str_Etc}/${file_TagDefinition}
-
+    if [[ ! -f ${dir_Project}/demo/${str_Etc}/${file_TagDefinition} ]] ; then 
+      printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | ${str_FunctionIdentifier}Demo1" >> ${dir_Project}/demo/${str_Etc}/${file_TagDefinition}
+    fi
     # Create DEMO function
     printf "${str_FunctionIdentifier}Demo1()\n{\n  Message \"Sleeping for \$TIME seconds\"\n  sleep \$TIME\n}\n" > ${dir_Project}/demo/${str_Functions}/${str_FunctionIdentifier}Demo1
  
