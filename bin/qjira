@@ -50,6 +50,7 @@ fn_Help()
   echo " ${str_ProgramName}"
   echo " # Query Options"
   echo "    -j <ticket number>       Jira Ticket ID"
+  echo "    -u <user:password>"
   echo " "
   echo " "
   echo " # Help"
@@ -59,7 +60,6 @@ fn_Help()
   echo " # Future features and development "
   echo "    create, assign, transition, comment"
   echo "    -c | --create            Create a ticket"
-  echo "    -u <user:password>"
   echo " "
   echo " # Example"
   echo "    ${str_ProgramName} -t DEP-1"
@@ -125,8 +125,9 @@ _JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADE
 #                                      -H     "Content-Type: application/json" \
 #                                      --data '{"jql":"key = '${TICKET}'""}' "${JIRA_SEARCH_URL}")
 
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>' && Error "Invalid jira username:password"
 
-#echo ${_JIRA_ISSUE_DETAILS}
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED" && Error "Password may be valid but account may be temporarily locked"
 
 #echo "==============="
 #curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "${JIRA_SERVER}/rest/api/2/user?username=user"
