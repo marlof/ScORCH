@@ -1,22 +1,109 @@
 #!/bin/bash
+##
+## Copyright 2016 WebMarcIT Ltd
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##    http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+## qjira
+##
+## VARIABLE naming convention
+## Variable names will use <prefix Hungarian Notation>_CamelCase
+## b    boolean                  TRUE,1 | FALSE,0
+## fn   function name            fn_function
+## p    pointer
+## str  string
+## dir  the variable defines a directory
+## file the variable defines a filename
+## History
+## 1.0  181110     marc        First release
+typeset str_ProgramVersion="1.0"
 
-typeset CURL=$(which curl)
-typeset JIRA_SERVER='http://jira-nas:32768'
-typeset JIRA_ISSUE_URL=${JIRA_SERVER}/rest/api/2/issue
-typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
-
-typeset TICKET=$1
-typeset AUTH='demo:test123'
-
-typeset PYTHON=$(which python)
-
-typeset AUTH_HEADER=$(echo -n $AUTH | base64)
+typeset    str_ProgramName="$(basename "$0")"
+typeset            dir_Run="$(dirname "$0")"
+typeset           dir_Orig="$(pwd)/${dir_Run}"
+typeset          file_Conf="${dir_Run}/../etc/${str_ProgramName}.conf"
 
 Error()
 {
   echo $@
   exit 1
 }
+
+fn_Usage()
+{
+	echo " ${str_ProgramName} [ -j <jira ID> [ --assign <name> | --transition <state> ] ] "
+}
+
+fn_Help()
+{
+  # Help
+  echo " ${str_ProgramName}"
+  echo " # Query Options"
+  echo "    -j <ticket number>       Jira Ticket ID"
+  echo " "
+  echo " "
+  echo " # Help"
+  echo "    -h | --help                          Show help"
+  echo "    -v | --verbose                       Display version"
+  echo " "
+  echo " # Future features and development "
+  echo "    create, assign, transition, comment"
+  echo "    -c | --create            Create a ticket"
+  echo "    -u <user:password>"
+  echo " "
+  echo " # Example"
+  echo "    ${str_ProgramName} -t DEP-1"
+}
+
+[[ ! -r ${file_Conf} ]] && Error "${str_ProgramName} not configured. Expecting JIRA_SERVER= to be set in ${file_Conf}"
+source ${file_Conf}
+[[ -z $JIRA_SERVER ]] && Error "JIRA_SERVER not exported from shell or not set in ${file_Conf}"
+
+typeset  JIRA_ISSUE_URL=${JIRA_SERVER}/rest/api/2/issue
+typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
+
+typeset      TICKET=$1
+typeset        AUTH='demo:test123'
+
+typeset PYTHON=$(which python)
+typeset   CURL=$(which curl)
+
+
+
+
+if [ $# -ne 0 ] ; then
+  while [ $# -gt 0 ] ; do
+    case "$1" in
+
+      # Help and version modes
+      -h | --help    ) fn_Help ; exit 0 ;; #b_Help=1 ;;
+      -v | --version ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+
+      ## API Mode
+      -j | --jira    ) shift ; TICKET=$1 ;;
+      -u             ) shift ;   AUTH=$1 ;;
+
+      ## Not yet working
+      -a | --assign  ) shift ; str_Assignee=$1 ; Error "Not yet enabled" ;;
+
+    esac
+    shift
+  done
+fi
+
+typeset AUTH_HEADER=$(echo -n $AUTH | base64)
+
+
 
 #curl -D- -u 'marc:test123' -X GET -H 'Content-Type: application/json' ${JIRA_SERVER}'/rest/api/2/issue/DEP-1'
 #${CURL} -D- -u $AUTH -X GET -H 'Content-Type: application/json' "${JIRA_ISSUE_URL}/${TICKET}"
