@@ -169,9 +169,12 @@ Sleep()
 
 Try()
 {
-  \$1 >> \${file_Log} 
+  printf "    Try: \$1\n"
+  \$1 >> \${file_Log}
   if [[ \$? != 0 ]] ; then
-    echo "TRY FAILED..... But will keep calm and carry on."
+    printf "\n    TRY FAILED..... But will keep calm and carry on.\n"
+    printf "\$(${fn_LogDate}) Tried and failed task [\${int_StartTask}/\${int_Last}]\n" >> "\${file_Log}"    
+    echo "AUDIT:T:\${int_StartTask}:T" >> "\${file_Job}"
   fi
 }
 
@@ -631,7 +634,7 @@ Task()
 #  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   case ${str_Task1} in
     Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
-    Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ; }\n" >> "${file_Job}" ;;
+    Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
 #    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
     *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac

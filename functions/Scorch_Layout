@@ -206,10 +206,10 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task} '
 
       if ( task_tmp[4] == "R")      str_Progress="  >>>  "
       if ( task_tmp[4] == "C")      str_Progress="[ done ]"
-      if ( task_tmp[4] == "F")
-       {    str_Progress="[ fail ]"   }
+      if ( task_tmp[4] == "F")      str_Progress="[ fail ]"
       if ( task_tmp[4] == "S")      str_Progress="[ skip ]"
       if ( task_tmp[4] == "M")      str_Progress="[manual]"
+      if ( task_tmp[4] == "T")      str_Progress="[ TaF  ]"
       arr_Progress[task_tmp[3]]=str_Progress
     }
     if ( $1 ~ "^fn_Task_[1-9]") {

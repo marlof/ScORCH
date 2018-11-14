@@ -155,9 +155,10 @@
 ## 1.54 181027    marc   #78 Scorch Group testing
 ## 1.55 181028    marc   Formatting improvememt
 ## 1.56 181107    marc   #79 Manual state defined
+## 1.57 181114    marc   #80 Try tasks that fail are noe shown in task output
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.56"
+typeset str_ProgramVersion="1.57"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
