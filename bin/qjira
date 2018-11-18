@@ -41,13 +41,16 @@ Error()
 
 fn_Usage()
 {
-	echo " ${str_ProgramName} [ -j <jira ID> [ --assign <name> | --transition <state> ] ] "
+	echo " ${str_ProgramName} [ -j <jira ID> [ --assign <name> | --transition <state> ] ]  [ -v ]"
 }
 
 fn_Help()
 {
   # Help
   echo " ${str_ProgramName}"
+  echo " "
+  echo " Using ${file_Conf} to locate the JIRA Server: $JIRA_SERVER"
+  echo " "
   echo " # Query Options"
   echo "    -j <ticket number>       Jira Ticket ID"
   echo "    -u <user:password>"
@@ -60,6 +63,10 @@ fn_Help()
   echo " # Future features and development "
   echo "    create, assign, transition, comment"
   echo "    -c | --create            Create a ticket"
+  echo "    -d description"
+  echo "    -s state"
+  echo "    -a assignee"
+  echo "    -set [-d -s -a]"
   echo " "
   echo " # Example"
   echo "    ${str_ProgramName} -t DEP-1"
@@ -73,10 +80,19 @@ typeset  JIRA_ISSUE_URL=${JIRA_SERVER}/rest/api/2/issue
 typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
 
 typeset      TICKET=$1
-typeset        AUTH='demo:test123'
 
-typeset PYTHON=$(which python)
-typeset   CURL=$(which curl)
+typeset       STATUS= ASSIGNEE= DESCRIPTION= VERBOSE= DESCRIPTION=simple
+
+typeset   PYTHON=$(which python)
+typeset     CURL=$(which curl)
+typeset JIRAPASS=$(which jirapass)
+
+# Jira pass will now be used - turning off hard coded password
+# typeset        AUTH='demo:test123'
+# typeset AUTH_HEADER=$(echo -n $AUTH | base64)
+! ${JIRAPASS} -r >/dev/null 2>&1 && echo "${JIRAPASS} issues: $(${JIRAPASS} -r)" && exit 1
+AUTH_HEADER=$(${JIRAPASS} -r)
+#jirapass -r
 
 
 
@@ -87,55 +103,90 @@ if [ $# -ne 0 ] ; then
 
       # Help and version modes
       -h | --help    ) fn_Help ; exit 0 ;; #b_Help=1 ;;
-      -v | --version ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+      -v             ) VERBOSE=1 ;;
+      --version ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
 
       ## API Mode
       -j | --jira    ) shift ; TICKET=$1 ;;
       -u             ) shift ;   AUTH=$1 ;;
 
       ## Not yet working
-      -a | --assign  ) shift ; str_Assignee=$1 ; Error "Not yet enabled" ;;
+      -set | --set  ) shift ; str_Assignee=$1 ; Error "Not yet enabled" ;;
+      -s            ) STATUS=1   ; DESCRIPTION= ;;
+      -a            ) ASSIGNEE=1 ; DESCRIPTION= ;;
+      -d            ) DESCRIPTION=1 ;;
+
 
     esac
     shift
   done
 fi
 
-typeset AUTH_HEADER=$(echo -n $AUTH | base64)
+
 
 
 
 #curl -D- -u 'marc:test123' -X GET -H 'Content-Type: application/json' ${JIRA_SERVER}'/rest/api/2/issue/DEP-1'
 #${CURL} -D- -u $AUTH -X GET -H 'Content-Type: application/json' "${JIRA_ISSUE_URL}/${TICKET}"
 
-#_JIRA_ISSUE_DETAILS=$(${CURL} -fk -X POST -H "Authorization: Basic ${_AUTH_HEADER}" \
-#                           -H "Content-Type: application/json" \
-#                           --data '{"jql":"key = '${TICKET}'"}' \
-#                           "${JIRA_SEARCH_URL}")
-#echo "DETAILS:$_JIRA_SSUE_DETAILS"
+_JIRA_ISSUE_DETAILS=$(${CURL} -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
+                           -H "Content-Type: application/json" \
+                           --data '{"jql":"key = '${TICKET}'"}' \
+                           "${JIRA_SEARCH_URL}")
+#echo "DETAILS:$_JIRA_ISSUE_DETAILS" 
+[[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
+
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>' && Error "Invalid jira username:password"
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"    && Error "Password may be valid but account may be temporarily locked"
+if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
+  if echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
+    echo "Ticket '${TICKET}' cannot be found"
+  else
+    echo "Error. Check jira API messages:"
+    echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u
+  fi
+  exit 1
+elif echo ${_JIRA_ISSUE_DETAILS} | grep -q '^{"startAt":' ; then
+  echo "You can't view this issue. It may have been deleted or you don't have permission to view it."
+  exit 1
+elif echo ${_JIRA_ISSUE_DETAILS} | grep -q "${str_ProgramName}:ERROR" ; then
+  echo "Check Jira server ${JIRA_SERVER}"
+  $CURL -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
+                                       -H     "Content-Type: application/json" "${JIRA_SEARCH_URL}"
+  exit 1
+fi
+
+[[ ${STATUS} ]]      && printf "Status:"      && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e status -e name -u
+[[ ${ASSIGNEE} ]]    && printf "Assignee:"    && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e assignee -e name -u
+if [[ "${DESCRIPTION}" = "1"  ]]  ; then
+  printf "Description:\n"
+  echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u
+elif [[ ${DESCRIPTION} ]] ; then
+  echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u	
+fi
+
 #read
 #echo "==============="
 
 # Works
-_JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
-                                       -H     "Content-Type: application/json" \
-                                       --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}" || echo "qjira:ERROR")
+#_JIRA_ISSUE_DETAILS=$(curl -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
+#                                       -H     "Content-Type: application/json" \
+#                                       --data '{"jql":"key = '${TICKET}'","fields":["id","description"]}}' "${JIRA_SEARCH_URL}") # || echo "qjira:ERROR")
 # in Test
 #_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
 #                                      -H     "Content-Type: application/json" \
 #                                      --data '{"jql":"key = '${TICKET}'""}' "${JIRA_SEARCH_URL}")
 
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>' && Error "Invalid jira username:password"
-
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED" && Error "Password may be valid but account may be temporarily locked"
 
 #echo "==============="
 #curl -D- -X GET -H "Authorization: Basic ${AUTH_HEADER}" -H "Content-Type: application/json" "${JIRA_SERVER}/rest/api/2/user?username=user"
 # Issue description
-echo ${TICKET}
-echo ${_JIRA_ISSUE_DETAILS} | grep -q "qjira:ERROR" && echo "Jira issue. Check Jira is running, username/password or ticket number" && exit 1
-echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues   -a -e fields  -e description -u
+#echo ${TICKET}
+#echo ">>"
+#echo "<<"
+#echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues   -a -e fields  -e description -u
 
+#_JIRA_ISSUE_DETAILS=
 #   _ISSUE_DESCRIPTION=$(echo ${_JIRA_ISSUE_DETAILS} | ${PYTHON} -c '
 #import sys
 #import json 

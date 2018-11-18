@@ -162,8 +162,8 @@ fn_RunJobs()
       nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
     else
       ## Fail the job as not executable
-      echo "Job not executable - running with bash"
-      fn_Audit "${file_EachJob}" "Not executable - running with bash"
+      #echo "Job not executable - running with bash"
+      #fn_Audit "${file_EachJob}" "Not executable - running with bash"
       nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
     fi
     ## To ensure started in order
