@@ -109,8 +109,19 @@ fn_ProcessRequest()
           exit 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
-        fn_JobFooter "${file_Job}"
-        echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+#        fn_JobFooter "${file_Job}"
+#        echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+#        (( int_JobCount+=1 ))
+
+        if [[ ${b_CreateFailed} ]] ; then
+          mv "${file_Job}" "${dir_Failed}/."
+          echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
+        else
+          fn_JobFooter "${file_Job}"
+          chmod 770 "${file_Job}"
+          echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+        fi
+
         (( int_JobCount+=1 ))
         b_StartGroup=""
 

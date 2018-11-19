@@ -187,18 +187,6 @@ while (( int_Count <= int_Last )) ; do
   (( int_Count++ ))
 done
 
-#  if [[ "\${str_Mode}" == "skip" ]] ; then
-#    for each_FailedTask in \${lst_FailedTasks[*]} ; do
-#      grep -q "^AUDIT:T:\${int_Count}:[C|M|S|R]" \${file_Log} && lst_SkipTasks=(\${lst_SkipTasks[*]} \${each_FailedTask})
-#    done
-#    echo "Debug:Skipped: \${lst_SkipTasks[*]}"
-#    for each_SkipTask in \${lst_SkipTasks[*]} ; do
-#      echo "AUDIT:T:\${each_FailedTask}:S" #>> \${file_Log}
-#    done
-#  else
-#    echo "\${lst_Tasks[*]}"
-#  fi
-
 int_Count=0
 if [[ "\${str_Mode}" == "skip" ]] ; then
   while (( int_Count <= int_Last )) ; do
@@ -416,11 +404,20 @@ fn_ProcessRequest()
           exit 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
-        fn_JobFooter "${file_Job}"
-        chmod 770 "${file_Job}"
-        echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+
+        if [[ ${b_CreateFailed} ]] ; then
+          mv "${file_Job}" "${dir_Failed}/."
+          echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
+        else
+          fn_JobFooter "${file_Job}"
+          chmod 770 "${file_Job}"
+          echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+        fi
+        
         (( int_JobCount+=1 ))
         b_StartGroup=""
+
+
         
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
@@ -691,6 +688,7 @@ GetVar()
   # -c                         Enforce case in the label pattern
   # -default "<value>"         Set a default is no value passed
   # -list                      Expect a list of values into an array by space or comma
+  # -m                         Set a mandatory flag
   #
   # awk 20070501 does not allow ignorecase so dont worry if it doesnt work
   # Examples
@@ -704,6 +702,7 @@ GetVar()
   typeset local b_List=
   typeset local b_Upper=
   typeset local b_Lower=
+  typeset local b_Mandatory=
  
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -712,6 +711,7 @@ GetVar()
         -name    ) shift ; str_Name="${1}"    ;;
         -default ) shift ; str_Default="${1}" ;;
         -c       )         b_IgnoreCase=0     ;;
+        -m       )         b_Mandatory=1      ;;
         -list    )         b_List=1           ;;
         -upper   )         b_Upper=1          ;;
         -lower   )         b_Lower=1          ;;
@@ -746,6 +746,14 @@ GetVar()
   [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
   eval "${str_Name}=\"${str_Value}\""
+  #[[ "${b_Mandatory}" ]] && echo "mandatory value requested <${str_Name}>" && sleep 10
+  if [[ "${b_Mandatory}" ]] && [[ -z "${str_Value}" ]] ; then
+    #echo "Mandatory value '${str_Name}' required a value but was not provided."
+    echo "Mandatory value '${str_Name}' required a value but was not provided." | tee -a  "${dir_Log}"/$(basename "${file_Job}").log
+
+    b_CreateFailed=1 
+    sleep 3
+  fi
 }
 readonly -f GetVar
 

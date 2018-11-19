@@ -156,9 +156,10 @@
 ## 1.55 181028    marc   Formatting improvememt
 ## 1.56 181107    marc   #79 Manual state defined
 ## 1.57 181114    marc   #80 Try tasks that fail are noe shown in task output
+## 1.58 181119    marc   #81 Adding Mandatory GetVar feature
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.57"
+typeset str_ProgramVersion="1.58"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -267,7 +268,7 @@ typeset     dir_Pending="${dir_Job}/pending"
 typeset      dir_Active="${dir_Job}/active"
 typeset      dir_Manual="${dir_Job}/manual"
 
-typeset      str_Filter=""
+typeset       str_Filter=""
 
 typeset        str_Group=${str_Group:-}
 typeset     b_Background=
@@ -283,6 +284,9 @@ typeset     dir_Location="www.autoscorch.com/downloads"
 typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="version.txt"
 typeset        file_MOTD="${dir_Etc}/motd"
+
+typeset   b_CreateFailed=
+
 
 
 
