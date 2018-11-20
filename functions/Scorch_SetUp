@@ -114,6 +114,9 @@ fn_CheckSetUp()
     exit 1
   fi
 
+  ps -f > /dev/null
+  [[ $? -ne 0 ]] && echo "ps is core dumping. Restart system" && exit 1
+
   str_JobPrefix="Job_"
 }
 readonly -f fn_CheckSetUp
