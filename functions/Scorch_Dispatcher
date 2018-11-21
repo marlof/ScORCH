@@ -36,6 +36,9 @@ fn_Dispatcher()
     fn_CheckRunning
     sleep ${int_DispatchSleep}
 
+    ## #83 - make sure jobs directories exists - if not then exit
+    [[ ! -d "${dir_Pending}" ]] || [[ ! -d "${dir_Running}" ]] || [[ ! -d "${dir_Queued}"  ]] && exit 1
+
     ## Check the pending directory first for any rules that have succeeded
     typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
     if [[ "${arr_PendingJobs}" ]] ; then

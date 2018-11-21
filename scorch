@@ -158,9 +158,10 @@
 ## 1.57 181114    marc   #80 Try tasks that fail are noe shown in task output
 ## 1.58 181119    marc   #81 Adding Mandatory GetVar feature
 ## 1.59 181120    marc   #82 Update for ps bash under windows bug
+## 1.60 181121    marc   #83 Dispatcher exits if jobs directory missing
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="1.59"
+typeset str_ProgramVersion="1.60"
 typeset       str_Codename="Amarok"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
