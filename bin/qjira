@@ -136,8 +136,9 @@ _JIRA_ISSUE_DETAILS=$(${CURL} -s -X POST -H "Authorization: Basic ${AUTH_HEADER}
 #echo "DETAILS:$_JIRA_ISSUE_DETAILS" 
 [[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
 
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>' && Error "Invalid jira username:password"
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"    && Error "Password may be valid but account may be temporarily locked"
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>'       && Error "Invalid jira username:password"
+echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"          && Error "Password may be valid but account may be temporarily locked"
 if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
   if echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
     echo "Ticket '${TICKET}' cannot be found"

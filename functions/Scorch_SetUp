@@ -32,6 +32,7 @@
 ## fn_IsNumber()
 ## fn_IsAlreadyRunning()
 ## fn_CheckLatest()
+## fn_PullRelease()
 ## fn_InstallLatest()
 ## fn_CheckMaint()
 ## fn_FileOwner()
@@ -411,6 +412,17 @@ fn_CheckLatest()
   fi
 }
 readonly -f fn_CheckLatest
+
+fn_Plugins()
+{
+  echo ""
+  if [[ "${str_Protocol}" == "http" ]] ; then
+    printf "\n\n Checking plugins ${str_Protocol}://${dir_URLPlugins}\n"
+    str_Plugins=$(curl ${str_Protocol}://${dir_Location}/${file_Plugins})
+  fi
+  echo ${str_Plugins}
+}
+readonly -f fn_Plugins
 
 fn_PullRelease()
 {

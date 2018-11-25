@@ -200,14 +200,16 @@ fn_Admin()
     printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
     [[ "${str_LatestVersion}" != "check" ]] && printf " I) Install latest version                ${str_LatestVersion}\n\n"
     printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
-    printf " F) Function Plugins\n\n"
+    printf " F) Function Plugin Manager\n\n"
+    printf " D) Download Plugins\n\n"
   else
     printf " POWER User permissions required:\n"
     printf "   .) Build Tar\n"
     printf "   .) Locks\n"
     printf "   .) Install\n"
     printf "   .) Maintenace\n\n"
-    printf "   .) Function Plugins"
+    printf "   .) Function Plugins Manager"
+    printf "   .) Download Plugins"
   fi
 
 
@@ -222,7 +224,7 @@ fn_Admin()
 
 
 
-  printf " P) Change Display and Timing preferences %s\n\n" ${file_Prefs}
+  printf " E) Edit Display and Timing preferences %s\n\n" ${file_Prefs}
   printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
   printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
   #fn_ShowLine "-" "Message of the day"
@@ -236,7 +238,10 @@ fn_Admin()
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
   (( b_Power == 1 )) && printf "${dis_ULOn}L${dis_ULOff}ocks | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | " && printf "${dis_ULOn}F${dis_ULOff}unctions | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}F${dis_ULOff}unctions | "
+  (( b_Power == 1 )) && printf "${dis_ULOn}D${dis_ULOff}ownload | "
+
   printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
@@ -247,8 +252,9 @@ fn_Admin()
     c | C )                            fn_CheckLatest ;;
     i | I ) (( b_Power == 1 ))      && fn_InstallLatest  ;;
     m | M ) (( b_Restricted != 1 )) && fn_AdminMOTD  ;;
-    p | P )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+    e | E )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) (( b_Power == 1 ))      && fn_LockManager        ;;
+    d | D ) fn_Plugins ;;
 
     f | F ) (( b_Power == 1 ))      && fnE_PluginManagerMenu ;;
 
