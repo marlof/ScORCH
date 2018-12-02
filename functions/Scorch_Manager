@@ -332,6 +332,7 @@ fn_Cancel()
   else
     echo "Incorrect call"
   fi
+  fn_LogWhy
   fn_PressEnter
 }
 

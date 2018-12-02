@@ -161,6 +161,7 @@
 ## 1.60 181121    marc   #83 Dispatcher exits if jobs directory missing
 ## END OF Amarok
 ## 2.00 181124    marc   #46 Install plugins from plugin library
+##                       #86 Added LogWhy to Cancel function
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="2.00"
@@ -409,6 +410,9 @@ typeset b_NonInteractive=
 typeset b_Sync=
 
 [[ ${BASH_VERSION%%.*} -lt 4 ]] && printf "$str_ProgramName uses associative arrays which require bash 4. Your version: $BASH_VERSION\n" && exit 1
+
+# Checks for python
+ ${dir_Python}/showJobs.py -n 1 new > /dev/null 2>&1 && str_ShowJobs=python || str_ShowJobs=bash
 
 ## Check for argument list
 ## scorch can be run in several modes (install, new, file, dispatcher, manager and background)
