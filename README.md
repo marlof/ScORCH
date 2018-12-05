@@ -1,6 +1,9 @@
 ScORCH Suite
 ============
 
+Annoucing 2.0
+
+
 DevOps Software Orchestration
 
 This will install the latest version (released or otherwise) into the current directory:
