@@ -1,8 +1,11 @@
 SP_DEMO-GROUP2()
 {
   GetVar -pattern "Fail" -name FAIL -default ""
+  Task "ls"
   StartGroup
-    Sleep  25
+    Task   "ls"
+    Message "uptime is"
+    Task   "uptime"
     Sleep  8
     Task   "printf \${RANDOM:4}"
     Sleep  15
@@ -12,28 +15,28 @@ SP_DEMO-GROUP2()
   Manual   "Release Manager to Notify OPS"
   
   StartGroup
-    Task   "echo STOP-CONTROL-FRAMEWORK" 
-    Manual "Backups on hold confirmation"
-    Task   "echo STOP-DB-A"
-    Task   "echo STOP-DB-B"
+    Message "STOP-CONTROL-FRAMEWORK" 
+    Manual  "Backups on hold confirmation"
+    Message "STOP-DB-A"
+    Message "STOP-DB-B"
   EndGroup
   
   Task   "printf Simulate random failure \${RANDOM:4} "
 
   StartGroup
-    Task   "echo INSTALL-APP-A"
-    Task   "echo INSTALL-APP-B"
+    Message   "INSTALL-APP-A"
+    Message   "INSTALL-APP-B"
   EndGroup
   
   StartGroup
-    Task   "echo START-DB-A"
-    Task   "echo START-DB-B"
-    Task   "echo START-APP-A"
-    Task   "echo START-APP-B"
+    Message "START-DB-A"
+    Message "START-DB-B"
+    Message "START-APP-A"
+    Message "START-APP-B"
   EndGroup
   
   StartGroup
-    Task   "echo START-CONTROL-FRAMEWORK"
+    Message "START-CONTROL-FRAMEWORK"
     Manual "Release Manager Notify OPS"
   EndGroup
 

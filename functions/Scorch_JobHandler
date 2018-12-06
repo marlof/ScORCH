@@ -34,6 +34,8 @@
 ##   StartGroup
 ##   EndGroup
 ##   Task()
+##   Error()
+##   Message()
 ##   tryTask()   | Try()
 ##   pauseTask() | Sleep()
 ##   breakTask() | Manual()
@@ -155,17 +157,10 @@ fn_NiceTime()
   printf "%02dh %02dm %02ds\n" \$hours \$minutes \$seconds
 }
 
-Manual()
-{
-  printf "\n\t\$*\n\n"
-  return 99
-}
-
-Sleep()
-{
-  printf "\n\tSleeping for \$1 seconds\n"
-  sleep \$1
-}
+Manual(){  printf "\n\t\$*\n\n" ; return 99 ; }
+Message(){ printf "\nTask Message: \$*\n" ; sleep $int_Refresh ; }
+Error(){   printf "\nForced Error: \$*\n" ; sleep $int_Refresh ; return 1 ; }
+Sleep(){   printf "\n\tSleeping for \$1 seconds\n" ; sleep \$1 ; }
 
 Try()
 {
@@ -508,10 +503,14 @@ fn_PIDWait()
         lst_PIDRunning="${lst_PIDRunning}${int_Task}:$int_PID "
       elif wait ${int_PID} ; then
         lst_PIDResult="${lst_PIDResult}${int_Task}:0 "
-        echo ">> SubTask ${int_Task} Output >>"
-        cat ${file_Log}.${int_Task} 
-        printf "\\nAUDIT:T:${int_Task}:C\\n" >> "${dir_Active}"/${str_JobName}
-        echo "== End SubTask ${int_Task} Output ============"
+        if [[ -r ${file_Log}.${int_Task} ]] ; then 
+          echo ">> SubTask ${int_Task} Output >>"
+          cat ${file_Log}.${int_Task} 
+          printf "\\nAUDIT:T:${int_Task}:C\\n" >> "${dir_Active}"/${str_JobName}
+          echo "== End SubTask ${int_Task} Output ============"
+        else
+          echo ">> Subtask ${int_Task} log missing"
+        fi
       else
         int_PID_RC=$?
 
@@ -630,48 +629,45 @@ Task()
   #works: printf "fn_Task_${int_TaskCount}${str_GroupTask}(){ ${str_Task1} \t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
 #  printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t>> \"\${file_Log}${str_LogExtension}\" 2>&1 ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   case ${str_Task1} in
-    Manual* | Sleep* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
-    Try*             ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
-#    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
-    *                ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    Manual* | Sleep* | Error* | Message* ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    #Message*                  ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" ; }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    Try*                      ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+#    *                        ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
+    *                         ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac
   (( int_TaskCount++ ))
 }
 readonly -f Task
 
-tryTask()
-{
-  ## To make things simple if there was just one parameter passed, use Task "command" OR true
-  Task "Try \"$*\""
-}
+Message(){ Task   "Message \"$*\""   ; }
+Error(){   Task   "Error   \"$*\""   ; }
+Try(){     Task   "Try     \"$*\""   ; }
+Sleep(){   Task   "Sleep   ${1:-10}" ; }
+Manual(){  Task   "Manual  \"$*\""   ; }
 
-Try()
-{
-  tryTask "$*"
-}
+#tryTask()
+#{
+#   ## To make things simple if there was just one parameter passed, use Task "command" OR true
+#   Task "Try \"$*\""
+#   echo "Depricated: Use Try"
+#}
 
-pauseTask()
-{
-  ## Exception to the naming convention is pauseTask. This is used in plugins by users
-  int_Sleep=${1:-10}
-  Task "Sleep ${int_Sleep}" 
-}
+#pauseTask()
+#{
+#  ## Exception to the naming convention is pauseTask. This is used in plugins by users
+#  int_Sleep=${1:-10}
+#  Task "Sleep ${int_Sleep}" 
+#  echo "Depricated: Use Sleep"
+#
+#}
 
-Sleep()
-{
-  pauseTask ${1:-10}
-}
+#breakTask()
+#{
+#  ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
+#  Task "Manual \"$*\""
+#  echo "Depricated: Use Manual"
+#}
 
-breakTask()
-{
-  ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
-  Task "Manual \"$*\"" 
-}
-
-Manual()
-{
-  breakTask "$*"
-}
 
 GetVar()
 {

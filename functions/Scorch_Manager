@@ -323,16 +323,18 @@ fn_Cancel()
     printf "\n Killing Process with PID[${int_PID}]"
     kill ${int_PID}
     mv ${file_Link} ${dir_Failed}
-    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Log} | tail -1 | cut -d: -f3)
+    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3)
     fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
-  elif  [[ "${str_JobState}" = "failed"  ]] ; then
-    fn_Audit "${file_Link}" "Aborted"
+    fn_LogWhy
+  elif  [[ "${str_JobState}" = "failed"  ]] || [[ "${str_JobState}" = "manual"  ]]; then
+    int_KillTask=$(grep "^AUDIT:T:.*:" ${file_Link} | tail -1 | cut -d: -f3)
     mv ${file_Link} ${dir_Completed}
+    fn_LogWhy
+    fn_Audit "${file_Link}" "aborted during task ${int_KillTask:-0}"
     printf "\n\n Aborted Job : ${file_Link}"
   else
     echo "Incorrect call"
   fi
-  fn_LogWhy
   fn_PressEnter
 }
 
