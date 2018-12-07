@@ -408,7 +408,7 @@ fn_CheckLatest()
     fi
     file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"
   else
-    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2)
+    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2 | head -1 )
   fi
 }
 readonly -f fn_CheckLatest
