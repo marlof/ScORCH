@@ -96,7 +96,19 @@ typeset JIRAPASS=$(which jirapass)
 AUTH_HEADER=$(${JIRAPASS} -r)
 #jirapass -r
 
+fn_CheckResponse()
+{
+  local RESPONSE=${1}
+  case ${RESPONSE} in
+    HTTP*20*  ) : ;;
+    HTTP*400* ) Error "$0: Internal error while trying to insert file message:\n${RESPONSE}" ;;
+    HTTP*401* ) Error "$0: Check username and password are correct in ${JIRA_PASSWORD_FILE}" ;;
+    HTTP*404* ) Error "$0: Cannot find the JIRA ticket. Check ${JIRA_SERVER}/browse/${_JIRA_ID}" ;;
+    HTTP*405* ) Error "$0: Method not allowed" ;;
+    *         ) Error "$0: Unhandled error from curl jira ticket check:\n${RESPONSE}" ;;
+  esac
 
+}
 
 fn_CreateTicket()
 {
@@ -125,7 +137,8 @@ EOF
      -X POST \
      --data @${file_Data} \
      -H "Content-Type: application/json" \
-     ${JIRA_ISSUE_URL})
+     ${JIRA_ISSUE_URL} | grep ^HTTP )
+  fn_CheckResponse $RESPONSE
   rm $file_Data
 }
 
@@ -146,8 +159,8 @@ EOF
      -X POST \
      --data @${file_Data} \
      -H "Content-Type: application/json" \
-     ${JIRA_ISSUE_URL}/${TICKET}/comment)
-
+     ${JIRA_ISSUE_URL}/${TICKET}/comment | grep ^HTTP)
+  fn_CheckResponse $RESPONSE
   rm $file_Data
 
 }
@@ -170,7 +183,8 @@ EOF
      -H "Authorization: Basic ${AUTH_HEADER}" \
      -X PUT --data @${file_Data} \
      -H "Content-Type: application/json" \
-     ${JIRA_ISSUE_URL}/${TICKET})
+     ${JIRA_ISSUE_URL}/${TICKET} | grep ^HTTP)
+  fn_CheckResponse "$RESPONSE"
   rm $file_Data
 }
 
@@ -241,7 +255,7 @@ if [ $# -ne 0 ] ; then
       -a            ) if [[ "$SET" -eq 1 ]] ; then
                         shift ; ASSIGNEE=$1
                       else
-                        ASSIGNEE= ; DESCRIPTION=
+                        ASSIGNEE=1 ; DESCRIPTION=
                       fi ;;
       -d            ) DESCRIPTION=1 ;;
       -c | --create ) shift ; PROJECT=$1 ;;
