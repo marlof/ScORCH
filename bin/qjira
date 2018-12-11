@@ -26,11 +26,12 @@
 ## file the variable defines a filename
 ## History
 ## 1.0  181110     marc        First release
-typeset str_ProgramVersion="1.0"
+## 1.1  181207     marc        Improvements
+typeset str_ProgramVersion="1.1"
 
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
-typeset           dir_Orig="$(pwd)/${dir_Run}"
+typeset           dir_Orig="$(cd $dir_Run && pwd)"
 typeset          file_Conf="${dir_Run}/../etc/${str_ProgramName}.conf"
 
 Error()
@@ -41,7 +42,7 @@ Error()
 
 fn_Usage()
 {
-	echo " ${str_ProgramName} [ -j <jira ID> [ --assign <name> | --transition <state> ] ]  [ -v ]"
+	echo " ${str_ProgramName} [--set] [--create <project> --summary 'text' --description 'text'] [ -j <jira ID> [ --assign <name> | --transition <state> ] ]  [ -v ]"
 }
 
 fn_Help()
@@ -69,7 +70,8 @@ fn_Help()
   echo "    -set [-d -s -a]"
   echo " "
   echo " # Example"
-  echo "    ${str_ProgramName} -t DEP-1"
+  echo "    ${str_ProgramName} -j DEP-1         Show full ticket details"
+  echo "    ${str_ProgramName} -s -j DEP-1      Show status"
 }
 
 [[ ! -r ${file_Conf} ]] && Error "${str_ProgramName} not configured. Expecting JIRA_SERVER= to be set in ${file_Conf}"
@@ -81,7 +83,7 @@ typeset JIRA_SEARCH_URL=${JIRA_SERVER}/rest/api/2/search
 
 typeset      TICKET=$1
 
-typeset       STATUS= ASSIGNEE= DESCRIPTION= VERBOSE= DESCRIPTION=simple
+typeset       STATUS= ASSIGNEE= DESCRIPTION= VERBOSE= DESCRIPTION=simple SET=
 
 typeset   PYTHON=$(which python)
 typeset     CURL=$(which curl)
@@ -94,6 +96,124 @@ typeset JIRAPASS=$(which jirapass)
 AUTH_HEADER=$(${JIRAPASS} -r)
 #jirapass -r
 
+
+
+fn_CreateTicket()
+{
+  [[ -z $PROJECT ]] && echo "Project not set" && fn_Usage && exit 1
+  #!/bin/bash
+  file_Data=$(mktemp)
+  #_JIRA="http://ukdc1-tc-jir02.worldpaytd.local:8080/rest/api/2/issue/"
+  cat >> ${file_Data} << EOF
+{
+    "fields": {
+       "project":
+       {
+          "key": "$PROJECT"
+       },
+       "summary": "$SUMMARY",
+       "description": "$DESCRIPTION",
+       "issuetype": {
+          "name": "Task"
+       }
+   }
+}
+EOF
+  RESPONSE=$(curl -k -s \
+     -D- \
+     -H "Authorization: Basic ${AUTH_HEADER}" \
+     -X POST \
+     --data @${file_Data} \
+     -H "Content-Type: application/json" \
+     ${JIRA_ISSUE_URL})
+  rm $file_Data
+}
+
+fn_AddComment()
+{
+  file_Data=$(mktemp)
+  echo "Adding comment $COMMENT to $TICKET"
+  cat >> ${file_Data} << EOF
+{
+    "body": "$COMMENT"
+}
+EOF
+
+  echo ${JIRA_ISSUE_URL}/${TICKET}
+  RESPONSE=$(curl -k -s \
+     -D- \
+     -H "Authorization: Basic ${AUTH_HEADER}" \
+     -X POST \
+     --data @${file_Data} \
+     -H "Content-Type: application/json" \
+     ${JIRA_ISSUE_URL}/${TICKET}/comment)
+
+  rm $file_Data
+
+}
+
+fn_AssignTicket()
+{
+  file_Data=$(mktemp)
+#_JIRA="http://ukdc1-tc-jir02.worldpaytd.local:8080/rest/api/2/issue/"
+  echo "assigning $TICKET to ${ASSIGNEE}"
+  cat >> ${file_Data} << EOF
+{
+   "fields": {
+       "assignee":{"name":"${ASSIGNEE}"}
+   }
+}
+EOF
+
+  RESPONSE=$(curl -k -s \
+     -D- \
+     -H "Authorization: Basic ${AUTH_HEADER}" \
+     -X PUT --data @${file_Data} \
+     -H "Content-Type: application/json" \
+     ${JIRA_ISSUE_URL}/${TICKET})
+  rm $file_Data
+}
+
+fn_ShowTicket()
+{
+  _JIRA_ISSUE_DETAILS=$(${CURL} -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
+                             -H "Content-Type: application/json" \
+                             --data '{"jql":"key = '${TICKET}'"}' \
+                             "${JIRA_SEARCH_URL}")
+  #echo "DETAILS:$_JIRA_ISSUE_DETAILS" 
+  [[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
+
+  echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
+  echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>'       && Error "Invalid jira username:password"
+  echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"          && Error "Password may be valid but account may be temporarily locked"
+  [[ -z ${_JIRA_ISSUE_DETAILS} ]] && Error "Jira page seems blank - has jira $JIRA_SERVER started correctly '${dir_Orig}/${str_ProgramName}'"
+  if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
+    if echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
+      echo "Ticket '${TICKET}' cannot be found"
+    else
+      echo "Error. Check jira API messages:"
+      echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u
+    fi
+    exit 1
+  elif echo ${_JIRA_ISSUE_DETAILS} | grep -q '^{"startAt":' ; then
+    echo "You can't view this issue. It may have been deleted or you don't have permission to view it."
+    exit 1
+  elif echo ${_JIRA_ISSUE_DETAILS} | grep -q "${str_ProgramName}:ERROR" ; then
+    echo "Check Jira server ${JIRA_SERVER}"
+    $CURL -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
+                      -H     "Content-Type: application/json" "${JIRA_SEARCH_URL}"
+    exit 1
+  fi
+
+  [[ ${STATUS} ]]      && printf "Status:"      && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e status -e name -u
+  [[ ${ASSIGNEE} ]]    && printf "Assignee:"    && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e assignee -e name -u
+  if [[ "${DESCRIPTION}" = "1"  ]]  ; then
+    printf "Description:\n"
+    echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u
+  elif [[ ${DESCRIPTION} ]] ; then
+    echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u  
+  fi
+}
 
 
 
@@ -111,10 +231,24 @@ if [ $# -ne 0 ] ; then
       -u             ) shift ;   AUTH=$1 ;;
 
       ## Not yet working
-      -set | --set  ) shift ; str_Assignee=$1 ; Error "Not yet enabled" ;;
-      -s            ) STATUS=1   ; DESCRIPTION= ;;
-      -a            ) ASSIGNEE=1 ; DESCRIPTION= ;;
+      -set | --set  ) SET=1 ;;
+#shift ; str_Assignee=$1 ; fn_AssignTicket ; exit 0 ;;
+      -s            ) if [[ "$SET" -eq 1 ]] ; then
+                        shift ; STATUS=$1 ; echo here
+                      else
+                        STATUS=1   ; DESCRIPTION=
+                      fi ;;
+      -a            ) if [[ "$SET" -eq 1 ]] ; then
+                        shift ; ASSIGNEE=$1
+                      else
+                        ASSIGNEE= ; DESCRIPTION=
+                      fi ;;
       -d            ) DESCRIPTION=1 ;;
+      -c | --create ) shift ; PROJECT=$1 ;;
+      --summary     ) shift ; SUMMARY=$1 ;;
+      --description ) shift ; DESCRIPTION=$1 ;;
+      --comment     ) shift ; COMMENT=$1 ;;
+
 
 
     esac
@@ -122,49 +256,30 @@ if [ $# -ne 0 ] ; then
   done
 fi
 
+if [[ $PROJECT ]] ; then
+  fn_CreateTicket
+  exit 0
+fi
 
+if [[ $COMMENT ]] ; then
+  fn_AddComment
+  exit 0
+fi
 
+if [[ $SET ]] ; then
+  echo setting
+  if [[ $ASSIGNEE ]] ; then
+    fn_AssignTicket
+  else
+    echo something else
+  fi
+else
+  fn_ShowTicket
+fi
 
 
 #curl -D- -u 'marc:test123' -X GET -H 'Content-Type: application/json' ${JIRA_SERVER}'/rest/api/2/issue/DEP-1'
 #${CURL} -D- -u $AUTH -X GET -H 'Content-Type: application/json' "${JIRA_ISSUE_URL}/${TICKET}"
-
-_JIRA_ISSUE_DETAILS=$(${CURL} -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
-                           -H "Content-Type: application/json" \
-                           --data '{"jql":"key = '${TICKET}'"}' \
-                           "${JIRA_SEARCH_URL}")
-#echo "DETAILS:$_JIRA_ISSUE_DETAILS" 
-[[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
-
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>'       && Error "Invalid jira username:password"
-echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"          && Error "Password may be valid but account may be temporarily locked"
-if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
-  if echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
-    echo "Ticket '${TICKET}' cannot be found"
-  else
-    echo "Error. Check jira API messages:"
-    echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u
-  fi
-  exit 1
-elif echo ${_JIRA_ISSUE_DETAILS} | grep -q '^{"startAt":' ; then
-  echo "You can't view this issue. It may have been deleted or you don't have permission to view it."
-  exit 1
-elif echo ${_JIRA_ISSUE_DETAILS} | grep -q "${str_ProgramName}:ERROR" ; then
-  echo "Check Jira server ${JIRA_SERVER}"
-  $CURL -s  -X POST -H     "Authorization: Basic ${AUTH_HEADER}" \
-                                       -H     "Content-Type: application/json" "${JIRA_SEARCH_URL}"
-  exit 1
-fi
-
-[[ ${STATUS} ]]      && printf "Status:"      && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e status -e name -u
-[[ ${ASSIGNEE} ]]    && printf "Assignee:"    && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e assignee -e name -u
-if [[ "${DESCRIPTION}" = "1"  ]]  ; then
-  printf "Description:\n"
-  echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u
-elif [[ ${DESCRIPTION} ]] ; then
-  echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u	
-fi
 
 #read
 #echo "==============="

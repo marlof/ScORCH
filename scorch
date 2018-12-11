@@ -165,6 +165,7 @@
 ## 2.1 181206     marc   #87 Add Error and Message tasks
 ##                           + fix to subgroup output
 ## 2.2 181207     marc   #88 Local install version improved
+## 2.3                       dir_Orig fixed
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="2.2"
@@ -172,7 +173,7 @@ typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
-typeset           dir_Orig="$(pwd)/${dir_Run}"
+typeset           dir_Orig="$(cd $dir_Run && pwd)"
 typeset     fn_FullLogDate="date +${str_ProgramName}:%y%m%d-%H%M%S"
 typeset         fn_LogDate="date +%y%m%d-%H%M%S"
 typeset           str_User=$(whoami)
