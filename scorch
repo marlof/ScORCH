@@ -166,9 +166,10 @@
 ##                           + fix to subgroup output
 ## 2.2 181207     marc   #88 Local install version improved
 ## 2.3                       dir_Orig fixed
+## 2.4 190104     marc   #92 Allow plugins to fail the creation of a job
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.2"
+typeset str_ProgramVersion="2.4"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -182,7 +183,7 @@ typeset         file_Prefs=~/${str_ProgramName}.prefs
 ## User EDITOR preference
 typeset         cmd_Editor="${EDITOR:-vi}"
 
-# Uncomment for group directory and file creation
+# Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
 
 fn_BaseDir()
@@ -251,7 +252,6 @@ if [[ ! -L ${dir_Base}/tmp/memory ]] ; then
   fi
 fi
 
-
 typeset     dir_Plugins="${dir_Base}/plugins"
 typeset     str_Plugins="$(basename "${dir_Plugins}")"
 typeset   dir_Functions="${dir_Base}/functions"
@@ -299,8 +299,6 @@ typeset        file_MOTD="${dir_Etc}/motd"
 typeset   b_CreateFailed=
 
 
-
-
 fn_ResetJobDefinitions()
 {
          dir_New="${dir_Job}/new"
@@ -313,6 +311,9 @@ fn_ResetJobDefinitions()
      dir_Deleted="${dir_Job}/deleted"
     dir_Archived="${dir_Job}/archived"
       dir_Active="${dir_Job}/active"
+     dir_Pending="${dir_Job}/pending"
+      dir_Active="${dir_Job}/active"
+      dir_Manual="${dir_Job}/manual"
 }
 
 ## Dispatcher definitions
@@ -519,7 +520,6 @@ echo call scorch in background and exit clean
 
 set | grep JobFile
 exit 0
-
 
   else
     exit 0

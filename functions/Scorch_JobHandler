@@ -645,6 +645,8 @@ Try(){     Task   "Try     \"$*\""   ; }
 Sleep(){   Task   "Sleep   ${1:-10}" ; }
 Manual(){  Task   "Manual  \"$*\""   ; }
 
+PluginError(){ echo ${1} >> "${dir_Log}"/$(basename "${file_Job}").log 2>&1 ; (( b_CreateFailed++ )) ; echo "mv job to failed" ; }
+
 #tryTask()
 #{
 #   ## To make things simple if there was just one parameter passed, use Task "command" OR true

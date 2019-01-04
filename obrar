@@ -57,6 +57,7 @@
 # 1.2 180520    marc        Find updated
 # 1.3 181107    marc        #77 Install no longer duplicates tag line
 # 1.4 181125    marc        #85 Bash 3 retrospective support
+# 1.5 190104    marc        #90 chgrp options added for str_Group settings
 
 # Program settings
 typeset str_ProgramVersion="1.4"
@@ -118,6 +119,9 @@ typeset      b_Verbose=
 typeset    str_Project=
 typeset   str_LProject=
 typeset  str_TimingExt=".tim"
+#typeset      str_Group=
+# Uncomment and set correct group for group directory and file creation
+# export str_Group=scorch
 
 
 # These function definitions are being stubbed until real one loaded
@@ -155,18 +159,51 @@ fn_GetJobID()
 readonly -f fn_GetJobID
 
 
+#fn_CreateFile()
+#{
+#  Verbose "Entering ${FUNCNAME}"
+#  typeset local file_Name="${1:-}"
+#  typeset local b_Blank="${2:-}"
+#  Verbose "Creating file <${file_Name}>"
+#  touch "${file_Name}" 
+#  [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
+#  chmod 664 "${file_Name}"
+#  [[ "${b_Blank}" ]] && > "${file_Name}"
+#}
+#readonly -f fn_CreateFile
+
+
 fn_CreateFile()
 {
-  Verbose "Entering ${FUNCNAME}"
   typeset local file_Name="${1:-}"
   typeset local b_Blank="${2:-}"
-  Verbose "Creating file <${file_Name}>"
-  touch "${file_Name}" 
+  touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
   chmod 664 "${file_Name}"
   [[ "${b_Blank}" ]] && > "${file_Name}"
+  if [[ ! -z ${str_Group} ]] ; then
+    Verbose "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
+    chgrp ${str_Group} ${file_Name} || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
+  else
+    :
+    Verbose "Creating default file $file_Name <${str_Group}>"
+  fi
 }
 readonly -f fn_CreateFile
+
+fn_Mkdir()
+{
+  typeset local dir_Name="${1}"
+  mkdir -p -m 770 "${dir_Name}"
+  if [[ ! -z ${str_Group} ]] ; then
+    Verbose "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
+    chgrp ${str_Group} ${dir_Name} || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+  else
+    :
+    Verbose "Creating dir $dir_Name <${str_Group}>"
+  fi
+}
+readonly -f fn_Mkdir
 
 
 fn_Help()
@@ -267,6 +304,19 @@ fn_CheckSetUp()
   Verbose "Entering ${FUNCNAME}"
   typeset b_SetUp=         # Is this the first run
 
+  if [[ ! -z ${str_Group} ]] ; then
+    # Check str_Group is ont of groups
+    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
+      :
+    else
+      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
+      printf "\n Your available groups are:\n "
+      groups
+      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator.\n"
+      exit 1
+    fi
+  fi
+
   # This function will check that all Scorch components are set to allow a smooth run.
   typeset local lst_Directories="dir_Common dir_Var dir_Etc dir_LogBase dir_Tmp dir_Timings"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
@@ -280,12 +330,13 @@ fn_CheckSetUp()
     printf "\n Creating common example ${str_ProgramName}.def file \n Example ${str_ProgramName}.env\n"
     
     # Create COMMON space
-    touch ${dir_Common}/${str_Etc}/${file_TagDefinition} ${dir_Common}/${str_Etc}/${file_Config}
-    mkdir -p ${dir_Common}/${str_Functions}
+    fn_CreateFile ${dir_Common}/${str_Etc}/${file_TagDefinition}
+    fn_CreateFile ${dir_Common}/${str_Etc}/${file_Config}
+    fn_Mkdir ${dir_Common}/${str_Functions}
 
     # Create DEMO space
-    mkdir -p ${dir_Project}/demo/${str_Etc} ${dir_Project}/demo/${str_Functions}
-    touch ${dir_Project}/demo/${str_Etc}/${file_Config}
+    fn_Mkdir ${dir_Project}/demo/${str_Etc} ${dir_Project}/demo/${str_Functions}
+    fn_CreateFile ${dir_Project}/demo/${str_Etc}/${file_Config}
 
     # Create DEMO tag
     if [[ ! -f ${dir_Project}/demo/${str_Etc}/${file_TagDefinition} ]] ; then 
@@ -314,7 +365,7 @@ fn_CheckSetUp()
   fi
 
   Verbose "Making log directory mkdir -p -m 775 ${dir_LogBase}"
-  mkdir -p -m 775 ${dir_LogBase}
+  fn_Mkdir ${dir_LogBase}
 
   [[ -z ${file_TagDefinition} ]] && Error "No file_TagDefinition defined"
   [[ -z ${str_Tag}     ]] && Error "No TAG passed"
@@ -677,7 +728,7 @@ fn_SourceSpaceEnvFile ${str_CommonName}
 
 # Now that we know what we are dealing with, create the log file directory and set the log file
 dir_LogSpace=${dir_LogBase}/$(date +%Y%m)
-mkdir -m 775 -p ${dir_LogSpace}
+fn_Mkdir ${dir_LogSpace}
 file_Log="${dir_LogSpace}/${str_LogPrefix}${str_Tag}-${int_JobID}.log"
 
 # Start logging and processing

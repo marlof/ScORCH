@@ -311,6 +311,9 @@ fn_Mkdir()
   if [[ ! -z ${str_Group} ]] ; then
     #echo "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
     chgrp ${str_Group} ${dir_Name} || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+  else
+    :
+    #echo "Creating dir $dir_Name <${str_Group}>"
   fi
 }
 readonly -f fn_Mkdir
