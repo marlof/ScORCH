@@ -442,7 +442,7 @@ fn_GetJobID()
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
   
   typeset local file_JobIDLock="${file_JobID}".lock
-
+  fn_CreateFile $file_JobIDLock
   (
     flock -w 1 200
     if [ -r "${file_JobID}" ] ; then
@@ -454,6 +454,7 @@ fn_GetJobID()
     echo ${int_JobID} > "${file_JobID}"
     echo ${int_JobID}
   ) 200> "${file_JobIDLock}"
+  rm $file_JobIDLock 2>/dev/null
 }
 readonly -f fn_GetJobID
 

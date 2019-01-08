@@ -167,9 +167,10 @@
 ## 2.2 181207     marc   #88 Local install version improved
 ## 2.3                       dir_Orig fixed
 ## 2.4 190104     marc   #92 Allow plugins to fail the creation of a job
+## 2.5 190107     marc   #90 str_Group additional fixes
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.4"
+typeset str_ProgramVersion="2.5"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -183,6 +184,7 @@ typeset         file_Prefs=~/${str_ProgramName}.prefs
 ## User EDITOR preference
 typeset         cmd_Editor="${EDITOR:-vi}"
 
+typeset         str_Group=
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
 
@@ -479,9 +481,10 @@ fn_CheckDispatcher
 
 [[ ${b_Dispatcher} ]] && fn_Dispatcher
 if [[ ${str_Action} ]] ; then
-  echo "Action:${str_Action}" > ${file_Template}
-  echo "${lst_GetVar}" | tr ";" "\n" >> ${file_Template}
-  cat ${file_Template}
+  fn_CreateFile "${file_Template}" blank
+  echo "Action:${str_Action}" > "${file_Template}"
+  echo "${lst_GetVar}" | tr ";" "\n" >> "${file_Template}"
+  cat "${file_Template}"
   fn_CheckDispatcher
   fn_RunJobs
 fi
@@ -528,8 +531,8 @@ fi
 
 if [[ ! -f ${file_CSV} ]] ; then
   fn_CreateFile "${file_CSV}"
-  echo "#DEF requesttime responsetime starttime endtime job time tasks failure who" >> ${file_CSV}
-  echo "#FS=," >> ${file_CSV}
+  echo "#DEF requesttime responsetime starttime endtime job time tasks failure who" >> "${file_CSV}"
+  echo "#FS=," >> "${file_CSV}"
 fi
 
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir "${dir_Tmp}" &&  exit 1

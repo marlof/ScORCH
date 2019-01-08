@@ -229,6 +229,7 @@ fn_CheckAuth()
   ##     root::all
   ##     user::DEMO
   file_Users=${dir_Etc}/users
+  fn_CreateFile "$file_Users"
 
   if [[ ${b_Install} ]] ; then
     printf "\n\n\tInitialising....\n\n"

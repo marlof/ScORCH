@@ -60,7 +60,7 @@
 # 1.5 190104    marc        #90 chgrp options added for str_Group settings
 
 # Program settings
-typeset str_ProgramVersion="1.4"
+typeset str_ProgramVersion="1.5"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
@@ -119,7 +119,7 @@ typeset      b_Verbose=
 typeset    str_Project=
 typeset   str_LProject=
 typeset  str_TimingExt=".tim"
-#typeset      str_Group=
+typeset      str_Group=
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
 
@@ -141,7 +141,7 @@ fn_GetJobID()
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
 
   typeset local file_JobIDLock="${file_JobID}".lock
-
+  #fn_CreateFile "$file_JobIDLock"
   if ( set -o noclobber; > "${file_JobIDLock}") 2> /dev/null ; then
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
@@ -152,7 +152,7 @@ fn_GetJobID()
     echo ${int_JobID} > "${file_JobID}"
     rm -f "${file_JobIDLock}"
   else
-    echo "Could not get exclusive lock"
+    Error "Could not get exclusive lock. Try again.\n If the issue persists remove the lock file ${file_JobIDLock}\n"
     exit 1
   fi
 }
@@ -272,6 +272,7 @@ fn_Timings()
 {
   typeset local str_FunctionName=${1:-}
   typeset local file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
+  fn_CreateFile "$file_Timing"
   typeset local int_Diff= str_Diff=
   if [ -r "${file_Timing}" ] ; then
     Message "Timings function:${str_FunctionName}"
@@ -284,6 +285,7 @@ fn_Timings()
     if [ ! -z "${str_Functions}" ] ; then
       for str_EachFunction in ${str_Functions} ; do
         file_Timing="${dir_Timings}/${str_EachFunction}${str_TimingExt}"
+        fn_CreateFile "$file_Timing"
         if [ -r "${file_Timing}" ] ; then
           Message "Timings function:${str_EachFunction}"
           printf "Runs\tMin\tMax\tAverage\n"
@@ -616,6 +618,7 @@ fn_UpdateTimings()
   typeset local str_FunctionName=${1:-}
   typeset local int_Timing=${2:-}
   typeset local file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
+  fn_CreateFile "$file_Timing"
   typeset local int_Diff= str_Diff=
   if [ -r "${file_Timing}" ] ; then
     typeset local str_Stats=$(cat ${file_Timing})
@@ -730,6 +733,8 @@ fn_SourceSpaceEnvFile ${str_CommonName}
 dir_LogSpace=${dir_LogBase}/$(date +%Y%m)
 fn_Mkdir ${dir_LogSpace}
 file_Log="${dir_LogSpace}/${str_LogPrefix}${str_Tag}-${int_JobID}.log"
+fn_CreateFile "$file_Log"
+
 
 # Start logging and processing
 fn_Header

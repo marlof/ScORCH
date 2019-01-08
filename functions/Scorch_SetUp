@@ -127,6 +127,11 @@ fn_SetPrefs()
   if [[ ! -f ${file_Prefs} ]] ; then
     fn_CreateFile ${file_Prefs} blank
     echo '
+## Permissions options
+## ===================
+# If the primary group is not the same as the team group set this value (suggested: scorch)
+export str_Group=
+
 ## Layout Option
 ## =============
 # Maximum number of jobs to show (useful for screen size preferences. Auto size is 999)
