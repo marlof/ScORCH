@@ -168,9 +168,10 @@
 ## 2.3                       dir_Orig fixed
 ## 2.4 190104     marc   #92 Allow plugins to fail the creation of a job
 ## 2.5 190107     marc   #90 str_Group additional fixes
+## 2.5.1          marc       Patch after testing on live
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.5"
+typeset str_ProgramVersion="2.5.1"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

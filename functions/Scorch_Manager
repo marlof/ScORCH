@@ -224,7 +224,7 @@ fn_Admin()
 
 
 
-  printf " E) Edit Display and Timing preferences %s\n\n" ${file_Prefs}
+  printf " P) Edit Display and Timing Preferences %s\n\n" ${file_Prefs}
   printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
   printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
   #fn_ShowLine "-" "Message of the day"
@@ -252,7 +252,7 @@ fn_Admin()
     c | C )                            fn_CheckLatest ;;
     i | I ) (( b_Power == 1 ))      && fn_InstallLatest  ;;
     m | M ) (( b_Restricted != 1 )) && fn_AdminMOTD  ;;
-    e | E )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+    p | P )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) (( b_Power == 1 ))      && fn_LockManager        ;;
     d | D ) fn_Plugins ;;
 

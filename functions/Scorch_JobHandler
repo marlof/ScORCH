@@ -378,7 +378,6 @@ fn_ProcessRequest()
         str_Call=${fn_Call#SP_}
         [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
-        fn_CreateFile "${file_Job}"
         fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
@@ -405,7 +404,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
         else
           fn_JobFooter "${file_Job}"
-          chmod 770 "${file_Job}"
+          #chmod 770 "${file_Job}"
           echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         fi
         
@@ -912,6 +911,7 @@ fn_CheckOwner()
 {
   typeset local file_Job="${1}"
   if ! grep -q "^str_Owner=${str_User}" "${file_Job}" ; then
+
     printf "\n\nYou do not own this job\n\nCurrent owner: $(grep "^str_Owner=" "${file_Job}")\n\n"
     read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in

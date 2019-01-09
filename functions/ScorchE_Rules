@@ -86,6 +86,8 @@ fn_ProcessRequest()
         str_Call=${fn_Call#SP_}
                 [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
+        fn_CreateFile "${file_Job}"
+        fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
         if [[ ! -z "${PARENT_LIST}" ]] ; then
           for str_EachRule in ${PARENT_LIST} ; do
             echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
