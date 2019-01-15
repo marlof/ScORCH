@@ -17,16 +17,16 @@ SP_DRINK-TEA()
   # Use 'Task' to run a command
   # ===========================
   str_LowerSize=$(echo ${SIZE} | tr [:upper:] [:lower:])
-  breakTask "Before filling the kettle, run the water for a few minutes so it is nicely aerated"
+  Manual "Before filling the kettle, run the water for a few minutes so it is nicely aerated"
   #Task "echo Before filling the kettle, run the water for a few minutes so it is nicely aerated"
   Task "echo Boil a kettle of water and while you wait for it to boil get a ${str_LowerSize}"
   Task "echo Pour the water directly onto the tea bag in the ${str_LowerSize}"
   (( brew_minutes = int_Strength * 60))
   Task "echo Leave to brew for ${int_Strength} minutes"
-  pauseTask $brew_minutes
+  Pause $brew_minutes
   [ ${MILK} -eq 1 ]  && Task "echo Add whole or semi skimmed milk"
   [ ${SUGAR} -ge 1 ] && Task "echo Add $SUGAR teaspoon${str_Plural} of sugar"
-  breakTask "Now sit back and enjoy, rating the tea for taste"
+  Manual "Now sit back and enjoy, rating the tea for taste"
   Task "echo Put the ${str_LowerSize} in the dish washer and you are done"
 }
 

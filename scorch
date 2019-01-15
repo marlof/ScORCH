@@ -169,6 +169,7 @@
 ## 2.4 190104     marc   #92 Allow plugins to fail the creation of a job
 ## 2.5 190107     marc   #90 str_Group additional fixes
 ## 2.5.1          marc       Patch after testing on live
+## 2.6            marc   #93
 ## Determine the program name and the running directory
 
 typeset str_ProgramVersion="2.5.1"
@@ -225,6 +226,8 @@ fn_Help()
   echo ""
   echo " # Setup"
   echo "    -install                             Setup directories and files for first use"
+  echo "    -repair                              Set group ownership and permissions on extracted files"
+  echo " "
   echo " # Example"
   echo "    scorch -a SAFEDEMO -o key1:value1 -o key2:val2 -s"
   echo "    scorch --action DRINK-TEA --start -sync"

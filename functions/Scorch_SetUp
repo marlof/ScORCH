@@ -130,7 +130,7 @@ fn_SetPrefs()
 ## Permissions options
 ## ===================
 # If the primary group is not the same as the team group set this value (suggested: scorch)
-export str_Group=
+# export str_Group=
 
 ## Layout Option
 ## =============
@@ -297,11 +297,12 @@ fn_CreateFile()
   typeset local b_Blank="${2}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
-  chmod 660 "${file_Name}"
+  chmod 660 "${file_Name}" 2>/dev/null
   [[ "${b_Blank}" ]] && > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     #echo "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${file_Name} || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
+    chgrp ${str_Group} ${file_Name} 2>/dev/null 
+    #|| echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
   else
     :
     #echo "Creating default file $file_Name <${str_Group}>"
@@ -312,10 +313,11 @@ readonly -f fn_CreateFile
 fn_Mkdir()
 {
   typeset local dir_Name="${1}"
-  mkdir -p -m 770 "${dir_Name}"
+  mkdir -p -m 770 "${dir_Name}" 2>/dev/null
   if [[ ! -z ${str_Group} ]] ; then
     #echo "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${dir_Name} || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+    chgrp ${str_Group} ${dir_Name} 2>/dev/null
+    #|| echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
   else
     :
     #echo "Creating dir $dir_Name <${str_Group}>"
@@ -558,6 +560,19 @@ fn_InstallLatest()
   fn_PressEnter
 }
 readonly -f fn_InstallLatest
+
+fn_Repair()
+{
+  # 93 - Fix perms and group settings for extracted file
+  echo "str_Group=$str_Group"
+  tar tvf ${file_Install}
+  ls -lH $dir_Orig
+  file $dir_Orig/*
+  echo "and bin"
+  ls -lH $dir_Orig/bin
+  fn_PressEnter
+}
+readonly -f fn_Repair
 
 fn_CheckMaint()
 {

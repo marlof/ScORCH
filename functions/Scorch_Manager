@@ -202,6 +202,7 @@ fn_Admin()
     printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
     printf " F) Function Plugin Manager\n\n"
     printf " D) Download Plugins\n\n"
+    [[ "${str_LatestVersion}" != "check" ]] && printf " R) Repair Permissions\n\n"
   else
     printf " POWER User permissions required:\n"
     printf "   .) Build Tar\n"
@@ -234,7 +235,7 @@ fn_Admin()
   printf "\n"
   (( b_Power == 1 )) && printf "${dis_ULOn}B${dis_ULOff}uild Release | "
   printf "${dis_ULOn}C${dis_ULOff}heck Version | "
-  [[ "${str_LatestVersion}" != "check" ]] && (( b_Power == 1 )) && printf "${dis_ULOn}I${dis_ULOff}nstall ${str_LatestVersion} | "
+  [[ "${str_LatestVersion}" != "check" ]] && (( b_Power == 1 )) && printf "${dis_ULOn}I${dis_ULOff}nstall ${str_LatestVersion} | ${dis_ULOn}R${dis_ULOff}epair | "
   printf "${dis_ULOn}P${dis_ULOff}references | "
   printf "${dis_ULOn}M${dis_ULOff}essage | "
   (( b_Power == 1 )) && printf "${dis_ULOn}L${dis_ULOff}ocks | "
@@ -258,6 +259,7 @@ fn_Admin()
 
     f | F ) (( b_Power == 1 ))      && fnE_PluginManagerMenu ;;
 
+    r | R ) (( b_Power == 1 ))      && fn_Repair ;;
     s | S ) (( b_Power == 1 ))      && ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;
