@@ -3,6 +3,6 @@ SP_OBRAR-DEMO()
   Sleep 10
   Task "obrar DEMO1 -t ${RANDOM:3}"
   Sleep 34
-  Manaul "This is a manual break task"
+  Manual "This is a manual break task"
   Try false
 }

@@ -28,8 +28,10 @@
 # 1.11      Marc Loftus     15/06/2018      Adding elasped time
 # 1.12      Marc Loftus     04/10/2018      Fixed issues with showline stealing CR
 # 1.13      Marc Loftus     23/10/2018      #73 Adding filter option
+# 1.14      Marc Loftus     26/01/2019      #94 Variable Column Width
+#                                           #95 Empty log file protection
 ############################################################################################################
-str_ProgramVersion = '1.13'
+str_ProgramVersion = '1.14'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
@@ -91,10 +93,35 @@ def fn_ShowLine(cha_LineChar,str_LineTitle):
     parity=(len(cha_LineChar))
     print( "%s"% cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity) - 1 ) )
 
+def fn_ColumnMax(arr_Files,int_Column):
+    int_ColumnMax=0
+    for str_File in arr_Files:
+        str_JobSplit = str_File.split("_")
+        int_TmpMax=len(str_JobSplit[int_Column])
+        if  int_TmpMax >= int_ColumnMax:
+            int_ColumnMax = int_TmpMax
+    return int_ColumnMax + 1
+
+def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
+    print os.path.join(dir_Job)
+    #arr_str_DirList2 = glob.glob(os.path.join(dir_Job)+'*/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
+    #for str_File in arr_str_DirList2:
+    #    print str_File
+    #    int_ColumnMax=0
+    #for root, dirs, files in os.walk(dir_Job):
+    #    print root
+        #print dirs
+        #print files
+    #for str_File in arr_Files:
+    #    str_JobSplit = str_File.split("_")
+    #    int_TmpMax=len(str_JobSplit[int_Column])
+    #    if  int_TmpMax >= int_ColumnMax:
+    #        int_ColumnMax = int_TmpMax
+    return 1
+
 def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
-    arr_str_DirList  = (listdir(join(dir_Job,str_State)))                   #   Create an "ls" list for the directory
     arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     global b_More
     global int_More
@@ -121,13 +148,15 @@ def fn_ShowJobs(str_State,temp,maxnum):
         else:
           ansi_colour=colours.RESET
 
-        # int_Column1Width=3     # Job num
-        # int_Column2Width=8     # Job ID
-        # int_Column3Width=20    # Longest Action
-        # int_Column4Width=10    # Longest Envrionment
-        # int_Column5Width=23    # Longest Release 
-        # int_Column6Width=      # Width left for the log
-        int_Width=int(int_Columns) - 3 - 8   - 10 - 20  - 8  - 20 
+        int_Magic=7    # including pipes and spaces
+        int_JobNumWidth=3     # 1 Job num
+        int_JobIDWidth=fn_ColumnMax(arr_Files,2)    # 2 Job ID
+        int_ActionWidth=fn_ColumnMax(arr_Files,3)     # 3 Longest Action
+        int_EnvWidth=fn_ColumnMax(arr_Files,4)     # 4 Longest Envrionment
+        int_ReleaseWidth=fn_ColumnMax(arr_Files,5)      # 5 Longest Release 
+        int_LogWidth=99      # 6 Width left for the log
+        #int_Width=int(int_Columns) - 3 - 8   - 10 - 20  - 8  - 20
+        int_Width=int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
 
         for str_File in arr_Files:
             if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
@@ -157,10 +186,13 @@ def fn_ShowJobs(str_State,temp,maxnum):
 
                     str_JobLogFile = ptr_JobLogFile.readlines()
                     ptr_JobLogFile.close()
-                    str_LastLine   = str_JobLogFile[-1].rstrip('\n')
+                    try:
+                        str_LastLine   = str_JobLogFile[-1].rstrip('\n')
+                    except IndexError:
+                        str_LastLine   = "Warning: Empty file"
 
                 else:
-                    str_LastLine   = "Error: Cannot read file"
+                    str_LastLine   = "Error: Cannot read file. Check permissions for read access."
 
                 if re.search("WIP", str_LastLine):
                   ansi_colour=colours.RESET
@@ -175,15 +207,29 @@ def fn_ShowJobs(str_State,temp,maxnum):
                           str_StartTime = int(line.split(':')[2])
                        except IndexError:
                           print
+                          str_StartTime = nt(time.time())
 
 
                   str_CurrentTime=int(time.time())
                   str_Time=str_CurrentTime - str_StartTime
                   str_Time=str(datetime.timedelta(seconds=str_Time))
-                  print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%+s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_Time, str_LastLine, colours.RESET))
+                  print (ansi_colour + "%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (int_Count,
+                    chr_PauseFlag,chr_RuleFlag,
+                    int_JobIDWidth,str_JobSplit[1],
+                    int_ActionWidth,str_JobSplit[3],
+                    int_EnvWidth,str_JobSplit[4],
+                    int_ReleaseWidth,str_JobSplit[5], 
+                    str_Time, 
+                    str_LastLine[:int_Width-10], colours.RESET))
                 else:
                     if re.search(jobfilter,str_File):
-                        print (ansi_colour + "%3d%s%s%+10s|%+20s|%+8s|%+20s|%s%s"% (int_Count,chr_PauseFlag,chr_RuleFlag,str_JobSplit[1],str_JobSplit[3],str_JobSplit[4],str_JobSplit[5], str_LastLine[:int_Width], colours.RESET))
+                        print (ansi_colour + "%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (int_Count,
+                            chr_PauseFlag,chr_RuleFlag,
+                            int_JobIDWidth,str_JobSplit[1],
+                            int_ActionWidth,str_JobSplit[3],
+                            int_EnvWidth,str_JobSplit[4],
+                            int_ReleaseWidth,str_JobSplit[5], 
+                            str_LastLine[:int_Width], colours.RESET))
 
                 int_Count = int_Count + 1
             else:
@@ -221,6 +267,12 @@ def main(argv):
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
         maxnum = int(rows) - 10
+
+    # Work for better spanning columns
+    #arr_str_DirList  = (listdir(dir_Job))                   #   Create an "ls" list for the directory
+    #arr_str_DirList = ("completed","failed","fixing","manual","new","pending","queued","running","starting","superseded")
+    #print arr_str_DirList
+    #print(fn_ColumnMax2(dir_Job,arr_str_DirList,1))
 
     for eachDir in list_Dir:
         fn_ShowJobs(eachDir,temp,maxnum)
