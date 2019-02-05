@@ -169,10 +169,11 @@
 ## 2.4 190104     marc   #92 Allow plugins to fail the creation of a job
 ## 2.5 190107     marc   #90 str_Group additional fixes
 ## 2.5.1          marc       Patch after testing on live
-## 2.6            marc   #93
+## 2.6            marc   #93 Group updates
+##                       #95 Dynamic coulm sizing in python 
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.5.1"
+typeset str_ProgramVersion="2.6"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
