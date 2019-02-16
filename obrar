@@ -727,7 +727,24 @@ Verbose "lst_TagArgs:${lst_TagArgs}"
 # If its not the TAGs, check everything it set up and process the request
 fn_CheckSetUp
 fn_GetJobID
+
+# Set Common envs
 fn_SourceSpaceEnvFile ${str_CommonName}
+# Load common functions
+fn_LoadFunctions()
+{
+  local str_Project=${1:-common}
+  Verbose "load ${str_Project}/functions"
+  local lst_Functions=$(find ${dir_Common}/${str_Functions} -name "fn_*" -type f)
+  for file_Function in ${lst_Functions} ; do
+    if [ -r ${file_Function} ] ; then
+      Verbose "Sourcing ${file_Function}"
+      source ${file_Function} || Error "There in common function <${file_Function}>"
+    fi
+  done
+}
+fn_LoadFunctions common
+
 
 # Now that we know what we are dealing with, create the log file directory and set the log file
 dir_LogSpace=${dir_LogBase}/$(date +%Y%m)
