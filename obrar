@@ -59,9 +59,10 @@
 # 1.4 181125    marc        #85 Bash 3 retrospective support
 # 1.5 190104    marc        #90 chgrp options added for str_Group settings
 # 1.6 190225    marc        #97 dir_Orig fixed
-
+# 1.7 190226    marc        #   Improvements to str_Group settings
+#                           #98 Improved standard error output
 # Program settings
-typeset str_ProgramVersion="1.5"
+typeset str_ProgramVersion="1.7"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
@@ -121,6 +122,7 @@ typeset      b_Verbose=
 typeset    str_Project=
 typeset   str_LProject=
 typeset  str_TimingExt=".tim"
+typeset    str_Logging=file
 typeset      str_Group=
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
@@ -129,6 +131,19 @@ typeset      str_Group=
 # These function definitions are being stubbed until real one loaded
 fn_LogDate() { printf "$($cmd_LogDate) $@\n";}
 Message() { printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log} ;}
+Message()
+{
+  #echo $str_Logging
+if [ ! -z ${str_Logging} ] ; then
+  printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log}
+else 
+  printf "$($cmd_LogDate) %15s FUNC  $@\n" "[${str_FunctionName}:${int_WarningCount}]"
+fi
+#printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" >> ${file_Log}
+#echo >> $LOG_FILE "INFORM[${PROG_NAME}] $1 (on `date '+%D %T'`)"
+# LIBRARY FUNCTION 
+# DO NOT MODIFY
+}
 Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};}
 Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After ${int_EndTime} seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log} ; exit 1;}
 Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};}
@@ -326,8 +341,12 @@ fn_CheckSetUp()
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${lst_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
-      printf "\n${p_Variable}\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
+      printf "\n# ${p_Variable}\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
       [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
+      if [[ ! -z ${str_Group} ]] ; then
+        Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2
+        printf "\n\tchgrp ${str_Group} ${!p_Variable}"
+      fi
     fi
   done
   if [[ ${b_Install} ]] ; then
@@ -435,14 +454,14 @@ fn_ProcessTag()
     if [ "${#str_TagLine}" != 0 ] ; then
       Error "TAG definitions are case sensitive. Did you mean\n${str_TagLine}"
     else
-	  local str_TagExample=$(${BASH_SOURCE[0]} -l | head -1)
+	    local str_TagExample=$(${BASH_SOURCE[0]} -l | head -1)
       Error "No TAG definition found.
   
         Check from the ${dir_Base} directory for files named ${file_TagDefinition}.
         find -L ${dir_Base} -name ${file_TagDefinition}
         ${str_ProgramName} is expecting to find a definition in the form
         ${str_TagExample}\n"
-		$BASH_SOURCE} -l | head -1
+		  #$BASH_SOURCE -l | head -1
     fi
   fi
   
@@ -595,17 +614,24 @@ fn_ProcessFunctions()
     typeset local int_StartTime=$(date +%s)
     typeset local   int_EndTime=
 
-    [[ ${b_Test} ]] && Message "TESTMODE: ${str_Function}" || ${str_Function}
+    # Process Function
+    str_Logging=
+    [[ ${b_Test} ]] && Message "TESTMODE: ${str_Function}" || ${str_Function} 2>&1 | tee -a ${file_Log}
     int_ReturnCode=${PIPESTATUS[0]}
+    str_FunctionName=${str_ProgramName}
+
     if [ ${int_ReturnCode} != 0 ] ; then
       Warning "The function <${str_Function}> aborted abnormally."
-	  Warning "Consider handling errors better in the function ${str_Function}."
+      Warning "Consider handling errors better in the function ${str_Function}.
+      Use Error \"<text>\" "
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
     fi
     int_EndTime=$(date +%s)
     (( int_EndTime = int_EndTime - int_StartTime ))
-    str_FunctionName=${str_ProgramName}
+    str_Logging=file
+
+
     [[ ${b_Test} ]] || fn_UpdateTimings "${str_Function}" "${int_EndTime}"
 
   done
@@ -700,7 +726,7 @@ while [ $# -gt 0 ] ; do
   case ${str_Arg} in
     -v | --verbose  ) b_Verbose=1 ;;
     -h | --help     ) fn_Help     ;;
-	-test | --test  ) b_Test=1    ;;
+    -test | --test  ) b_Test=1    ;;
     -n              ) b_Interactive=0   ;;	
     -l | --list     ) b_ListTags="TRUE" ;; 
     -install        ) b_Install=1 ;;
@@ -759,5 +785,7 @@ fn_CreateFile "$file_Log"
 fn_Header
 fn_ProcessTag #Update the timings of each function as we go. Base it on env just in case
 fn_SourceSpaceEnvFile ${str_LProject}
-fn_ProcessFunctions
+#str_Logging=
+fn_ProcessFunctions #2>&1 | tee -a ${file_Log}
+#str_Logging=file
 fn_Footer

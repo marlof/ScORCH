@@ -3,4 +3,9 @@ fn_Demo2()
   [[ "$FLAG" ]] && Message "FLAG set" || Message "Not FLAG"
   Message "Sleep set at $TIME seconds"
   sleep $TIME
+  ls /tmp/x /tmp/y
+  Message "Above command ls /tmp/x may create a standard error"
+  Message "Sleeping in backgroud 10 seconds before touching /tmp/x"
+  #(sleep 10 && touch /tmp/x) &
+  return 0
 }
