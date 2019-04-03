@@ -126,6 +126,7 @@ typeset    str_Logging=file
 typeset      str_Group=
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
+# [ ! -z ${str_Group} ] && umask 0007
 
 
 # These function definitions are being stubbed until real one loaded
@@ -622,8 +623,8 @@ fn_ProcessFunctions()
 
     if [ ${int_ReturnCode} != 0 ] ; then
       Warning "The function <${str_Function}> aborted abnormally."
-      Warning "Consider handling errors better in the function ${str_Function}.
-      Use Error \"<text>\" "
+      Warning "Consider handling errors better in the function ${str_Function}."
+      Warning "Use Error \"<text>\" "
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
     fi

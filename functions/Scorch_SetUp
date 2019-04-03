@@ -299,14 +299,7 @@ fn_CreateFile()
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
   chmod 660 "${file_Name}" 2>/dev/null
   [[ "${b_Blank}" ]] && > "${file_Name}"
-  if [[ ! -z ${str_Group} ]] ; then
-    #echo "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${file_Name} 2>/dev/null 
-    #|| echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
-  else
-    :
-    #echo "Creating default file $file_Name <${str_Group}>"
-  fi
+  [[ ! -z ${str_Group} ]] && chgrp ${str_Group} ${file_Name} 2>/dev/null 
 }
 readonly -f fn_CreateFile
 
@@ -314,14 +307,7 @@ fn_Mkdir()
 {
   typeset local dir_Name="${1}"
   mkdir -p -m 770 "${dir_Name}" 2>/dev/null
-  if [[ ! -z ${str_Group} ]] ; then
-    #echo "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${dir_Name} 2>/dev/null
-    #|| echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
-  else
-    :
-    #echo "Creating dir $dir_Name <${str_Group}>"
-  fi
+  [[ ! -z ${str_Group} ]] && chgrp ${str_Group} ${dir_Name} 2>/dev/null
 }
 readonly -f fn_Mkdir
 
