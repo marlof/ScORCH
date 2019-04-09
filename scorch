@@ -171,9 +171,10 @@
 ## 2.5.1          marc       Patch after testing on live
 ## 2.6            marc   #93 Group updates
 ##                       #95 Dynamic coulm sizing in python 
+## 2.6.1          marc   #99 bash -n added
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.6"
+typeset str_ProgramVersion="2.6.1"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -381,7 +382,7 @@ fn_LoadFunctions()
         [[ ${b_NonInteractive} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
 
         # Bash the function file for errors before loading it
-        bash "${str_EachFile}" && . "${str_EachFile}"
+        bash -n "${str_EachFile}" && . "${str_EachFile}"
         if [[ $? = 0 ]] ; then
           [[ ${b_NonInteractive} ]] || printf "%10s\n" "OK"
         else

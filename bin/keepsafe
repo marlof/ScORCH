@@ -14,13 +14,27 @@
 ## keepsafe -l list available creds
 ## ssh-keygen -t dsa
 ## 
+## History
+## 190409   1.1  marc     Improved dir_Program location
 set -u
 
 typeset local BASE_DIR= b_Force= READ= WRITE=
+
+str_ProgramName=$(basename $0)
+dir_Program=$(cd "$(dirname "$0")" ; /bin/pwd)
+
+# Single user mode
 typeset local file_Key=~/.ssh/mykey
 typeset local file_Cred=mycred
-str_ProgramName=$(basename $0)
-str_ProgramVersion=1.0
+
+# Team group mode
+typeset dir_KeyRelative="$(cd ${dir_Program}/../etc/.ssh/ ; /bin/pwd)"
+typeset dir_SSH=${dir_SSH:-${dir_KeyRelative}}
+file_Key=${dir_SSH}/team-key
+file_Cred=${dir_SSH}/team-creds
+
+
+str_ProgramVersion=1.1
 
 fn_Usage()
 {
@@ -39,7 +53,7 @@ fn_Write()
   # Create a file and set its credentials in case we are the first user
   touch ${file_Cred} 2>/dev/null
   chmod 660 ${file_Cred} 2>/dev/null
-  [[ ! -w ${file_Cred} ]] && echo "Credential file not writable" && exit 1
+  [[ ! -w ${file_Cred} ]] && echo "Credential file <${file_Cred}> not writable" && exit 1
 
   if [[ "$(grep "^${WRITE}=" ${file_Cred})" ]] && [[ -z ${b_Force} ]]; then
     echo "Error: Credential <${WRITE}> already exists. Use -f to force overwrite."
@@ -79,7 +93,7 @@ fn_Write()
 
 fn_Read()
 {
-  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
+  [[ ! -r ${file_Cred} ]]  && echo "Credential file <${file_Cred}> not readable" && exit 1
   str_CRED=$(grep ${READ} ${file_Cred} | cut -d"=" -f2-)
   if [[ ! -z ${str_CRED} ]] ; then
     echo ${str_CRED} | openssl enc -aes-256-cbc -a -salt -d -pass file:${file_Key}
@@ -91,7 +105,7 @@ fn_Read()
 
 fn_List()
 {
-  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
+  [[ ! -r ${file_Cred} ]]  && echo "Credential file <${file_Cred}> not readable" && exit 1
   if [[ -z $GREP ]] ; then
     echo "file_Cred:${file_Cred}"
     cat ${file_Cred} | cut -d"=" -f1 | sort 
