@@ -61,6 +61,7 @@ time I will be lucky to get through step 1 and make it work.
 	Actual time spent *14 hours*
 
 Outcome 1 and 3 have been completed.
+
 Outcome 2 and 4 - out of time.
 
 
@@ -72,7 +73,7 @@ also shows the simulation tests
 
 		./tMan.py
 
-					 IP|             Service|                 CPU|              Memory|              Status|
+			         IP|             Service|                 CPU|              Memory|              Status|
 		--------------------------------------------------------------------------------------------------------------
 			  10.58.1.1|      StorageService|                 33%|                 56%|             Heathly|
 			 10.58.1.10|         RoleService|                 25%|                  3%|             Heathly|
@@ -104,6 +105,7 @@ Troubleshooting
 ===============
 
 If you see error like these, they are coming from *requests*. It may be that you have not started the cpx or it is on a different port
+
 		requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8889): Max retries exceeded with url: /servers (Caused by NewConnectionError('<requests.packages.urllib3.connection.HTTPConnection object at 0x7f7682426c88>: Failed to establish a new connection: [Errno 111] Connection refused',))
 
 A try: was attempted but need to look at it in further development.
@@ -176,4 +178,37 @@ Create/use other peoples library functions that have already some of the actions
 
 
 
+
+DevOps Software Orchestration
+
+This will install the latest version (released or otherwise) into the current directory:
+
+`wget http://www.autoscorch.com/downloads/install && chmod a+x install && ./install`
+
+Repeatable
+
+Brilliant in it's simplicity
+
+Standard Features
+
+                      Add Jobs
+                      
+                      Plugins Engine
+                      
+                      State Engine
+                      
+                      Notification / Communication Engine
+                      
+Enterprise features
+
+                      Authentication / Security  Module
+
+                      Alternative Paths
+                      
+                      Audit Module
+                      
+                      Report Module
+                      
+                      Admin tasks Module
+                      
                       
