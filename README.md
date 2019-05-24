@@ -45,15 +45,15 @@ Overview
 
 Please find attached my submission.
 
-# tMan.py 		python source code for Thought Machine Service Manager
-# README.md 	this file
+tMan.py 		python source code for Thought Machine Service Manager
+README.md 	this file
 
 
 Develoment approach
 ===================
-# step 1 make it work
-# step 2 make it right
-# step 3 make it fast
+step 1 make it work
+step 2 make it right
+step 3 make it fast
 
 Due to the time constraint and having external factors influencing my
 time I will be lucky to get through step 1 and make it work.
