@@ -49,8 +49,8 @@ tMan.py 		python source code for Thought Machine Service Manager
 README.md 	this file
 
 
-Develoment approach
-===================
+Development approach
+====================
 step 1 make it work
 step 2 make it right
 step 3 make it fast
@@ -68,38 +68,42 @@ Outcome 2 and 4 - out of time.
 Running
 =======
 
+tMan.py has been set to use port 8889 by default
+
+		./cpx_server.py 8889
+
+
 I have been running my script from a bash command line. It can be run with -d for debug which
 also shows the simulation tests
 
 		./tMan.py
-
 			         IP|             Service|                 CPU|              Memory|              Status|
 		--------------------------------------------------------------------------------------------------------------
-			  10.58.1.1|      StorageService|                 33%|                 56%|             Heathly|
-			 10.58.1.10|         RoleService|                 25%|                  3%|             Heathly|
+			  10.58.1.1|      StorageService|                 33%|                 56%|             Healthy|
+			 10.58.1.10|         RoleService|                 25%|                  3%|             Healthy|
 			10.58.1.100|         RoleService|                 78%|                 31%|            Degraded|
-			10.58.1.101|         RoleService|                 63%|                 19%|             Heathly|
-			10.58.1.102|         RoleService|                 56%|                 34%|             Heathly|
-			10.58.1.103|           MLService|                 64%|                 72%|             Heathly|
-			10.58.1.104|       TicketService|                 51%|                 54%|             Heathly|
+			10.58.1.101|         RoleService|                 63%|                 19%|             Healthy|
+			10.58.1.102|         RoleService|                 56%|                 34%|             Healthy|
+			10.58.1.103|           MLService|                 64%|                 72%|             Healthy|
+			10.58.1.104|       TicketService|                 51%|                 54%|             Healthy|
 			10.58.1.105|         RoleService|                 99%|                 49%|           Unhealthy|
-			10.58.1.106|           MLService|                 39%|                 17%|             Heathly|
-			10.58.1.107|         AuthService|                 23%|                 45%|             Heathly|
+			10.58.1.106|           MLService|                 39%|                 17%|             Healthy|
+			10.58.1.107|         AuthService|                 23%|                 45%|             Healthy|
 			10.58.1.108|          GeoService|                  2%|                 76%|            Degraded|
 			10.58.1.109|         AuthService|                 35%|                 75%|            Degraded|
-			 10.58.1.11|           MLService|                 22%|                  3%|             Heathly|
+			 10.58.1.11|           MLService|                 22%|                  3%|             Healthy|
 			10.58.1.110|         TimeService|                 11%|                 86%|           Unhealthy|
 			10.58.1.111|       TicketService|                 22%|                100%|           Unhealthy|
 
 You may notice an addition Status of "Degraded". This is a service which has values that have broken 
-a warning threshold which can be set at variables.
+a warning threshold which can be set using the following variables.
 
 		# Healthy/unhealthy thresholds
 		int_AmberCPU          = 75              # Please change this to suit your needs
 		int_AmberMemory       = 75              # Please change this to suit your needs
 		int_RedCPU            = 85              # Please change this to suit your needs
 		int_RedMemory         = 85              # Please change this to suit your needs
-		int_ServiceCountLimit = 2               # Customisable number of services to alert on unheathly services
+		int_ServiceCountLimit = 2               # Customisable number of services to alert on unhealthy services
 
 Troubleshooting
 ===============
@@ -139,7 +143,7 @@ task or have time to refactor.
 Considerations
 ==============
 
-Try to make the functions as generic as possible to allow more re-use and adatability
+Try to make the functions as generic as possible to allow more re-use and adaptabilit
 Some services may return a different number of key pairs
 Some services may use upper/lowercase differences in key names - just be aware if hashing and use k.upper() of k.lower()
 Some services may stop using % signs and may simply switch to numeric so use str.replace()
@@ -151,64 +155,18 @@ Dont limit the columns just to those shown - allow additional columns and thresh
 Future Improvements
 ===================
 
-Extand to be python 2 or 3 agnostic
-Check for service down, long delays, http success/error codes 2xx success messages, 4xx clients errors, 5xx server errors
+Extend to be python 2 or 3 agnostic
+
+Check for service down, long delays, http success/error codes 2xx success messages, 4xx client errors, 5xx server errors
+
 Validate that the server is an IP or valid hostname (dont limit it to IP's )
+
 Allow config driven customisable threshold per service i.e AuthService may be ok to have higher memory usage
+
 Some effort has already been invested in the creation of specific functions in order to allow return on investment if/when changes are required
+
 Run it as a container
-More then one service may come from the same IP (different ports/shared services) so beware that a hash may overwrite
+
+More than one service may come from the same IP (different ports/shared services) so beware that a hash may overwrite
+
 Create/use other peoples library functions that have already some of the actions. 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DevOps Software Orchestration
-
-This will install the latest version (released or otherwise) into the current directory:
-
-`wget http://www.autoscorch.com/downloads/install && chmod a+x install && ./install`
-
-Repeatable
-
-Brilliant in it's simplicity
-
-Standard Features
-
-                      Add Jobs
-                      
-                      Plugins Engine
-                      
-                      State Engine
-                      
-                      Notification / Communication Engine
-                      
-Enterprise features
-
-                      Authentication / Security  Module
-
-                      Alternative Paths
-                      
-                      Audit Module
-                      
-                      Report Module
-                      
-                      Admin tasks Module
-                      
-                      
