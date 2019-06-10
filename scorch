@@ -172,9 +172,10 @@
 ## 2.6            marc   #93 Group updates
 ##                       #95 Dynamic coulm sizing in python 
 ## 2.6.1          marc   #99 bash -n added
+## 2.6.2          marc   #104 StartTime issue fixed
 ## Determine the program name and the running directory
 
-typeset str_ProgramVersion="2.6.1"
+typeset str_ProgramVersion="2.6.2"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -248,7 +249,7 @@ typeset         dir_Log="${dir_Var}/log/"
 typeset        dir_Lock="${dir_Var}/locks/"
 typeset         dir_Tmp="${dir_Base}/tmp/"
 
-## Memory tmp files for multi scorch use system
+## Memory tmp files for multi scorch use systems
 typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
 mkdir -p  ${dir_Memory} 2>/dev/null
 chmod 775 ${dir_Memory} 2>/dev/null
@@ -349,9 +350,9 @@ typeset      file_ProgLog="${dir_Log}/${str_ProgramName}.log"
 
 ## Authority
 ## =========
-typeset str_Authority=
-typeset       b_Power=0
-typeset  b_Restricted=0
+typeset     str_Authority=
+typeset           b_Power=0
+typeset      b_Restricted=0
 
 ## Load Functions
 ## ==============
@@ -373,7 +374,7 @@ fn_LoadFunctions()
   typeset local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
-        SAVEIFS=$IFS
+    SAVEIFS=$IFS
     IFS=$(echo -en "\n\b")
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*" | sed 's/ /\\ /g')
     arr_Functions=$(find -L "${dir_Directory}" -name "${str_Search}*")
@@ -519,16 +520,16 @@ if [[ ${file_Template} ]] ; then
       sleep 10
     done
 
-echo "Now find the jobs final resting place - completed or failed or lost"
-find -L ${dir_Completed} -name $(basename ${file_Job}) && echo "SUCCESS" && exit 0
-find -L ${dir_Failed} -name $(basename ${file_Job}) && echo "FAILED" && exit 1
+    echo "Now find the jobs final resting place - completed or failed or lost"
+    find -L ${dir_Completed} -name $(basename ${file_Job}) && echo "SUCCESS" && exit 0
+    find -L ${dir_Failed} -name $(basename ${file_Job}) && echo "FAILED" && exit 1
 
-echo "waiting for ${str_JobName} to complete"
-set | grep SAFE
-echo call scorch in background and exit clean
+    echo "waiting for ${str_JobName} to complete"
+    set | grep SAFE
+    echo call scorch in background and exit clean
 
-set | grep JobFile
-exit 0
+    set | grep JobFile
+    exit 0
 
   else
     exit 0
