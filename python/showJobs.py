@@ -197,6 +197,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                 if re.search("WIP", str_LastLine):
                   ansi_colour=colours.RESET
                 if str_State == "running":
+                  str_StartTime = int(time.time())
                     
                   # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
                   with open(file_JobLog) as origin:
@@ -207,7 +208,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                           str_StartTime = int(line.split(':')[2])
                        except IndexError:
                           print
-                          str_StartTime = nt(time.time())
+                          str_StartTime = int(time.time())
 
 
                   str_CurrentTime=int(time.time())

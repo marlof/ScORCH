@@ -16,6 +16,7 @@
 ## 
 ## History
 ## 190409   1.1  marc     Improved dir_Program location
+## 190508   1.2  marc     #101 Added feature to show value (no write)
 set -u
 
 typeset local BASE_DIR= b_Force= READ= WRITE=
@@ -28,7 +29,7 @@ typeset local file_Key=~/.ssh/mykey
 typeset local file_Cred=mycred
 
 # Team group mode
-typeset dir_KeyRelative="$(cd ${dir_Program}/../etc/.ssh/ ; /bin/pwd)"
+[[ -r  ${dir_Program}/../etc/.ssh/ ]] && typeset dir_KeyRelative="$(cd ${dir_Program}/../etc/.ssh/ ; /bin/pwd)" || dir_KeyRelative="/tmp"
 typeset dir_SSH=${dir_SSH:-${dir_KeyRelative}}
 file_Key=${dir_SSH}/team-key
 file_Cred=${dir_SSH}/team-creds
@@ -38,8 +39,9 @@ str_ProgramVersion=1.1
 
 fn_Usage()
 {
-  echo "$0  [ -r <credential> | -w <credential> [-f] ]  |  [-l]  |  [ -e ]
+  echo "$0  [ -r <credential> | -w <credential> [-f] ]  | [-c] | [-l]  |  [ -e ]
 
+  -c                  Create a credential from input
   -r <credential>     Read the stored value for the credential name.
   -w <credential>     Write a new credential.
   -f                  Overwrite / update a credential.
@@ -91,6 +93,40 @@ fn_Write()
   echo "Credential $WRITE written"
 }
 
+fn_CreateCred()
+{
+  # Create a file and set its credentials in case we are the first user
+
+
+  while : ; do
+    str_Check1=""
+    str_Check2=""
+
+    # Get the first password
+    str_Prompt="Enter value to encrypt  : "
+    while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
+      [[ ${chr_Input} == $'\0' ]] && break
+      str_Prompt="*"
+      str_Check1+="${chr_Input}"
+    done
+    echo
+
+    # Get the second password
+    str_Prompt="Confirm value to encrypt: "
+    while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
+      [[ ${chr_Input} == $'\0' ]] && break
+      str_Prompt="*"
+      str_Check2+="${chr_Input}"
+    done
+    echo
+
+    [[ ${str_Check1} != ${str_Check2} ]] && echo "Error: passwords do not match - try again" && exit 1 || break
+  done
+
+  grep -v "^${WRITE}=" ${file_Cred} >${file_Cred}.tmp
+  echo ${str_Check1} | openssl enc -aes-256-cbc -a -salt -e -pass file:${file_Key}
+}
+
 fn_Read()
 {
   [[ ! -r ${file_Cred} ]]  && echo "Credential file <${file_Cred}> not readable" && exit 1
@@ -118,6 +154,7 @@ if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
     case "$1" in
       -h          ) fn_Usage ;;
+      -c          ) fn_CreateCred ;;
       -v          ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
       -r          ) shift ; READ=${1:-}  ;;
       -f          ) b_Force=1            ;;

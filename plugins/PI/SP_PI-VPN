@@ -8,7 +8,7 @@ SP_PI-VPN()
   Task "INET=\$(echo ${_INET_FULL#*addr:})"
   Task "BCAST=\$(echo ${_INET_FULL#*Bcast:})"
   Task "MASK=\$(echo ${_INET_FULL#*Mask:})"  Task "echo Instructions from http://www.bbc.co.uk/news/technology-33548728"
-  pauseTask 60
+  Sleep 60
 
 }
 
