@@ -173,7 +173,9 @@
 ##                       #95 Dynamic coulm sizing in python 
 ## 2.6.1          marc   #99 bash -n added
 ## 2.6.2          marc   #104 StartTime issue fixed
+## 2.6.3          marc   #105 Super Strict Mode
 ## Determine the program name and the running directory
+set -euo pipefail
 
 typeset str_ProgramVersion="2.6.2"
 typeset       str_Codename="Chimera"
@@ -290,6 +292,8 @@ typeset       str_Filter=""
 
 typeset        str_Group=${str_Group:-}
 typeset     b_Background=
+typeset          b_SetUp=
+typeset        str_Owner=
 typeset      int_SubTask=
 typeset      str_SubTask=
 typeset int_DispatchSleep=10
@@ -369,8 +373,8 @@ fn_LoadFunctions()
   ##typeset local dir_Directory="$(basename ${1})"
   typeset local dir_Directory="${1}"
   typeset local    str_Search="${2}"
-  typeset local     b_Display="${3}"
-  typeset local      b_Errors=
+  #typeset local     b_Display="${3:-true}"
+  typeset local      b_Errors=0
   typeset local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
@@ -400,7 +404,8 @@ fn_LoadFunctions()
         ##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
-  [[ "${b_Errors}" -eq 1 ]] && echo "Check function files for errors like missing quotes, brackets or malformed syntax" && exit 1
+  [[ ${b_Errors} -ge 1 ]] && echo HERE && exit 1 || :
+
 }
 readonly -f fn_LoadFunctions
 

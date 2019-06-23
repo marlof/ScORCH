@@ -32,7 +32,7 @@ fn_DisplayMOTD()
   typeset local str_MOTD=
   if [ -r "${file_MOTD}" ] ; then
     str_MOTD=$(tail -1 "${file_MOTD}" | cut -d"+" -f2-)
-    [ "${str_MOTD}" ] && printf "Notice ${str_MOTD}\n" && fn_ShowLine "="
+    [ "${str_MOTD}" ] && printf "Notice ${str_MOTD}\n" && fn_ShowLine "=" || :
   fi
 }
 readonly -f fn_DisplayMOTD
@@ -62,7 +62,6 @@ fn_AdminMOTD()
 
     esac
   done
-
 }
 
 fn_EditMOTD()

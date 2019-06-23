@@ -294,20 +294,25 @@ fn_RangeTUI()
 fn_CreateFile()
 {
   typeset local file_Name="${1}"
-  typeset local b_Blank="${2}"
+  typeset local b_Blank="${2:-""}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
   chmod 660 "${file_Name}" 2>/dev/null
   [[ "${b_Blank}" ]] && > "${file_Name}"
-  [[ ! -z ${str_Group} ]] && chgrp ${str_Group} ${file_Name} 2>/dev/null 
+  if [[ ! -z ${str_Group} ]] ; then
+    chgrp ${str_Group} ${file_Name} 2>/dev/null
+  fi
 }
 readonly -f fn_CreateFile
 
 fn_Mkdir()
 {
   typeset local dir_Name="${1}"
-  mkdir -p -m 770 "${dir_Name}" 2>/dev/null
-  [[ ! -z ${str_Group} ]] && chgrp ${str_Group} ${dir_Name} 2>/dev/null
+
+  mkdir -p -m 770 "${dir_Name}" #2>/dev/null
+  if [[ ! -z ${str_Group} ]] ; then
+    chgrp ${str_Group} ${dir_Name} #2>/dev/null
+  fi
 }
 readonly -f fn_Mkdir
 
