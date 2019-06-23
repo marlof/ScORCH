@@ -329,7 +329,7 @@ fn_UpdateResumePoint()
   typeset local file_Job="${1}"                             # The Job to update
   typeset local int_ResumePoint="${2:-0}"                   # The new start task
   typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-  (( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
+  #(( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
   fn_CreateFile "${file_Job}"
   fn_CreateFile "${file_Job}".tmp blank
   sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ "${file_Job}" > "${file_Job}".tmp

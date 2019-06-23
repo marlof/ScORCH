@@ -309,7 +309,10 @@ typeset     file_Version="version.txt"
 typeset     file_Plugins="plugins.txt"
 typeset        file_MOTD="${dir_Etc}/motd"
 
-typeset   b_CreateFailed=
+typeset    b_CreateFailed=
+typeset           b_Debug=
+typeset b_StartGroupAdded=
+
 
 
 fn_ResetJobDefinitions()

@@ -141,7 +141,7 @@ fn_ShowJobs()
     if [[ "${str_ShowJobs}" == "python" ]] ; then
       [[ ! -z ${str_Filter} ]] && fn_ShowLine "=" "Filter ${str_Filter}"
       ${dir_Python}/showJobs.py -n $int_MaxShown -o ${file_Cache} -f "${str_Filter}" $* 
-      [[ -r ${file_Cache} ]] && . ${file_Cache}
+      [[ -r ${file_Cache} ]] && . ${file_Cache} || :
     else
       fn_ShowJobs2
     fi
@@ -357,7 +357,7 @@ fn_ShowTasks()
 {
   ## This functions simply displays the list of tasks that will be run
   ## If a value was passed assume that was the job for which to show the tasks
-  typeset local file_Job="${1}"
+  typeset local file_Job="${1:-""}"
   typeset local int_Answer=
 
   fn_ShowTop
@@ -468,7 +468,8 @@ fn_ContextMenu()
   [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
   [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
   [[ "${b_NewJobs}"     ]]  || [[ "${b_FailedJobs}"  ]]   && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
-  [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
+#  [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
+[[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   ( [[ "${b_FailedJobs}" ]] || [[ "${b_RunningJobs}" ]] ) && [[ "${str_State}" ]]  && printf "${dis_ULOn}H${dis_ULOff}angup | "
   [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}D${dis_ULOff}elete | "
 

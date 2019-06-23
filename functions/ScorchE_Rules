@@ -42,9 +42,9 @@ fn_GetRequest()
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
-          declare -f fn_ExtractPairs | grep "GetVar -pattern"
+          declare -f fn_ExtractPairs | grep -w "GetVar"
           echo "==CUSTOM============="
-          declare -f "SP_${str_Help}" | grep "GetVar "
+          declare -f "SP_${str_Help}" | grep -w "GetVar"
           echo "==============="
         fi
       else
@@ -71,7 +71,7 @@ fn_ProcessRequest()
 
     fn_ExtractPairs
 
-    [[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
+    #[[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
     for ACTION in ${ACTION_LIST} ; do
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
@@ -153,7 +153,7 @@ fn_ShowRules()
 {
   ## typeset local file_Job="${1}"
   echo ""
-  [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" )
+  [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) || :
 }
 readonly -f fn_ShowRules
 

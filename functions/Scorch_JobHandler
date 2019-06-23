@@ -262,7 +262,7 @@ echo "AUDIT:FINISH:\$(date "+%s")" >> "\${file_Log}"
 # CSV File
 # Request time,Response time, Start time, End Time, Job name, number of failures, who
 int_Created=\$(grep -m 1 "Created by:" \${file_Log} | cut -d" " -f1)
-str_Requested=${FROM:-${int_Responded}}
+str_Requested=${FROM:-""}
 int_Start=\$(grep  "^AUDIT:START"  \${file_Log} | tail -1 | cut -d: -f3)
 int_Finish=\$(grep "^AUDIT:FINISH" \${file_Log} | tail -1 | cut -d: -f3) 
 (( int_Duration = int_Finish - int_Start ))
@@ -332,9 +332,9 @@ fn_GetRequest()
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
-          declare -f fn_ExtractPairs | grep "GetVar -pattern"
+          declare -f fn_ExtractPairs | grep -w "GetVar"
           echo "==CUSTOM============="
-          declare -f "SP_${str_Help}" | grep "GetVar "
+          declare -f "SP_${str_Help}" | grep -w "GetVar"
           echo "==============="
         fi
       else
@@ -361,7 +361,6 @@ fn_ProcessRequest()
     echo "${str_EachFile}"
 
     fn_ExtractPairs
-    b_Debug=1
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
     for ACTION in ${ACTION_LIST} ; do
 
@@ -409,7 +408,7 @@ fn_ProcessRequest()
         fi
         
         (( int_JobCount+=1 ))
-        b_StartGroup=""
+        b_StartGroupAdded=
 
 
         
@@ -469,12 +468,15 @@ fn_ExtractPairs()
 }
 ## Enterprise feature available readonly -f fn_ExtractPairs
 
+# StartGroup will only be called from within a plugin
 StartGroup()
 {
   b_Background="&"
  # arr_PID=""
  # lst_PID=""
-  if [[ ${b_StartGroup} = "" ]] ; then
+ echo "HERE" && sleep 5
+ echo "b_StartGroupAdded = ${b_StartGroupAdded}"
+  if [[ -z ${b_StartGroupAdded} ]] ; then
     printf '
 
 typeset local int_PID=
@@ -581,7 +583,7 @@ fn_PIDWait()
 
 ' >> "${file_Job}"
 	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PID}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
-	b_StartGroup=1
+	b_StartGroupAdded=1
   fi
   int_SubTask=0
 }
@@ -601,9 +603,9 @@ Task()
   ## This function will Add Tasks to a scorch Job
   ## ================================================================================
   int_TaskCount=${int_TaskCount:-0}
-  typeset local   str_Task1=${1}
-  typeset local      str_OR=${2}
-  typeset local   str_Task2=${3}
+  typeset local   str_Task1=${1:-""}
+  typeset local      str_OR=${2:-""}
+  typeset local   str_Task2=${3:-""}
   typeset local str_AltTask=
 
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"

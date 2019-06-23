@@ -286,7 +286,7 @@ fn_ViewJob()
     fi
   #fn_PressEnter
   fi
-  [ -f "${file_View}" ] && rm -f "${file_View}"
+  [ -f "${file_View}" ] && rm -f "${file_View}" || :
 }
 readonly -f fn_ViewJob
 
@@ -301,7 +301,7 @@ fn_EditJob()
     mv "${file_Edit}" "${file_Orig}"
     fn_Audit "${file_Orig}" "edited job"
   fi
-  [ -f "${file_Edit}" ] && rm -f "${file_Edit}"
+  [ -f "${file_Edit}" ] && rm -f "${file_Edit}" || :
 }
 readonly -f fn_EditJob
 
