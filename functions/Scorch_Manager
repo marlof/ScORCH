@@ -48,7 +48,7 @@ fn_Filter()
 {
   printf "\n\n"
   [[ ! -z ${str_Filter} ]] && printf " Current filter <${str_Filter}> (press enter to clear)\n\n"
-  read -t ${int_Refresh} -p " Job name filter string: " str_Filter
+  read -t ${int_Refresh} -p " Job name filter string: " str_Filter || :
   #str_Filter=$(echo ${str_Filter})
 }
 readonly -f fn_Filter
@@ -71,7 +71,7 @@ fn_Manager()
     (( b_Quick == 1 )) && str_Quick="-n 1" || str_Quick=""
 
 
-    read ${str_Quick} -t ${int_Refresh} char_Choice
+    read ${str_Quick} -t ${int_Refresh} char_Choice || :
 
     case ${char_Choice} in
 
@@ -146,7 +146,7 @@ fn_ShowPrefs()
     printf "${dis_ULOn}D${dis_ULOff}efaults | "
     printf " e${dis_ULOn}X${dis_ULOff}it : "
 
-    read ${str_Quick} -t ${int_Refresh} char_Choice
+    read ${str_Quick} -t ${int_Refresh} char_Choice || :
 
     case ${char_Choice} in
       e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
@@ -246,7 +246,7 @@ fn_Admin()
   printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
   printf " e${dis_ULOn}X${dis_ULOff}it : "
 
-  read ${str_Quick} -t ${int_Refresh} char_Choice
+  read ${str_Quick} -t ${int_Refresh} char_Choice || :
 
   case ${char_Choice} in
     b | B ) (( b_Power == 1 ))      && fnE_MkEscorchtar ;;
@@ -278,7 +278,7 @@ fn_ViewJob()
   ${cmd_Editor} "${file_View}"
   if ! diff "${file_Orig}" "${file_View}" ; then
     printf "\n\nWarning. Not in edit mode. Changes will not be saved.\n"
-    read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer
+    read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer || :
     printf "\n\n"
     if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
       mv "${file_View}" /tmp/$(basename "${file_Orig}")
@@ -356,7 +356,7 @@ fn_AdminFunctions()
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
-      read ${str_Quick} -t 30 char_Choice
+      read ${str_Quick} -t 30 char_Choice || :
       fn_CheckDispatcher
 
 
