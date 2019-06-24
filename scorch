@@ -175,10 +175,11 @@
 ## 2.6.2          marc   #104 StartTime issue fixed
 ## 2.6.3          marc   #105 Super Strict Mode
 ## 2.6.4          marc   #105 -e mode turned to requestable until resolved
+## 2.6.5          marc   #106 -u - more work on undefined arrays
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.6.4"
+typeset str_ProgramVersion="2.6.5"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -310,6 +311,7 @@ typeset     file_Version="version.txt"
 typeset     file_Plugins="plugins.txt"
 typeset        file_MOTD="${dir_Etc}/motd"
 typeset       arr_States=("")
+typeset         arr_Jobs=("")
 
 typeset    b_CreateFailed=
 typeset           b_Debug=

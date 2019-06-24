@@ -817,11 +817,15 @@ fn_Transition()
   esac
 
   fn_ShowLine
-  if [ ${#arr_Jobs[@]} != 0 ] ; then
-    fn_GetAnswer range
-  else
+  if [ -z ${arr_Jobs} ] ; then
     printf "\n\tThere are no suitable jobs for that action\n\n"
     fn_GetAnswer
+  else
+  #if [ ${#arr_Jobs[@]} != 0 ] ; then
+    fn_GetAnswer range
+  #else
+   # printf "\n\tThere are no suitable jobs for that action\n\n"
+    #fn_GetAnswer
   fi
 
   arr_Answer=$(fn_Range "${str_Answer}")
