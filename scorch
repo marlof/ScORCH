@@ -174,8 +174,9 @@
 ## 2.6.1          marc   #99 bash -n added
 ## 2.6.2          marc   #104 StartTime issue fixed
 ## 2.6.3          marc   #105 Super Strict Mode
+## 2.6.4          marc   #105 -e mode turned to requestable until resolved
 ## Determine the program name and the running directory
-set -euo pipefail
+set -uo pipefail
 
 typeset str_ProgramVersion="2.6.3a"
 typeset       str_Codename="Chimera"
@@ -451,6 +452,8 @@ if [ $# -ne 0 ] ; then
       -s | --start   ) b_Start=1 ;;
       -sync | --sync ) b_Sync=1 ;;
       -dispatcher    ) b_Dispatcher=1 ;;
+
+      -e             ) set -e ;;
 
       ## Internal Mode
       -f | --file    ) shift ; file_Template="$1" ; b_NonInteractive=1 ;;

@@ -606,7 +606,7 @@ Task()
   typeset local      str_OR=${2:-""}
   typeset local   str_Task2=${3:-""}
   typeset local str_AltTask=
-
+  typeset local file_Job=${file_Job:-"/dev/null"}
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) | tee -a \"\${file_Log}\"" >> "${file_Job}"
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} "

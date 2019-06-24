@@ -159,6 +159,13 @@ export      file_Version="version.txt"
 ' >> ${file_Prefs}
   fi
   source ${file_Prefs}
+  if [ ! -z ${str_Group} ] ; then
+    if ! grep "${str_Group}:" /etc/group ; then
+      echo "str_Group set to ${str_Group} but does not exist."
+      echo "Reset to black"
+      str_Group=
+    fi
+  fi
 }
 readonly -f fn_SetPrefs
 
@@ -397,8 +404,8 @@ fn_CheckLatest()
   if [[ "${str_Protocol}" == "http" ]] ; then
     printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
     str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
-    fn_IsNumber ${str_LatestVersion}
-    if [[ $? == 0 ]] ; then
+    if fn_IsNumber ${str_LatestVersion} ; then
+    #if [[ $? == 0 ]] ; then
       echo "$str_LatestVersion"
     else
       printf "\n\n"
