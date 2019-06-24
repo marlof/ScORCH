@@ -369,8 +369,9 @@ readonly -f fn_Select
 
 fn_IsNumber()
 {
+  local str_Integer=${1:-""}
   re='^-?[0-9]+([.][0-9]+)?$'
-  if [[ $1 =~ $re ]] ; then
+  if [[ ${str_Integer} =~ $re ]] ; then
     return 0
   else
     return 1
@@ -380,7 +381,7 @@ readonly -f fn_IsNumber
 
 fn_IsAlreadyRunning()
 {
-  local str_Process="${1}"
+  local str_Process="${1:-""}"
   if [[ ! -z ${str_Process} ]] ; then
     ps -fu ${str_User} | grep -v grep | grep -s "${str_Process}" && return 0 || return 1
   else
