@@ -474,7 +474,6 @@ StartGroup()
   b_Background="&"
  # arr_PID=""
  # lst_PID=""
- echo "HERE" && sleep 5
  echo "b_StartGroupAdded = ${b_StartGroupAdded}"
   if [[ -z ${b_StartGroupAdded} ]] ; then
     printf '
