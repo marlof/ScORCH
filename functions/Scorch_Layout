@@ -112,6 +112,7 @@ fn_ShowTop()
   ## Reset the Array for Jobs and States
   ## ===================================
   unset arr_Jobs arr_States
+  arr_States=("")
 }
 readonly -f fn_ShowTop
 
@@ -237,6 +238,7 @@ fn_ShowJobs2()
     }'
     ##. ${file_Cache}
 #       cat "${file_Cache}"
+    typeset -A arr_States=
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
   done
 }
@@ -456,11 +458,13 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
-    [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
-    [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
-    [[ "$(echo ${arr_States[@]} | egrep -i "failed|manual")"   ]] && b_NewJobs=1 && b_FailedJobs=1 
-    [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
+    #if [ ! -z ${arr_States} ] ; then 
+      [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
+      [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
+      [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
+      [[ "$(echo ${arr_States[@]} | egrep -i "failed|manual")"   ]] && b_NewJobs=1 && b_FailedJobs=1 
+      [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
+    #fi
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
   fi
 

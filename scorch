@@ -309,6 +309,7 @@ typeset              URL="${str_Protocol}${dir_Location}"
 typeset     file_Version="version.txt"
 typeset     file_Plugins="plugins.txt"
 typeset        file_MOTD="${dir_Etc}/motd"
+typeset       arr_States=("")
 
 typeset    b_CreateFailed=
 typeset           b_Debug=
