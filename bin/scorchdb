@@ -135,7 +135,7 @@ typeset local file_DB=${1}
 # Find the defined columns names in the text file and turn it into an array
 # =========================================================================
 [[ -z ${str_Columns} ]] && str_Columns=$(grep "^#DEF" ${file_DB} 2>/dev/null | head -1)
-[[ -z ${c_FS} ]]        && grep "^#FS" ${file_DB} 2>/dev/null | head -1
+#[[ -z ${c_FS} ]]        && grep "^#FS" ${file_DB} 2>/dev/null | head -1
 [[ -z ${c_FS} ]] && c_tmpFS=$(grep "^#FS" ${file_DB} 2>/dev/null | head -1) && c_FS="$(echo ${c_tmpFS#\#FS=} | sed 's/[^[:print:]]//g' )"
 #[ ! -z "${c_tmpFS}" ]     && str_FS="-F${c_tmpFS#\#FS=}"
 [   -z "${str_Columns}" ] && echo "Cannot find a column definition in file:${file_DB}" && exit 1

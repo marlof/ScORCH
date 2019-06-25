@@ -316,6 +316,7 @@ typeset         arr_Jobs=("")
 typeset    b_CreateFailed=
 typeset           b_Debug=
 typeset b_StartGroupAdded=
+typeset  str_StatusColour=
 
 
 

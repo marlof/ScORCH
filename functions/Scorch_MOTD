@@ -46,7 +46,7 @@ fn_AdminMOTD()
     fn_ShowTop
     printf "\n\n"
     fn_ShowLine "=" "MOTD"
-    tail ${file_MOTD}
+    [[ -r ${file_MOTD} ]] && tail ${file_MOTD} || :
     fn_ShowLine
     fn_DisplayMOTD
     printf "\n"

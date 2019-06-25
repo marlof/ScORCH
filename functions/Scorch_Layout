@@ -405,7 +405,7 @@ fn_JobInfo()
   echo " State at selection : ${str_JobState}"
   basename ${file_ActiveJob}
   ##pgrep -a ${$(basename ${file_ActiveJob})::15}
-  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob})
+  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob}) || :
   echo ""
   ls -lL "${file_ActiveJob}"
   ls -lL "${file_Log}"
@@ -419,7 +419,7 @@ fn_JobInfo()
   echo ""
   if [[ "${str_JobState}" = "completed" ]] ; then
     fn_ShowLine "-" "Issues"
-    grep "REASON:" ${file_ActiveJob}
+    grep "REASON:" ${file_ActiveJob} || :
   fi
   fn_ShowLine "-" 
 
