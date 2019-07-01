@@ -1,0 +1,8 @@
+SP_INSTALL-DOCKER()
+{
+  SP_UPGRADE-LINUX
+  Task "sudo apt-get install docker-ce"
+  Task "docker -H localhost:2375 images"
+  Task "export DOCKER_HOST=localhost:2375"
+  Task "docker images"
+}

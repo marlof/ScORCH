@@ -1,0 +1,8 @@
+SP_MESSAGE()
+{
+  Message "I am the message"
+  Sleep 10
+  Try false
+  Manual "I am a manual task"
+  Error "I am a forced error"
+}

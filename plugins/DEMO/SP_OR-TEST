@@ -1,0 +1,14 @@
+SP_OR-TEST()
+{
+  GetVar -pattern "MAND" -name MAND -m
+  GetVar -pattern "Sugar" -name "SUGAR" -default 0
+
+  Manual "Confirm the mandatory value was $MAND"
+  Task "false" OR "true"
+  Sleep 5 
+  Task "false" OR "false"
+  Sleep 15 
+  Try "false"
+  Sleep 15 
+  Task "false || true"
+}
