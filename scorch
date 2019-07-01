@@ -176,10 +176,11 @@
 ## 2.6.3          marc   #105 Super Strict Mode
 ## 2.6.4          marc   #105 -e mode turned to requestable until resolved
 ## 2.6.5          marc   #106 -u - more work on undefined arrays
+## 2.6.6          marc   - Kafka/Docker/Ubuntu demo plugins
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.6.5"
+typeset str_ProgramVersion="2.6.6"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
