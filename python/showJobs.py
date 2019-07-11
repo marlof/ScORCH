@@ -30,6 +30,7 @@
 # 1.13      Marc Loftus     23/10/2018      #73 Adding filter option
 # 1.14      Marc Loftus     26/01/2019      #94 Variable Column Width
 #                                           #95 Empty log file protection
+# 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 ############################################################################################################
 str_ProgramVersion = '1.14'
 
@@ -147,7 +148,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
           ansi_colour=colours.FAIL
         else:
           ansi_colour=colours.RESET
-
+        chr_Owner=" "
         int_Magic=7    # including pipes and spaces
         int_JobNumWidth=3     # 1 Job num
         int_JobIDWidth=fn_ColumnMax(arr_Files,2)    # 2 Job ID
@@ -159,6 +160,12 @@ def fn_ShowJobs(str_State,temp,maxnum):
         int_Width=int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
 
         for str_File in arr_Files:
+            chr_Owner = " "
+            for line in open(str_File, 'r'):
+              if re.search("str_Owner=" + getpass.getuser() + "$", line):
+                chr_Owner = ">"
+                break
+
             if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
                 chr_PauseFlag = "P"
             else:
@@ -214,7 +221,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                   str_CurrentTime=int(time.time())
                   str_Time=str_CurrentTime - str_StartTime
                   str_Time=str(datetime.timedelta(seconds=str_Time))
-                  print (ansi_colour + "%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (int_Count,
+                  print (ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
                     chr_PauseFlag,chr_RuleFlag,
                     int_JobIDWidth,str_JobSplit[1],
                     int_ActionWidth,str_JobSplit[3],
@@ -224,7 +231,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                     str_LastLine[:int_Width-10], colours.RESET))
                 else:
                     if re.search(jobfilter,str_File):
-                        print (ansi_colour + "%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (int_Count,
+                        print (ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (chr_Owner,int_Count,
                             chr_PauseFlag,chr_RuleFlag,
                             int_JobIDWidth,str_JobSplit[1],
                             int_ActionWidth,str_JobSplit[3],
