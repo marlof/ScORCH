@@ -312,6 +312,7 @@ fn_Cancel()
   typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
 
   fn_CheckOwner "${file_Link}"
+  echo "${file_Link}"
   if [[ "${str_JobState}" = "running" ]] ; then
     printf "From AUDIT PID:"
     int_PID=$(grep "^AUDIT:PID:" ${file_Log} | tail -1 | cut -d: -f3)
@@ -322,10 +323,11 @@ fn_Cancel()
     ps -fu ${str_User} >> ${file_Log}
     echo "Process tree at termination:" >> ${file_Log}
     pstree -p ${int_PID} >> ${file_Log}
-    printf "\n Killing Process with PID[${int_PID}]"
+    printf "\n Killing Process with PID[${int_PID}]\n"
+    grep "^AUDIT:T:.*:R" ${file_Link} 
+    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3)
     kill ${int_PID}
     mv ${file_Link} ${dir_Failed}
-    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3)
     fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
     fn_LogWhy
   elif  [[ "${str_JobState}" = "failed"  ]] || [[ "${str_JobState}" = "manual"  ]]; then
