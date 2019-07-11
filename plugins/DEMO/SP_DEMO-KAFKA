@@ -47,5 +47,5 @@ SP_DEMO-KAFKA()
   #Message "Run in bash     kafka-topics --version"
   #Message "Adding Data to Kafka - Create a new kafka topic called $TOPIC"
   #Message "Run in bash  kafka-topics --create --zookeeper localhost:2181 --partitions 2  --replication-factor 1 --topic ${TOPIC^^}"
-  #Message  "Run in bash  kafka-topics --alter  --zookeeper localhost:2181 --partitions 16 --topic ${TOPIC^^}"
+  #Message  "Run in bash  kafka-topics --alter  --zookeeper localhost:2181 --partitions 16 --topic ${TOPIC^^} --timeout-ms 200"
 }

@@ -318,6 +318,8 @@ typeset    b_CreateFailed=
 typeset           b_Debug=
 typeset b_StartGroupAdded=
 typeset  str_StatusColour=
+typeset   int_ScreenWidth=80
+typeset           COLUMNS=80
 
 
 

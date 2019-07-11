@@ -1,3 +1,16 @@
+# The following instructions have been turned into a plugin
+#
+# 1 Before filling the kettle, run the water for a few seconds so it it nicely aeratedRun
+# 2 Boil the kettle
+# 3 Select a mug or a cup
+# 4 Pour the water directly onto the tea bag in the cup/mug 
+# 5 Leave to brew for a few minutes depending on taste [3/weak, 4/medium, 5/strong]
+# 6 Remove tea bag with a spoon giving just one gentle squeeze
+# 7 Add [whole/semi skimmed] milk to taste
+# 8 Add sugar to taste
+#
+# As steps become automated they can evolve from Manual "<steps>" to Task "<command>s"
+
 SP_DRINK-TEA()
 {
   # Use 'GetVar' to pass your own key pair values to the plugin
@@ -9,23 +22,38 @@ SP_DRINK-TEA()
   GetVar -pattern "Size"  -name "SIZE"  -default "Cup"
   
   case $STRENGTH in
-      weak   ) int_Strength=3 ;;
+    weak   ) int_Strength=3 ;;
 	  medium ) int_Strength=4 ;;
 	  strong ) int_Strength=5 ;;
   esac
-  
+
+  str_LowerSize=$(echo ${SIZE} | tr [:upper:] [:lower:])
+
+
+  # Use 'Manual' to force a stop
+  # ============================
+  Manual "Before filling the kettle, run the water for a few minutes so it is nicely aerated"
+
   # Use 'Task' to run a command
   # ===========================
-  str_LowerSize=$(echo ${SIZE} | tr [:upper:] [:lower:])
-  Manual "Before filling the kettle, run the water for a few minutes so it is nicely aerated"
-  #Task "echo Before filling the kettle, run the water for a few minutes so it is nicely aerated"
   Task "echo Boil a kettle of water and while you wait for it to boil get a ${str_LowerSize}"
-  Task "echo Pour the water directly onto the tea bag in the ${str_LowerSize}"
+
+  # Use 'Message' to provide information
+  # ====================================
+  Message "Pour the water directly onto the tea bag in the ${str_LowerSize}"
   (( brew_minutes = int_Strength * 60))
-  Task "echo Leave to brew for ${int_Strength} minutes"
-  Pause $brew_minutes
-  [ ${MILK} -eq 1 ]  && Task "echo Add whole or semi skimmed milk"
-  [ ${SUGAR} -ge 1 ] && Task "echo Add $SUGAR teaspoon${str_Plural} of sugar"
+  Message "Leave to brew for ${int_Strength} minutes - the next task will sleep for that long"
+
+  # Use 'Sleep' to pause or wait
+  # ============================
+  Sleep $brew_minutes
+
+  # Tasks etc can be Test driven
+  # ============================
+  [ ${MILK} -eq 1 ]  && Manual "Add whole or semi skimmed milk"
+  [ ${SUGAR} -ge 1 ] && Manual "Add $SUGAR teaspoon${str_Plural} of sugar"
+
+
   Manual "Now sit back and enjoy, rating the tea for taste"
   Task "echo Put the ${str_LowerSize} in the dish washer and you are done"
 }
@@ -37,11 +65,4 @@ SP_DRINK-TEA()
 # Strength    : weak, [medium], strong
 # Size        : [cup], mug
 # 
-# 1 Before filling the kettle, run the water for a few seconds so it it nicely aeratedRun
-# 2 Boil the kettle
-# 3 Select a mug or a cup
-# 4 Pour the water directly onto the tea bag in the cup/mug 
-# 5 Leave to brew for a few minutes depending on taste [3/weak, 4/medium, 5/strong]
-# 6 Remove tea bag with a spoon giving just one gentle squeeze
-# 7 Add [whole/semi skimmed] milk to taste
-# 8 Add sugar to taste
+

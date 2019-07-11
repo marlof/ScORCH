@@ -160,7 +160,7 @@ export      file_Version="version.txt"
   fi
   source ${file_Prefs}
   if [ ! -z ${str_Group} ] ; then
-    if ! grep "${str_Group}:" /etc/group ; then
+    if ! grep -q "${str_Group}:" /etc/group ; then
       echo "str_Group set to ${str_Group} but does not exist."
       echo "Reset to black"
       str_Group=
@@ -318,7 +318,7 @@ fn_Mkdir()
 
   mkdir -p -m 770 "${dir_Name}" #2>/dev/null
   if [[ ! -z ${str_Group} ]] ; then
-    chgrp ${str_Group} ${dir_Name} #2>/dev/null
+    chgrp ${str_Group} ${dir_Name} 2>/dev/null
   fi
 }
 readonly -f fn_Mkdir

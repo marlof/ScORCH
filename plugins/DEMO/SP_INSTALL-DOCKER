@@ -7,7 +7,9 @@ SP_INSTALL-DOCKER()
   Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
   Task "sudo apt-get update"
   Task "sudo apt-get install docker-ce"
-  Task "docker -H localhost:2375 images"
-  Task "export DOCKER_HOST=localhost:2375"
+  if [[ $(uname -v) =~ "Microsoft" ]] ; then
+    Task "docker -H localhost:2375 images"
+    Task "export DOCKER_HOST=localhost:2375"
+  fi
   Task "docker images"
 }
