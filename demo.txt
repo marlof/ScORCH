@@ -28,3 +28,14 @@ Label       : systest
 
 # Deployment framework 
 obrar -l
+
+# There be dragons....
+# Amphithere - Creatures with wings only and a forked tail
+# Azhi Dahaka - Three headed beast with sharp fangs Balaur - Enormous multi-headed monster
+# Cetus - Large head, clawed forearms, serpent-like body and tail
+# Fafnir - Poison breathing serpent-like creature Guivre - Huge snake with horns
+# Knucker - Large flying water beast Ladon - Multi-headed snake-like monster
+# Lambton Worm - Long serpent-like body, huge eyes and large teeth Lindworm - Extremely large, monstrous snake
+# Orochi - Enormous evil serpent with 8 heads & eight tails Peluda - Green and covered with numerous spikes
+# Smaug - Large, fire breathing red worm with indestructible armor Smok Wawelski - Fire breathing beast with six legs
+# Tarasque - Sharps fangs, body covered with scales, a whip-like tail Wyvern - Serpentine head, winged spiked body with pointed tail
