@@ -1,15 +1,17 @@
 SP_INSTALL-DOCKER()
 {
-  SP_UPGRADE-LINUX
-  Task "sudo apt-get install apt-transport-https ca-certificates curl software-properties-common"
-  Task "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
-  Task "sudo apt-key fingerprint 0EBFCD88"
-  Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
-  Task "sudo apt-get update"
-  Task "sudo apt-get install docker-ce"
-  if [[ $(uname -v) =~ "Microsoft" ]] ; then
-    Task "docker -H localhost:2375 images"
-    Task "export DOCKER_HOST=localhost:2375"
+  if [ -r /usr/bin/lsb_release] ; then
+    SP_UPGRADE-LINUX
+    Task "sudo apt-get install apt-transport-https ca-certificates curl software-properties-common"
+    Task "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
+    Task "sudo apt-key fingerprint 0EBFCD88"
+    Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
+    Task "sudo apt-get update"
+    Task "sudo apt-get install docker-ce"
+    if [[ $(uname -v) =~ "Microsoft" ]] ; then
+      Task "docker -H localhost:2375 images"
+      Task "export DOCKER_HOST=localhost:2375"
+    fi
+    Task "docker images"
   fi
-  Task "docker images"
 }
