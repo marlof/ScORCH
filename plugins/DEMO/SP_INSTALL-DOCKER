@@ -1,5 +1,9 @@
 SP_INSTALL-DOCKER()
 {
+  case $(grep "ID_LIKE=" /etc/os-release | cut -d"=" -f2) in
+    debain ) echo Ubuntu-esk ;;
+    fedora ) echo Red-hat-esk ;;
+  esac
   if [ -r /usr/bin/lsb_release] ; then
     SP_UPGRADE-LINUX
     Task "sudo apt-get install apt-transport-https ca-certificates curl software-properties-common"
@@ -13,5 +17,7 @@ SP_INSTALL-DOCKER()
       Task "export DOCKER_HOST=localhost:2375"
     fi
     Task "docker images"
+  else
+    Task "sudo yum install docker-ce docker-ce-cli containerd.io"
   fi
 }
