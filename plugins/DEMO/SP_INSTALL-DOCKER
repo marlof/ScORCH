@@ -1,23 +1,46 @@
 SP_INSTALL-DOCKER()
 {
-  case $(grep "ID_LIKE=" /etc/os-release | cut -d"=" -f2) in
-    debain ) echo Ubuntu-esk ;;
-    fedora ) echo Red-hat-esk ;;
+  # Instructions taken from  https://docs.docker.com/install/linux/docker-ce
+  
+  SP_UPDATE-LINUX
+  
+  
+  case $(grep "ID=" /etc/os-release | cut -d"=" -f2) in
+  
+    centos ) echo centos-esk
+          Task "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+          Task "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
+          Task "sudo yum install docker-ce docker-ce-cli containerd.io"
+    
+    ;;
+    debian | ubuntu ) echo debian-esk
+          Task "sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common"
+          Task "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
+          Task "sudo apt-key fingerprint 0EBFCD88"
+          Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
+          Task "sudo apt-get update"
+          Task "sudo apt-get install docker-ce docker-ce-cli containerd.io"
+          if [[ $(uname -v) =~ "Microsoft" ]] ; then
+            # Likely running Ubuntu under bash for windows - we can connect to the windows docker engine
+            Task "docker -H localhost:2375 images"
+            Task "export DOCKER_HOST=localhost:2375"
+          fi
+    ;;
+         
+    fedora ) echo Red-hat-esk
+          Task "sudo dnf -y install dnf-plugins-core"
+          Task "sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo"
+          Task "sudo dnf install docker-ce docker-ce-cli containerd.io"
+    ;;
+    
   esac
-  if [ -r /usr/bin/lsb_release] ; then
-    SP_UPGRADE-LINUX
-    Task "sudo apt-get install apt-transport-https ca-certificates curl software-properties-common"
-    Task "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
-    Task "sudo apt-key fingerprint 0EBFCD88"
-    Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
-    Task "sudo apt-get update"
-    Task "sudo apt-get install docker-ce"
-    if [[ $(uname -v) =~ "Microsoft" ]] ; then
-      Task "docker -H localhost:2375 images"
-      Task "export DOCKER_HOST=localhost:2375"
-    fi
+#  if [ -r /usr/bin/lsb_release] ; then
+  
+  
+    Message "If you require docker access run the following:     sudo usermod -aG docker $(whoami)"
     Task "docker images"
-  else
-    Task "sudo yum install docker-ce docker-ce-cli containerd.io"
-  fi
+    Task "docker run hello-world"
+#  else
+#    Task "sudo yum install docker-ce docker-ce-cli containerd.io"
+#  fi
 }
