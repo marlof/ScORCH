@@ -1,7 +1,23 @@
 SP_UPGRADE-LINUX()
 {
-  # Linux Updates section
+
   Task "sudo -n true" OR Manual "Exit scorch and run sudo true"
-  Task "sudo apt update"
-  Task "sudo apt -y upgrade"
+
+  case $(grep "ID=" /etc/os-release | cut -d"=" -f2) in
+  
+    centos ) echo centos-esk
+          Manual "Find out how to update manually"
+    
+    ;;
+    debian | ubuntu ) echo debian-esk
+          Task "sudo apt update"
+          Task "sudo apt -y upgrade"
+    ;;
+         
+    fedora ) echo Red-hat-esk
+          Manual "Find out how to update manually"
+    ;;
+    
+  esac
+
 }
