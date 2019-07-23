@@ -163,11 +163,17 @@ fn_RunJobs()
     printf "\n$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
     fn_CreateFile "${dir_Log}"/$(basename "${file_EachJob}").log
     if [[ -x "${file_EachJob}" ]] ; then
-      nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+      if [[ -z ${str_Group} ]] ; then
+        nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+      else
+        newgrp ${str_Group} << EOGROUP
+        nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+EOGROUP
+      fi
     else
       ## Fail the job as not executable
       #echo "Job not executable - running with bash"
-      #fn_Audit "${file_EachJob}" "Not executable - running with bash"
+      fn_Audit "${file_EachJob}" "Not executable - running with bash"
       nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
     fi
     ## To ensure started in order

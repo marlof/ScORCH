@@ -179,10 +179,11 @@
 ## 2.6.6          marc   - Kafka/Docker/Ubuntu demo plugins
 ## 2.6.7          marc   #111 COLUMNS update + others
 ## 2.7            marc   #109 Killed jobs report last running task
+## 2.7.1          marc   #115 Run jobs with newgrp is str_Group set
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.7"
+typeset str_ProgramVersion="2.7.1"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
