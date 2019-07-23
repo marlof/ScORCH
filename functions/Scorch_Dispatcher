@@ -179,6 +179,7 @@ EOGROUP
         newgrp ${str_Group} << EOGROUP
         nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 EOGROUP
+      fi
     fi
     ## To ensure started in order
     sleep 1
