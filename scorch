@@ -180,10 +180,11 @@
 ## 2.6.7          marc   #111 COLUMNS update + others
 ## 2.7            marc   #109 Killed jobs report last running task
 ## 2.7.1          marc   #115 Run jobs with newgrp is str_Group set
+## 2.7.2          marc   #117 Fixed double run issue when using -s from background job
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.7.1"
+typeset str_ProgramVersion="2.7.2"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -298,6 +299,7 @@ typeset       str_Filter=""
 
 typeset        str_Group=${str_Group:-}
 typeset     b_Background=
+typeset  b_BackgroundRun=
 typeset          b_SetUp=
 typeset        str_Owner=
 typeset      int_SubTask=
@@ -468,7 +470,7 @@ if [ $# -ne 0 ] ; then
       ## Internal Mode
       -f | --file    ) shift ; file_Template="$1" ; b_NonInteractive=1 ;;
       -new           ) b_New=1 ;;
-      -background    ) b_Background=1 ;;
+      -background    ) b_BackgroundRun=1 ;;
 
       ## Development / Alternative Mode
       -p             ) shift ; dir_Plugins="$(fn_BaseDir "${1}")"   ;;
@@ -565,7 +567,7 @@ fi
 
 [[ ${b_SetUp} ]] && printf "\nThis may be the first time you have run this. Check the issues above and try again." && mkdir "${dir_Tmp}" &&  exit 1
 
-if [[ "${b_Background}" ]] ; then
+if [[ "${b_BackgroundRun}" ]] ; then
   # ADD LOOP HERE FOR JOB CHECKS
   typeset local b_Finished=1
   echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"

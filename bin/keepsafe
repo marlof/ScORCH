@@ -130,7 +130,7 @@ fn_CreateCred()
 fn_Read()
 {
   [[ ! -r ${file_Cred} ]]  && echo "Credential file <${file_Cred}> not readable" && exit 1
-  str_CRED=$(grep ${READ} ${file_Cred} | cut -d"=" -f2-)
+  str_CRED=$(grep "^{READ}=" ${file_Cred} | cut -d"=" -f2-)
   if [[ ! -z ${str_CRED} ]] ; then
     echo ${str_CRED} | openssl enc -aes-256-cbc -a -salt -d -pass file:${file_Key}
   else

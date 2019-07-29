@@ -416,7 +416,7 @@ fn_ProcessRequest()
           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
         fi
         if [[ ${b_Start} ]] ; then
-          nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
+          #nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
 
           if [[ ${b_Sync} ]] ; then
             mv "${file_Job}" "${dir_Queued}/." 

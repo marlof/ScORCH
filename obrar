@@ -197,7 +197,7 @@ fn_CreateFile()
   typeset local b_Blank="${2:-}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
-  chmod 664 "${file_Name}"
+  chmod 664 "${file_Name}" 2>/dev/null
   [[ "${b_Blank}" ]] && > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
