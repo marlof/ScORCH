@@ -1,7 +1,7 @@
 ScORCH Suite
 ============
 
-Announcing 2.6
+Announcing 2.7
 
 
 DevOps Software Orchestration
