@@ -1,16 +1,59 @@
-FROM debian:buster-slim
+FROM debian
 LABEL maintainer "marc@webmarcit.com"
+
+ENV dir_Scorch     /opt/scorch
+ENV str_Protocol   http
+ENV dir_Location   autoscorch.com/downloads
+ENV str_User       scorch
+ENV str_Group      scorch
+
+# add user and group    
+RUN groupadd -r -g 999 ${str_Group} ; \
+    useradd -r -g ${str_Group} -u 999 ${str_User}
 
 # update debian
 RUN apt-get update
-
-# add our scorch user and group first to make sure their IDs get assigned consistently, regardless of whatever depencies get added
-RUN groupadd -r -g 999 scorch && useradd -r -g scorch -u 999 scorch
-
-# grab the latest 
-ENV dir_Scorch   /opt/scorch
-ENV str_Protocol http
-ENV dir_Location autoscorch.com/downloads
+RUN	apt-get install -y --no-install-recommends \
+    wget \
+    gawk \
+    procps \
+    python \
+	;
 
 WORKDIR ${dir_Scorch}
-RUN curl -o latest.tar ${str_Protocol}:${dir_Location}/scorch.tar
+
+# grab the latest 
+RUN wget -O scorch.tar ${str_Protocol}://${dir_Location}/latest.tar ; \
+    tar -xf scorch.tar ; \
+    rm scorch.tar  
+
+RUN mkdir -p -m 770 "${dir_Scorch}/jobs/pending" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/new" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/starting" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/failed" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/fixing" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/deleted" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/running" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/superseded" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/manual" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/completed" ; \
+    mkdir -p -m 770 "${dir_Scorch}/etc" ; \
+    mkdir -p -m 770 "${dir_Scorch}/tmp/" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/queued" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/active" ; \
+    mkdir -p -m 770 "${dir_Scorch}/jobs/archived" ; \
+    mkdir -p -m 770 "${dir_Scorch}/var/" ; \
+    mkdir -p -m 770 "${dir_Scorch}/var//log/" ; \
+    mkdir -p -m 770 "${dir_Scorch}/var//locks/" ; \
+    echo "root:POWER:ALL" >> ${dir_Scorch}/etc/users ; \
+    touch ${dir_Scorch}/etc/motd
+    
+RUN chown -R ${str_User}:${str_Group} ${dir_Scorch}
+
+
+RUN echo "docker build --network=host -f Dockerfile-0.1 -t webmarcit/scorch:latest ."
+RUN echo "docker run --rm -i --net=host webmarcit/scorch:latest"
+# docker build --network=host -f Dockerfile-0.1 -t webmarcit/scorch:latest .
+# docker image ls
+# docker run --rm -i --net=host webmarcit/scorch:latest
+# docker exec -it <container-id> /bin/bash
