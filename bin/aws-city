@@ -1,0 +1,3 @@
+#!/bin/bash
+dir_Scorch=/opt/scorch
+${dir_Scorch}/bin/scorchdb -f ${dir_Scorch}/etc/regions.txt -name $*
