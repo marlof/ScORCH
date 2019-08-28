@@ -1,0 +1,156 @@
+#!/bin/bash
+#
+# Send a message to MS Teams.  You'll need to set up a webhook connector in your
+# MS Teams channel first.
+#
+# ======================================================
+# History
+# 1.0        sp       first version
+# 1.1        ml       loftusised
+#                     Added set formalisation
+#                     Functionalised
+#                     Parameterised
+# 1.2        ml       Added ability to post to mutliple web hooks by simply specifing multiple -w "host"
+# 1.3        ml       #1 - Added colour feature
+# 1.4        ml       #2 - Add named channels
+
+
+set -uo pipefail
+str_ProgramVersion=1.4
+
+
+# ================================================================
+# Library Functions      ### No need to change ###
+typeset   str_ProgramName="$(basename "$0")"
+typeset   cmd_LogDate="date +%y%m%d-%H%M%S"
+typeset   int_WarningCount=0
+typeset   SEPERATOR="====================================================================="
+Error()   {                            printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR $@\n" "[${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${int_WarningCount}]" ; exit 1;}
+Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  $@\n" "[${int_WarningCount}]" ;}
+Verbose() { [ "${VERBOSE}" ] && printf "$($cmd_LogDate) %15s DEBUG $@\n" "[${int_WarningCount}]" ;}
+# ================================================================
+
+Usage()
+{
+  printf '
+
+  '${str_ProgramName}' posts a given message to a given msteams channel
+
+  Usage:    '${str_ProgramName}' (-w "<webhook_url>"| -n "<channel name>")  [-t "<title>"] [-c "<colour>"] -m "<message>" [-V] | -V | -h
+
+  -c | --colour      Colour of the status bar. Default is "#ffffff" / white.
+  -h | --help        Shows this page.
+  -m | --message     Message to be displayed. Required.
+  -n | --name        Named Channel. Overrides the -w webhook url.
+                     Named channels can be defined in the users home directory as a NAME:URL list
+  -t | --title       Title of the channel box. Default is "untitled"
+  -w | --webhook     Webhook url. Must be specified unless -n named channel is used.
+  -v | --version     Shows the program version number ['${str_ProgramVersion}']
+  -V | --verbose     Shows additional information.
+
+
+  Example:  '${str_ProgramName}' -w "https://outlook.office.com/webhook/xxx/IncomingWebhook/xxx/xxx" -t "Test" -c "#ff0000" -m "Testing 1 2 3"
+
+
+            '${str_ProgramName}' -w "https://<web1>" -w "https://<web2>" -w "https://<web3>" -m "Everywhere message"
+
+            '${str_ProgramName}' -n TEST -m "To Channel TEST message"
+
+            Colours can be passed as hex picker values or can use the palette
+
+                red, green, blue, cyan, yellow, magenta, orange, purple, lime
+
+            Or from status
+
+                alert/error, ok, warning, ok, info,
+
+'
+}
+readonly Usage
+
+TITLE="untitled"
+COLOUR=
+hex_COLOUR="#ffffff"
+MESSAGE=""
+TEXT=""
+lst_WEBHOOK_URL=""
+WEBHOOK_URL=""
+lst_NAMED_CHANNEL=""
+NAMED_CHANNEL=""
+VERBOSE=""
+file_CHANNEL=~/.msteams.cfg
+tmp_GREP=""
+
+if [ $# -ne 0 ] ; then
+  while [ $# -gt 0 ] ; do
+    case "$1" in
+
+      -h | --help    ) Usage ; exit 0 ;;
+      -v | --version ) echo "${str_ProgramName}[${str_ProgramVersion}]" ; exit 0 ;;
+      -V | --verbose ) VERBOSE=1 ;;
+
+      -m | --message  ) shift ; MESSAGE="${1:-}"     ;;
+      -t | --title    ) shift ; TITLE="${1:-}"       ;;
+      -c | --colour   ) shift ; COLOUR="${1:-}"
+                        case "${COLOUR,,}" in
+                          red|alert|error  )  hex_COLOUR="#ff0000" ;;
+                          green | ok       )  hex_COLOUR="#00ff00" ;;
+                          blue  | info     )  hex_COLOUR="#0000ff" ;;
+                          yellow           )  hex_COLOUR="#ffff00" ;;
+                          cyan             )  hex_COLOUR="#00ffff" ;;
+                          magenta          )  hex_COLOUR="#ff00ff" ;;
+                          black            )  hex_COLOUR="#000000" ;;
+                          white            )  hex_COLOUR="#ffffff" ;;
+                          orange | warning )  hex_COLOUR="#ff9600" ;;
+                          purple           )  hex_COLOUR="#9600ff" ;;
+                          lime             )  hex_COLOUR="#96ff00" ;;
+                          * ) : ;;
+                        esac
+                       ;;
+      -w | --webhook  ) shift ; [[ ${1:-} =~ "http" ]] && lst_WEBHOOK_URL="${lst_WEBHOOK_URL} ${1:-}" || Warning "Wrong values passed - expected webhook to start http";;
+
+      -n | --name     ) shift ; lst_NAMED_CHANNEL="${lst_NAMED_CHANNEL} ${1:-}"  ;;
+
+      *               ) Usage; Error "Unknown value passed" ;;
+
+    esac
+    shift
+  done
+fi
+[[ ! -z ${COLOUR} ]] && Verbose "Converted $COLOUR to $hex_COLOUR"
+
+[[ -z $MESSAGE     ]] && Warning "No MESSAGE passed"
+[[ -z $lst_WEBHOOK_URL ]] && [[ -z $lst_NAMED_CHANNEL ]] && Warning "No WEBHOOK_URL or NAMED_CHANNEL passed"
+
+(( int_WarningCount > 0 )) && Usage && Error "Some values could not be defaulted"
+
+# Convert formating.
+MESSAGE=$( printf "${MESSAGE}" | sed 's/"/\"/g' | sed "s/'/\'/g" )
+JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${hex_COLOUR}\", \"text\": \"${MESSAGE}\" }"
+Verbose "Message:$MESSAGE"
+Verbose "JSON:$JSON"
+
+# If NAMED CHANNELS - convert those to WEBHOOK_URLs here
+if [[ ! -z ${lst_NAMED_CHANNEL} ]] ; then
+  lst_WEBHOOK_URL=""
+  Verbose "Checking for named channel lookup file "${file_CHANNEL}
+  [[ ! -r ${file_CHANNEL} ]] && Error "The channel file ["${file_CHANNEL}"] is not available or readable"
+  for NAMED_CHANNEL in ${lst_NAMED_CHANNEL} ; do
+    Verbose "Using ${NAMED_CHANNEL}"
+    tmp_GREP=$(grep -w "^${NAMED_CHANNEL}" ${file_CHANNEL} | cut -d":" -f2-)
+    [[ ! -z ${tmp_GREP} ]] && lst_WEBHOOK_URL="${lst_WEBHOOK_URL} ${tmp_GREP}" || Warning "Cannot find a channel named ${NAMED_CHANNEL} in ${file_CHANNEL}"
+  done
+else
+  Verbose "Using webhooks"
+fi
+
+
+# Post to Microsoft Teams.
+for WEBHOOK_URL in ${lst_WEBHOOK_URL} ; do
+  echo "Sending message...."
+#  [[ ! -z $VERBOSE ]] && set -x
+  Verbose "curl -sH \"Content-Type: application/json\" -d \"${JSON}\" \"${WEBHOOK_URL}\""
+  STATUS=$(curl -sH "Content-Type: application/json" -d "${JSON}" "${WEBHOOK_URL}")
+done
+
+(( int_WarningCount > 0 )) && Error "Some warnings could not be handled"
