@@ -1,0 +1,8 @@
+SP_AWS-LIST-EC2()
+{
+  arr_PROFILE=$(scorchdb -f ~/scorchgrp/etc/regions.txt -profile ${ENVIRONMENT})
+  # Assert that the result is in the list of returned values from the first column of file
+  for str_PROFILE in ${arr_PROFILE} ; do
+    Task "aws ec2 describe-instance-status   --include-all-instances --profile ${str_PROFILE}"
+  done
+}
