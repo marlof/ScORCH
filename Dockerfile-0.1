@@ -1,0 +1,16 @@
+FROM debian:buster-slim
+LABEL maintainer "marc@webmarcit.com"
+
+# update debian
+RUN apt-get update
+
+# add our scorch user and group first to make sure their IDs get assigned consistently, regardless of whatever depencies get added
+RUN groupadd -r -g 999 scorch && useradd -r -g scorch -u 999 scorch
+
+# grab the latest 
+ENV dir_Scorch   /opt/scorch
+ENV str_Protocol http
+ENV dir_Location autoscorch.com/downloads
+
+WORKDIR ${dir_Scorch}
+RUN curl -o latest.tar ${str_Protocol}:${dir_Location}/scorch.tar
