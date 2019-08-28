@@ -1,0 +1,12 @@
+#!/bin/bash
+str_Progname="$(basename "$0")"
+dir_Run="$(dirname "$0")"
+dir_Scorch="$(cd $dir_Run && cd .. && pwd)"
+lst_Envs="nonprod prod"
+
+str_Env=$(echo "${str_Progname}" | cut -d"-" -f2-)
+[[ ${str_Env} != ${str_Progname} ]] && lst_Envs=${str_Env}
+for each_Env in ${lst_Envs} ; do
+  ${dir_Scorch}/bin/scorchdb -f ${dir_Scorch}/tmp/awscache.${each_Env} $*
+done
+#${dir_Scorch}/bin/scorchdb -f ${dir_Scorch}/tmp/awscache.prod $*
