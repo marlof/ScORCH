@@ -1,0 +1,5 @@
+SP_AWS-LIST-S3()
+{
+  Task "hostname"
+  Task "aws s3 ls"
+}
