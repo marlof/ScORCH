@@ -1,0 +1,205 @@
+#!/bin/bash
+
+show_instances()
+{
+  local GREP=${1:-""}
+  local lst_PROFILES=$(aws-profile $GREP)
+  local PROFILE=
+  [[ -z $GREP ]] && echo "#DEF  name instanceid type zone state pip iip key  launch owner secgroup sg1 sg2 sg3 sg4 sg5 sg6" && echo "#FS=,"
+  for PROFILE in ${lst_PROFILES} ; do
+    [[ -z $GREP ]] && echo "# $PROFILE"
+echo "aws ec2 describe-instances --profile ${ENVIRONMENT,,}-${PROFILE}"
+    aws ec2 describe-instances --profile ${ENVIRONMENT,,}-${PROFILE} | \
+      jq -r '.Reservations[].Instances[]  |   [(.Tags[]|select(.Key=="Name")|.Value),  .InstanceId, .InstanceType, .Placement.AvailabilityZone, .State.Name, .PublicIpAddress, .PrivateIpAddress, .KeyName, .LaunchTime, .Platform, .SecurityGroups[].GroupId  ]| @csv' | tr -d "\""
+  done
+}
+
+fn_RotateLogs()
+{
+  # This function will rotate the logs
+
+  # If the file already exists - add the hour
+  if [[ -f ${file_AWSCache} ]] ; then
+    Message "Already been run today - adding timestamp and pausing for 10 seconds to give chance for ctrl-c."
+    str_LogDate="$(date +%y%m%d-%H%M%S)"
+    file_AWSCache=${dir_Tmp}/awscache.${ENVIRONMENT,,}.${str_LogDate}
+    sleep 10
+    Message "New file: ${file_AWSCache}"
+  fi
+
+  # Save previous info via soft links
+  if [[ -f ${ln_AWSCache} ]] ; then
+    Message "Saving previous link ${ln_AWSCache} as ${ln_AWSCache}.prev"
+    mv ${ln_AWSCache} ${ln_AWSCache}.prev
+    if [[ $? != 0 ]] ; then
+      Error "Issues with file permissions"
+      ls -l ${file_AWSCache} ${file_AWSCache}.prev
+    fi
+  fi
+}
+
+fn_CreateNewCache()
+{
+  Message "Running show_instances....."
+  show_instances > ${file_AWSCache}
+
+  Message "Creating new link"
+  ln -s ${file_AWSCache}  ${ln_AWSCache}
+
+  Message "Attempting to set group and permissions"
+  chgrp scorch ${file_AWSCache} 2>/dev/null
+  chmod 660 ${file_AWSCache} 2>/dev/null
+}
+
+fn_CheckQaws()
+{
+  # Takes an instance name and check which columns changed
+  # Get a column name to check for from paramater
+  str_InstanceName=${1:-"null"}
+  lst_Changes=""
+  lst_Summary=""
+
+  # List the columns
+  lst_Columns=$(qaws -l | head -1 | sed 's/ -/ /g')
+
+  # Find the column number from a simple count
+  int_Count=1
+  for each_Column in ${lst_Columns} ; do
+    int_Change=$(diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep -e "<" -e ">" | grep -i ${str_InstanceName} | cut -d" " -f2- | cut -d"," -f1,${int_Count} | sort -u | wc -l)
+    if (( int_Change > 1 )) ; then
+      lst_Changes="${lst_Changes} ${each_Column}"
+
+      if [[ ${each_Column} != "launch" ]] ; then
+        str_From=$(diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | \
+                   grep -e ">" | grep -i ${str_InstanceName} | \
+                   cut -d" " -f2- | cut -d"," -f${int_Count} )
+        str_To=$(  diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | \
+                   grep -e "<"  | grep -i ${str_InstanceName} | \
+                   cut -d" " -f2- | cut -d"," -f${int_Count} )
+        lst_Summary="${lst_Summary} ${each_Column} changed from ${str_From} to ${str_To}"
+      fi
+
+    fi
+    (( int_Count++ ))
+  done
+  if [[ ! -z ${lst_Summary} ]] ; then
+    echo "Changes to: ${lst_Changes} </pre>Summary:<pre>${lst_Summary}</pre>"
+  else
+    echo "Changes to: ${lst_Changes}"
+  fi
+}
+
+
+
+fn_AWSCreateScorchDB()
+{
+  # Run validation checks
+  [[ -z ${ENVIRONMENT} ]] && Error "Variable ENVIRONMENT was required but not set - expected NONPROD or PROD"
+
+  # Set local variables
+  local str_LogDate="$(date +%y%m%d)"
+  local ln_AWSCache=${dir_Tmp}/awscache.${ENVIRONMENT,,}
+  local file_AWSCache=${dir_Tmp}/awscache.${ENVIRONMENT,,}.${str_LogDate}
+  local lst_Channel=${CHANNEL:-"NULL"}
+  local b_Channel=${CHANNEL:-""}
+  local lst_Launch=""
+
+  if [[ -z $TEST ]] ; then
+    fn_RotateLogs
+    fn_CreateNewCache
+  else
+    Message "TEST MODE - will not rotate logs or create new cache"
+  fi
+
+  if [[ -r  ${ln_AWSCache}.prev ]] ; then
+    if [[ "$(diff -wiq ${ln_AWSCache} ${ln_AWSCache}.prev)" ]] ; then
+      Message "Checking differences....."
+      Message " < shows current"
+      Message " > shows previous"
+
+      str_From=""
+      str_To=""
+      diff -wi ${ln_AWSCache} ${ln_AWSCache}.prev
+
+
+      if [[ $? != 0 ]] ; then      # New feature:
+        if [[ "$ENVIRONMENT" == "PROD" ]] || [[ ! -z ${b_Channel} ]] ; then
+          # Get a list of hostnames where there were differences or changes
+          lst_ChangedInstances=$(diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep -e "<" -e ">" | cut -d" " -f2- | cut -d"," -f2,4 | sort -u )
+
+          for  ChangedInstance in ${lst_ChangedInstances} ; do
+            str_Hostname=$(diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep ${ChangedInstance%,*} | cut -d" " -f2- | cut -d"," -f1,4 | sort -u )
+
+            str_Change=""
+            str_Message=""
+            str_Changes=""
+            str_Region="${ChangedInstance#*,}"
+
+            str_From="$(diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep ${ChangedInstance%,*} | grep ${ChangedInstance#*,} | grep -e ">" | cut -d" " -f2- )"
+            str_To="$(  diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep ${ChangedInstance%,*} | grep ${ChangedInstance#*,} | grep -e "<" | cut -d" " -f2- )"
+
+            [[ "${str_From}" ]] && [[ "${str_To}" ]] && str_Change="CHANGED"
+            [[ "${str_From}" == "" ]] && str_Change="ADDED"
+            [[ "${str_To}" == "" ]]   && str_Change="REMOVED"
+            if [[ "${str_Change}" == "CHANGED" ]] ; then
+              str_Changes="$(fn_CheckQaws ${ChangedInstance%,*})"
+              Verbose "$ChangedInstance: ${str_Changes}"
+            else
+              Verbose "From: diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep ${ChangedInstance%,*} | grep ${ChangedInstance#*,} | grep -e \">\""
+              Verbose "To  : diff -dwi ${ln_AWSCache}  ${ln_AWSCache}.prev | grep ${ChangedInstance%,*} | grep ${ChangedInstance#*,} | grep -e \"<\""
+            fi
+
+            case ${str_Change} in
+               CHANGED ) str_Message="<pre>${str_Changes}</pre> FROM<pre>${str_From}</pre>TO<pre>${str_To}</pre>" ;;
+               ADDED   ) str_Message="<pre>${str_To}</pre>"  ;;
+               REMOVED ) str_Message="<pre>${str_From}</pre>"  ;;
+            esac
+
+            if [[ ! -z ${str_Change} ]] && [[ "${lst_Channel^^}" != "NULL" ]] ; then
+              str_Channel=""
+              for each_Channel in ${lst_Channel} ; do
+                str_Channel="${str_Channel} -n ${each_Channel}"
+              done
+
+              if [[ "${str_Changes}" == "Changes to:  launch" ]] ; then
+                lst_Launch="${lst_Launch} ${str_Hostname}"
+              else
+                Message "${ChangedInstance} ${str_Change}"
+                if [[ -z $TEST ]] ; then
+                   post_to_msteams.sh ${str_Channel} \
+                                    -c Info \
+                                    -t "AWS Update - $ENVIRONMENT" \
+                                    -m "Server: ${str_Hostname} / $(aws-city ${str_Region:0:-1}) ${str_Change}. ${str_Message}"
+                else
+                  Message "TEST MODE - will not send messages
+
+    post_to_msteams.sh ${str_Channel} \\
+       -c Info \\
+       -t \"AWS Update - $ENVIRONMENT\" \\
+       -m \"Server: ${str_Hostname} / $(aws-city ${str_Region:0:-1}) ${str_Change}. ${str_Message}\"
+                "
+                fi
+
+                Message "=================="
+              fi
+            else
+              :
+              # Ready for future development
+            fi
+          done
+        fi
+      else
+        Message "No changes"
+      fi
+
+    else
+      Message "No changes"
+    fi
+  else
+    :
+  fi
+  if [[ ! -z ${lst_Launch} ]] ; then
+    Message "The following servers restarted: ${lst_Launch}"
+  fi
+  true
+}
