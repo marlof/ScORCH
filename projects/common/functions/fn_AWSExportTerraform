@@ -1,0 +1,33 @@
+fn_AWSExportTerraform()
+{
+  #REGION=${REGION:-$(aws-region)}
+  #REGION=${REGION:-$(aws-region)}
+  [[ ! -z $REGION ]] && REGION="${REGION##*-}" || REGION=$(aws-region $REGION)
+
+  [[ -z ${ENVIRONMENT} ]] && Error "ENVIRONMENT expected but not set"
+
+
+  docker pull quay.io/dtan4/terraforming:latest
+  for each_REGION in ${ENVIRONMENT,,}-${REGION} ; do
+    Message "${each_REGION}"
+    each_REGION=$(aws-region ${each_REGION} head -1 )
+
+    DOCKER="docker run \
+            --rm \
+            --name terraforming \
+            -e AWS_ACCESS_KEY_ID=$(cat ~/.aws/${ENVIRONMENT,,}-aws_access_key_id) \
+            -e AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/${ENVIRONMENT,,}-aws_secret_access_key) \
+            -e AWS_REGION=${each_REGION} \
+            quay.io/dtan4/terraforming:latest "
+
+    Message "S3"
+    #$DOCKER terraforming s3 --profile ${REGION}
+    $DOCKER terraforming s3
+
+    Message "EC2"
+    #$DOCKER terraforming ec2 --profile ${REGION}
+    $DOCKER terraforming ec2
+
+  done
+
+}
