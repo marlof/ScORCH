@@ -1,0 +1,105 @@
+#!/bin/bash
+
+
+show_running()
+{
+  local PROFILE=${1:-""}
+  aws ec2 describe-instances   --filter  'Name=instance-state-name,Values=running' \
+                               --profile ${PROFILE} | \
+                               jq -r '.Reservations[].Instances[] | [.InstanceId,  .Tags[].Value] | @csv'
+}
+
+show_instances()
+{
+  local GREP=${1:-""}
+  local lst_PROFILES=$(aws-profile $GREP)
+  local PROFILE=
+  Message "Showing Instances: $lst_PROFILES"
+  for PROFILE in ${lst_PROFILES} ; do
+    echo "### $PROFILE ###"
+    aws ec2 describe-instances --profile ${PROFILE} | \
+      jq -r '.Reservations[].Instances[] |   select(.LaunchTime > "2015-01-28") |   select(.State.Code != 48) |   [.InstanceId, .State.Name, .Platform, .PublicIpAddress, .PrivateIpAddress, (.Tags[]|select(.Key=="Name")|.Value) ]| @csv'
+  done
+}
+
+
+stop_instance()
+{
+  local PROFILE=${PROFILE:-nonprod-london}
+  local INSTANCE=${1:-""}
+  #local PROFILE=
+  if [[ $(show_running ${PROFILE} | grep $INSTANCE) ]] ; then
+    aws ec2 stop-instances --instance-ids $INSTANCE
+  else
+    if [[ $(show_instances ${PROFILE} | grep $INSTANCE) ]] ; then
+      echo "Not stopped"
+    else
+      echo "Cannot find instance $INSTANCE in $(aws-city $PROFILE)"
+    fi
+  fi
+}
+
+
+fn_AWSCreateInstance()
+{
+  local AWS_NAME="Scorch-$$"
+  local str_Profile=${ENVIRONMENT:-"nonprod-london"}
+echo ${str_Profile}" : "
+  local str_Region=$(aws-region ${str_Profile#*-})
+  local file_Instance="/tmp/instance.$$.json"
+  local str_Type="${TYPE:-t2.micro}"
+  local str_AMI="ami-01a76e79ae757048d"
+  local str_Key=${KEY:-""}
+  local str_Name=${NAME:-"obrar.$$"}
+  local int_Count=${COUNT:-1}
+
+  [[ -z ${str_Key} ]]    && Error "No key pair was specified"
+  [[ -z ${str_Region} ]] && Error "No str_Region found"
+  [[ -z ${str_Type} ]]   && Error "No str_Type found"
+
+  show_instances ${str_Profile}
+  Message "Creating an instance in ${str_Region}"
+  Message "aws ec2 run-instances --instance-type ${str_Type} --image-id ${str_AMI} --region ${str_Region} --key-name ${str_Key} --count ${int_Count}"
+  sleep 10
+  aws ec2 run-instances --instance-type ${str_Type} --image-id ${str_AMI} --region ${str_Region} --key-name ${str_Key} --count ${int_Count} > ${file_Instance}
+  [[ $? != 0 ]] && Error "Failed to create instance: aws ec2 run-instances --instance-type ${str_Type} --image-id ${str_AMI} --region ${str_Profile} --key-name ${str_Key} --count 1"
+  sleep 5
+
+  Message "Finding instance ID from ${file_Instance}"
+  lst_InstanceID=$(jq -r .Instances[].InstanceId ${file_Instance})
+  Message "InstanceID=${lst_InstanceID}"
+
+  for str_InstanceID in ${lst_InstanceID} ; do
+    Message "Adding Tag name $str_Name to ${str_InstanceID}"
+    Message "aws ec2 create-tags --resources ${str_InstanceID} --tags Key=Name,Value=${str_Name}"
+    aws ec2 create-tags --resources ${str_InstanceID} --tags Key=Name,Value=${str_Name}
+  done
+
+
+  Message "Waiting for ${str_InstanceID} to be in running state"
+  arr_Watch="$(show_running ${str_Profile}) | grep $str_Name)"
+  arr_Check="${arr_Watch}"
+  int_Count=0
+  Message "$arr_Watch"
+  while [[ "${arr_Watch}" == "${arr_Check}" ]] && [[ (( $int_Count < 10 )) ]] ; do
+    Message "${int_Count}"
+    Message "show_running ${str_Profile} | grep ${str_InstanceID}"
+    sleep 10
+    (( int_Count++ ))
+    arr_Check="$(show_running ${str_Profile} | grep ${str_InstanceID}str_Name)"
+    echo "${arr_Check}"
+  done
+
+  Message "Showing Instances with name $str_Name"
+  sleep 5
+  show_instances  ${str_Profile} | grep -i  $str_Name || true
+  Message "======================================="
+  Message "Adding to Security Group to allow ssh"
+  sleep 5
+  aws ec2 modify-instance-attribute --instance-id ${str_InstanceID} --group   sg-6022020b
+  Message "======================================="
+  sleep 5
+
+
+  echo "ssh -i \"~/.ssh/${str_Key}.pem\" ec2-user@$(show_instances  ${str_Profile} | grep -i  $str_Name | cut -d"," -f4  | tr -d "\"" )"
+}
