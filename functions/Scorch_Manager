@@ -324,7 +324,6 @@ fn_Cancel()
     echo "Process tree at termination:" >> ${file_Log}
     pstree -p ${int_PID} >> ${file_Log}
     printf "\n Killing Process with PID[${int_PID}]\n"
-    grep "^AUDIT:T:.*:R" ${file_Link} 
     int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3)
     kill ${int_PID}
     mv ${file_Link} ${dir_Failed}
