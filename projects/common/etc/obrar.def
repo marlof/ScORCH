@@ -1,4 +1,1 @@
 HOUSEKEEP | COMMON | O:ENV:e: O:DAYS:d: | fn_HouseKeep
-CREATEINSTANCE   |  AWS     | O:TYPE:t: O:ENVIRONMENT:e: R:KEY:k: O:INSTANCE:i: O:NAME:n: O:COUNT:c:  | fn_AWSCreateInstance
-CREATECACHE      |  AWS     |           O:ENVIRONMENT:e: O:CHANNEL:n: O:VERBOSE:v  O:TEST:t           | fn_AWSCreateScorchDB
-EXPORT-TERRAFORM |  AWS     |           O:ENVIRONMENT:e: O:REGION:r:                                  | fn_AWSExportTerraform
