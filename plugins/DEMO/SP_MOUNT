@@ -1,0 +1,16 @@
+SP_MOUNT()
+{
+  # Instructions taken from  https://docs.docker.com/install/linux/docker-ce
+  GetVar -pattern "drive"  -name "str_DRIVE"  -default "u"
+  GetVar -pattern "remote" -name "str_REMOTE" -default "home"
+  GetVar -pattern "host"   -name "str_HOST"   -default "NAS01"
+  GetVar -pattern "user"   -name "str_USER"   -default "$(whoami)"
+  Message "Testing if sudo password is cached. If there is an issue ctrl-c and run sudo true"
+  Task "sudo -n true"
+
+  Task "sudo apt-get check cif-utils" || Task "sudo apt-get install -y cif-utils"
+
+  Task "sudo mkdir -p /mnt/${str_DRIVE,,}"
+  Task "sudo mount -t cifs //${str_HOST}/${str_DRIVE^^} /mnt/${str_DRIVE,,} user=${str_USER}"
+
+}

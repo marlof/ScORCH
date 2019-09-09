@@ -181,10 +181,11 @@
 ## 2.7            marc   #109 Killed jobs report last running task
 ## 2.7.1          marc   #115 Run jobs with newgrp is str_Group set
 ## 2.7.2          marc   #117 Fixed double run issue when using -s from background job
+## 2.7.3          marc   #118 Fixed str_Group check when in prefs
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.7.2"
+typeset str_ProgramVersion="2.7.3"
 typeset       str_Codename="Chimera"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

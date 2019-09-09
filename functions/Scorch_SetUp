@@ -95,18 +95,6 @@ fn_CheckSetUp()
 
 #  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
-  if [[ ! -z ${str_Group} ]] ; then
-    # Check str_Group is ont of groups
-    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
-      :
-    else
-      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
-      printf "\n Your available groups are:\n "
-      groups
-      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator.\n"
-      exit 1
-    fi
-  fi
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories, commands or permissions.\n"
@@ -164,6 +152,18 @@ export      file_Version="version.txt"
       echo "str_Group set to ${str_Group} but does not exist."
       echo "Reset to black"
       str_Group=
+    fi
+  fi
+  if [[ ! -z ${str_Group} ]] ; then
+    # Check str_Group is ont of groups
+    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
+      :
+    else
+      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
+      printf "\n Your available groups are:\n "
+      groups
+      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator. Or change your scorch.prefs file\n"
+      exit 1
     fi
   fi
 }

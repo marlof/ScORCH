@@ -1,0 +1,9 @@
+SP_FAIL()
+{
+  Message "I am the message"
+  Sleep 10
+  Try false
+  [[ ! -z $AVAR ]] && PluginError "Missing a var AVAR"
+  Manual "I am a manual task"
+  Error "I am a forced error"
+}

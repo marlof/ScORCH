@@ -1,3 +1,6 @@
+# Customer backups
+.[0-9].*.backup
+my*.sublime*
 var
 tmp
 etc
