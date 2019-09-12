@@ -78,11 +78,15 @@ fn_CheckSetUp()
 
   if [[ ! ${b_NonInteractive} ]] ; then
     printf "\n\n"
-    arr_Commands="gawk pgrep"
+    arr_Commands="gawk pgrep python"
     str_Install="sudo apt-get install"
     for str_Command in ${arr_Commands} ; do
       printf "\tChecking for ${str_Command}:\t"
-      which ${str_Command} 2>/dev/null || ( printf "not found. ${str_Install} ${str_Command}\n" && b_SetUp=1 )
+      which ${str_Command} 2>/dev/null
+      if [[ $? != 0 ]] ; then 
+        printf "not found. ${str_Install} ${str_Command}\n"
+        b_SetUp=1 
+      fi
     done
   fi
 
