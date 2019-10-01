@@ -79,7 +79,9 @@ fn_ProcessRequest()
         if type -t "SP_${ACTION}" >/dev/null ; then
           fn_Call="SP_${ACTION}"
         else
-          printf "\n\nCannot find a function called SP_${ACTION} or ${fn_Call}\n"
+          printf "\n\nCannot find a function called SP_${ACTION}\n" # Maybe issue107: or ${fn_Call}\n"
+          ACTION="no-action"
+          fn_Call="no-action"
           fn_PressEnter
           return 0
         fi
