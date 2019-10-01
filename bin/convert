@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+
+# Simple script to convert human readable format to Kilobytes for use when checking disk space
+
+typeset str_Value=${1:-0}
+typeset str_Sum="0"
+
+# Trick to allow decimals starting with "." i.e. .5G and force cahrs to uppercase
+typeset str_Value="0"${str_Value^^}
+
+case $str_Value in
+  [0-9]*K     )    str_Sum="${str_Value}"  ;;
+  [0-9]*M     )    str_Sum="${str_Value} * 1024"  ;;
+  [0-9]*G     )    str_Sum="${str_Value} * 1024 * 1024"  ;;
+  [0-9]*T     )    str_Sum="${str_Value} * 1024 * 1024 * 1024"  ;;
+  *           )    >&2 "Bad format" ; exit 1 ;;
+esac
+
+echo ${str_Sum} | bc -l
