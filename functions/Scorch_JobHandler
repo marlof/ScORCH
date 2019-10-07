@@ -862,7 +862,9 @@ fn_Transition()
                   mv "${file_Link}" "${str_Target}"/. ;;
         delete  ) fn_CheckOwner "${file_Job}"
                   echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
-                  mv "${file_Link}" "${str_Target}"/. ;;
+                  mv "${file_Link}" "${str_Target}"/. 
+                  chmod 660 ${file_Job}
+                  ;;
         resume  ) fn_CheckOwner "${file_Job}"
                   fn_LogWhy
                   fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"

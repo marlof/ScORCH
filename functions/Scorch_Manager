@@ -82,7 +82,7 @@ fn_Manager()
       n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
       ## Job State transition
-      d | D ) fn_Transition delete  ;;
+      d | D ) fn_Transition delete  ;; 
       q | Q ) fn_Transition queue    ; fn_CheckDispatcher ;;
       r | R ) fn_Transition resume   ; fn_CheckDispatcher ;;
       u | U ) fn_Transition unqueue ;;
@@ -383,6 +383,7 @@ fn_AdminFunctions()
                 fn_Audit "${file_Job}" deleted
                 echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
                 mv "${file_Link}" "${dir_Deleted}"
+                chmod 660 "${file_ActiveJob}"
                 return 0 ;;
 
         ## Queue Job(s)

@@ -184,10 +184,11 @@
 ## 2.7.3          marc   #118 Fixed str_Group check when in prefs
 ## 2.7.4          marc   Checks include python
 ## 2.7.5          marc   Stop current user being added to /etc/users (install script)
+## 2.7.6          marc   #108 deleted jobs deactivated (removed execute)
 ## Determine the program name and the running directory
 set -uo pipefail
 
-typeset str_ProgramVersion="2.7.5"
+typeset str_ProgramVersion="2.7.6"
 typeset       str_Codename="Amphithere"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
