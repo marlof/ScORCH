@@ -186,7 +186,7 @@
 ## 2.7.5          marc   Stop current user being added to /etc/users (install script)
 ## 2.7.6          marc   #108 deleted jobs deactivated (removed execute)
 ## Determine the program name and the running directory
-set -uo pipefail
+set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 
 typeset str_ProgramVersion="2.7.6"
 typeset       str_Codename="Amphithere"
