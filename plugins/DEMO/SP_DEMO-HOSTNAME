@@ -11,7 +11,8 @@ SP_DEMO-HOSTNAME()
   
   # Use values you get for free or passed via GetVar key pairs
   # ==========================================================
-  Task "sleep ${PAUSE}"
+  #Task "sleep ${PAUSE}"
+  Sleep ${PAUSE}
   
   # Use   OR "<other task>"   to run another command if the first Task fails
   # ========================================================================

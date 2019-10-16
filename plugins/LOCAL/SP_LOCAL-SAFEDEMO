@@ -3,7 +3,7 @@ SP_LOCAL-SAFEDEMO()
   GetVar -pattern "Pause" -name "PAUSE" -default "60"
   GetVar -pattern "Fail"  -name "FAIL"  -default "0"
   Task "hostname"
-  Pause 35
+  Sleep 35
   Task "sleep ${PAUSE}"
   if [ ${FAIL} -ne 0 ] ; then
     Task "false"
