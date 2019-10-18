@@ -185,11 +185,12 @@
 ## 2.7.4          marc   Checks include python
 ## 2.7.5          marc   Stop current user being added to /etc/users (install script)
 ## 2.7.6          marc   #108 deleted jobs deactivated (removed execute)
+## 2.8            marc   #121 Started shared drive / multi host work
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 
-typeset str_ProgramVersion="2.7.6"
-typeset       str_Codename="Amphithere"
+typeset str_ProgramVersion="2.8"
+typeset       str_Codename="Balaur"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -352,10 +353,11 @@ fn_ResetJobDefinitions()
 ## Dispatcher definitions
 ## ======================
 typeset int_DispatcherPID=0
-typeset   int_DispatchMax=999
+typeset   int_DispatchMax=50
 typeset      file_JobLock="${dir_Lock}/JobLock"
 typeset  file_DispatchLog="${dir_Log}/dispatch.log"
 typeset file_DispatchLock="${dir_Lock}/dispatch.lck"
+typeset file_DispatchLink="${str_ProgramName}_$(hostname)"
 
 ## Layout Option
 ## =============

@@ -24,6 +24,11 @@
 
 fn_Dispatcher()
 {
+  # Move this somewhere else
+  [[ ! -L ${file_DispatchLock} ]] && ln -s "${file_DispatchLink}_$$" "${file_DispatchLock}"
+
+  #fn_IsDispatchHost && return 0
+
   typeset local int_DispatchCount=0
 
   ## Run the dispatcher loop for a predetermined number of times
@@ -112,6 +117,8 @@ readonly -f fn_Dispatcher
 
 fn_CheckRunning()
 {
+  fn_IsDispatchHost || return 0
+
   ## Check running jobs are really running
   ## If they are not, move them to a failed state and report they were orphaned
   typeset local arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
@@ -126,10 +133,21 @@ fn_CheckRunning()
 }
 readonly -f fn_CheckRunning
 
+fn_IsDispatchHost()
+{
+  str_DispatchHost="$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $2}')"
+  [[ "$(hostname)" == "${str_DispatchHost}" ]] && return 0 || return 1
+}
+
+
+
+
 fn_CheckDispatcher()
 {
+  fn_IsDispatchHost || return 0
+
   ## Check Dispatcher
-##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
+  ##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   [ -f "${file_DispatchLock}" ] && ( [[ "$(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}')" ]] || rm "${file_DispatchLock}" )
   if [ -L "${file_DispatchLock}" ] ; then
     ## Check the lock is correct
@@ -143,11 +161,11 @@ fn_CheckDispatcher()
     fi
   else
     if [[ "$(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}")" ]] ; then
-      ln -s "${dir_Base}/${str_ProgramName}_$(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}")" "${file_DispatchLock}"	  
+      ln -s "${file_DispatchLink}_$$" "${file_DispatchLock}"	  
       return 0
     else
       "${dir_Base}/${str_ProgramName}" -dispatcher -j "${dir_Job}" >> "${file_DispatchLog}" &
-      ln -s "${dir_Base}/${str_ProgramName}_$!" "${file_DispatchLock}"
+      ln -s "${file_DispatchLink}_$!" "${file_DispatchLock}"
     fi
   fi
 }
