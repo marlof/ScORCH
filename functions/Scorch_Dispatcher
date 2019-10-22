@@ -15,17 +15,16 @@
 ##
 
 ## This file contains functions to set and display layout
-## fn_Dispatcher()
-## fn_CheckRunning()
-## fn_CheckDispatcher()
-## fn_RunJobs()
+## fn_Dispatcher()        Runs the dispatcher in a while loop for a number of attempts
+## fn_CheckRunning()      Looks at ruuning jobs and makes sure they are still running (Only the Dispatch host should do this)
+## fn_IsDispatchHost()    Checks if the host is the Dispatch host
+## fn_CheckDispatcher()   Checks that the lock file matches the process of the dispatcher (Only yhe Dispatch host should do this)
+## fn_RunJobs()           Each sessions will check for owned jobs in the run state to start
 ## fn_LockManager()
 
 
 fn_Dispatcher()
 {
-  # Move this somewhere else
-  [[ ! -L ${file_DispatchLock} ]] && ln -s "${file_DispatchLink}_$$" "${file_DispatchLock}"
 
   #fn_IsDispatchHost && return 0
 
@@ -38,8 +37,6 @@ fn_Dispatcher()
     ## Make sure all current jobs reporting a running state are actually running
     fn_CheckMaint
 
-    fn_CheckRunning
-    sleep ${int_DispatchSleep}
 
     ## #83 - make sure jobs directories exists - if not then exit
     [[ ! -d "${dir_Pending}" ]] || [[ ! -d "${dir_Running}" ]] || [[ ! -d "${dir_Queued}"  ]] && exit 1
@@ -107,13 +104,16 @@ fn_Dispatcher()
       done
     fi
     (( int_DispatchCount+=1 ))
-    #sleep ${int_DispatchSleep}
+
+    sleep ${int_DispatchSleep}
+    fn_CheckRunning
   done
   rm -f "${file_DispatchLock}"
   typeset int_DispatcherPID=0
   exit 0
 }
 readonly -f fn_Dispatcher
+
 
 fn_CheckRunning()
 {
@@ -133,6 +133,7 @@ fn_CheckRunning()
 }
 readonly -f fn_CheckRunning
 
+
 fn_IsDispatchHost()
 {
   str_DispatchHost="$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $2}')"
@@ -140,36 +141,51 @@ fn_IsDispatchHost()
 }
 
 
-
-
 fn_CheckDispatcher()
 {
-  fn_IsDispatchHost || return 0
+  # Move this somewhere else
+  # If the lock file doesnt exist, elect to be the dispatcher by creating the lock file
+ # if [[ ! -L ${file_DispatchLock} ]] ; then
+ #   ln -s "${file_DispatchLink}_$$" "${file_DispatchLock}"
+ #   # Should now wait a short while to make sure no-one else tried this
+ #   # if all ok, then we might be the only dispatcher and happy to continue
+ #   sleep 5
+ # fi
+
 
   ## Check Dispatcher
   ##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   [ -f "${file_DispatchLock}" ] && ( [[ "$(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}')" ]] || rm "${file_DispatchLock}" )
   if [ -L "${file_DispatchLock}" ] ; then
+    fn_IsDispatchHost || return 0
+
     ## Check the lock is correct
     #echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}" | head -1) -eq $(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}') ]] ; then
-      #echo This is the dispatcher      
+echo This is the dispatch host and the lock file is good
+echo "pgrep -f \"${str_ProgramName} -dispatcher -j ${dir_Job}\"" 
+ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}'
+touch -h "${file_DispatchLock}"
+sleep 2
       return 0
     else
-      #echo This is not the dispatcher      
+      echo "This is the dispatch host but the process associated with the dispatch lock file has died. (Removing lock)"
       rm "${file_DispatchLock}" 2>/dev/null
     fi
   else
     if [[ "$(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}")" ]] ; then
-      ln -s "${file_DispatchLink}_$$" "${file_DispatchLock}"	  
+      echo "Found dispatcher - repairing lock file"
+      ln -s "${file_DispatchLink}_$(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}")" "${file_DispatchLock}"	  
       return 0
     else
+      echo "Starting dispatcher"
       "${dir_Base}/${str_ProgramName}" -dispatcher -j "${dir_Job}" >> "${file_DispatchLog}" &
       ln -s "${file_DispatchLink}_$!" "${file_DispatchLock}"
     fi
   fi
 }
 readonly -f fn_CheckDispatcher
+
 
 fn_RunJobs()
 {
@@ -204,6 +220,7 @@ EOGROUP
   done
 }
 readonly -f fn_RunJobs
+
 
 fn_LockManager()
 {
