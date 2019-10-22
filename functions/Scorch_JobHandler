@@ -806,8 +806,8 @@ fn_Transition()
   case ${str_Transition} in
 
     ## Jobs requiring the dispatcher
-    queue   ) fn_ShowJobs manual failed fixing superseded new      ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
-    resume  ) fn_ShowJobs manual failed fixing superseded          ; str_Target="${dir_Queued}" ; fn_CheckDispatcher ;;
+    queue   ) fn_ShowJobs manual failed fixing superseded new      ; str_Target="${dir_Queued}"  ;;
+    resume  ) fn_ShowJobs manual failed fixing superseded          ; str_Target="${dir_Queued}"  ;;
 
     ## Jobs not requiring the dispatcher
     delete  ) fn_ShowJobs manual failed fixing superseded new      ; str_Target="${dir_Deleted}" ;;
@@ -817,6 +817,7 @@ fn_Transition()
   esac
 
   fn_ShowLine
+  fn_CheckDispatcher
   #if [ -z ${arr_Jobs} ] ; then
   #  printf "\n\tThere are no suitable jobs for that action\n\n"
   #  fn_GetAnswer

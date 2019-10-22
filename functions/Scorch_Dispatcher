@@ -105,6 +105,7 @@ fn_Dispatcher()
     fi
     (( int_DispatchCount+=1 ))
 
+    touch -h "${file_DispatchLock}" 2>/dev/null
     sleep ${int_DispatchSleep}
     fn_CheckRunning
   done
@@ -157,16 +158,45 @@ fn_CheckDispatcher()
   ##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
   [ -f "${file_DispatchLock}" ] && ( [[ "$(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}')" ]] || rm "${file_DispatchLock}" )
   if [ -L "${file_DispatchLock}" ] ; then
+
+    if ! fn_IsDispatchHost ; then
+
+
+
+
+      #echo "This is not the dispatch host but need to check that the file is still healthy"
+
+      local int_LockDate=$(date "+%s" -d "$(  ls -l "${file_DispatchLock}" | awk -F" " '{print $6, $7, $8}' )" )
+      local int_NowDate=$(date "+%s")
+      if (( int_NowDate - int_LockDate > 100 )) ; then
+        echo "The local file may be stale. There will be a short delay while checking"
+        ls -l "${file_DispatchLock}"
+        sleep 2
+        echo "Removing locak file..."
+        sleep 12
+        if [ -L "${file_DispatchLock}" ] ; then
+          echo "Another process has triggered the dispatcher"
+        else
+          echo "Starting dispatcher"
+          "${dir_Base}/${str_ProgramName}" -dispatcher -j "${dir_Job}" >> "${file_DispatchLog}" &
+          ln -s "${file_DispatchLink}_$!" "${file_DispatchLock}"
+          sleep 4
+        fi
+      else
+        : #echo "The age of the lock file ($((int_NowDate - int_LockDate )) seconds) is within tolerance"
+      fi
+
+    fi
     fn_IsDispatchHost || return 0
 
     ## Check the lock is correct
     #echo "Checking this pid $$ against lock pid $(ls -l "${file_DispatchLock}" | awk -F"_" '{print $NF}')"
     if [[ $(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}" | head -1) -eq $(ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}') ]] ; then
-echo This is the dispatch host and the lock file is good
-echo "pgrep -f \"${str_ProgramName} -dispatcher -j ${dir_Job}\"" 
-ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}'
-touch -h "${file_DispatchLock}"
-sleep 2
+#echo This is the dispatch host and the lock file is good
+#echo "pgrep -f \"${str_ProgramName} -dispatcher -j ${dir_Job}\"" 
+#ls -l "${file_DispatchLock}" | ${cmd_AWK} -F"_" '{print $NF}'
+#touch -h "${file_DispatchLock}"
+#sleep 2
       return 0
     else
       echo "This is the dispatch host but the process associated with the dispatch lock file has died. (Removing lock)"
