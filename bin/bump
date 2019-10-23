@@ -1,0 +1,20 @@
+#!/bin/bash
+
+l_str_Version=${1:-"0.0.0"}
+l_int_Major=${l_str_Version%%.*}
+l_int_Minor=$(echo ${l_str_Version} | cut -d"." -f2)
+l_int_Micro=$(echo ${l_str_Version} | cut -d"." -f3)
+l_str_tmpSpecial=${3:-""}
+l_str_Special=""
+
+l_str_Bump=${2:-"minor"}
+
+case ${l_str_Bump,,} in
+  micro | patch ) (( l_int_Micro = l_int_Micro + 1 )) ;;
+  minor         ) (( l_int_Minor = l_int_Minor + 1 )) ; l_int_Micro=0 ;;
+  major         ) (( l_int_Major = l_int_Major + 1 )) ; l_int_Micro=0 && l_int_Minor=0 ;;
+  special       ) l_str_Special=${l_str_tmpSpecial:-"dev"} ; l_str_Special=".${l_str_Special}" ;;
+  *             ) >2& echo "Unknown bump. Expected one of [major] | [minor] | [macro|patch] | [special [\"str\"]]" ;;
+esac
+
+echo "${l_int_Major}.${l_int_Minor}.${l_int_Micro}${l_str_Special}"
