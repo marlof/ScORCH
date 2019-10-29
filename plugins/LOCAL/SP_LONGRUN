@@ -5,6 +5,8 @@ SP_LONGRUN()
   done
   for x in 40 60 80 20 5 30 10 70 ; do
     Sleep $x
+    #Task "scorch-test"
+    #Message "Test \$(date) \$(sleep 1) \\r"
   done
   Try "false"
 }

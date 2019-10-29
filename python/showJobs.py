@@ -31,8 +31,9 @@
 # 1.14      Marc Loftus     26/01/2019      #94 Variable Column Width
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
+# 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
 ############################################################################################################
-str_ProgramVersion = '1.14'
+str_ProgramVersion = '1.16'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
@@ -194,7 +195,12 @@ def fn_ShowJobs(str_State,temp,maxnum):
                     str_JobLogFile = ptr_JobLogFile.readlines()
                     ptr_JobLogFile.close()
                     try:
-                        str_LastLine   = str_JobLogFile[-1].rstrip('\n')
+                        #str_LastLine   = str_JobLogFile[-1].rstrip('\n').encode("ascii", errors="ignore").decode()
+                        #str_LastLine   = str_JobLogFile[-1].rstrip('\n\r')
+                        #str_LastLine   = repr(str_JobLogFile[-1].rstrip('\n'))
+                        str_LastLine   = re.sub(r'[^\x0e-\x7e]',r'\\', str_JobLogFile[-1].rstrip('\n'))
+                        #str_LastLine   = str(re.U(str_JobLogFile[-1]))
+                        # str_LastLine   = set(str_LastLine.printable)
                     except IndexError:
                         str_LastLine   = "Warning: Empty file"
 

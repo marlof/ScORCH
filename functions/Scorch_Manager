@@ -65,6 +65,11 @@ fn_Manager()
     fn_ShowTop
     fn_ShowJobs superseded manual failed fixing new running starting pending queued completed
     fn_ShowLine "="
+
+    # Attempts to clear keyboard buffer
+    #read -t 0 -n 256 discard
+    #while read -d '' -r -t 0 ; do read -r -n 1 char_Choice; done
+
     fn_DisplayMOTD
     printf "\n${dis_Reset}"
     fn_ContextMenu
