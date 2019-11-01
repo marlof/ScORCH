@@ -105,7 +105,7 @@ fn_Dispatcher()
     fi
     (( int_DispatchCount+=1 ))
 
-    touch -h "${file_DispatchLock}" 2>/dev/null
+    touch -h "${file_DispatchLock}" 2>/dev/null || fn_CheckDispatcher
     sleep ${int_DispatchSleep}
     fn_CheckRunning
   done

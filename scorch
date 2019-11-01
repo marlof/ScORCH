@@ -186,10 +186,12 @@
 ## 2.7.5          marc   Stop current user being added to /etc/users (install script)
 ## 2.7.6          marc   #108 deleted jobs deactivated (removed execute)
 ## 2.8            marc   #121 Started shared drive / multi host work
+## 2.8.1          marc   #124 Adding /dev/shm alternative for other OS
+##                       #126 SetPrefs not required when non-interactive
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 
-typeset str_ProgramVersion="2.8"
+typeset str_ProgramVersion="2.8.1"
 typeset       str_Codename="Balaur"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -264,7 +266,11 @@ typeset        dir_Lock="${dir_Var}/locks/"
 typeset         dir_Tmp="${dir_Base}/tmp/"
 
 ## Memory tmp files for multi scorch use systems
-typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
+if [ -w /dev/shm ] ; then
+  typeset      dir_Memory=/dev/shm/$(echo ${dir_Base} | cksum | tr ' ' '_')
+else
+  typeset      dir_Memory=${dir_|tmp}/no_shm
+fi
 mkdir -p  ${dir_Memory} 2>/dev/null
 chmod 775 ${dir_Memory} 2>/dev/null
 
@@ -326,6 +332,7 @@ typeset         arr_Jobs=("")
 
 typeset    b_CreateFailed=
 typeset           b_Debug=
+typeset           b_Quick=
 typeset b_StartGroupAdded=
 typeset  str_StatusColour=
 typeset   int_ScreenWidth=80
@@ -511,7 +518,7 @@ fi
 # Area reserved for loading OPENSCORCH - Do not remove
 #FOOTER
 fn_CheckSetUp
-fn_SetPrefs
+[[ ${b_NonInteractive} ]] || fn_SetPrefs
 fn_CheckAuth
 fn_CheckDispatcher
 

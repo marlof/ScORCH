@@ -139,7 +139,7 @@ fn_ProcessRequest()
             mv "${file_Job}" "${dir_Queued}/." 
             "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 
           else
-            mv "${file_Job}" "${dir_Queued}/." && ${str_ProgramName} -background &
+            mv "${file_Job}" "${dir_Queued}/." && "${dir_Base}"/${str_ProgramName} -background &
           fi
         fi
 
