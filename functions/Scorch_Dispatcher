@@ -224,6 +224,13 @@ fn_RunJobs()
   ##shopt -s nullglob
   ##for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
   for file_EachJob in $(grep -l "str_Owner=${str_User}" "${dir_Starting}"/* 2>/dev/null)  ; do
+
+    ##########################################################
+    # Section added for slow NFS shares with clustered servers
+    sleep 2
+    [[ -f ${file_EachJob} ]] || continue
+    ##########################################################
+
     printf "\n$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
     fn_CreateFile "${dir_Log}"/$(basename "${file_EachJob}").log
     if [[ -x "${file_EachJob}" ]] ; then

@@ -188,8 +188,10 @@
 ## 2.8            marc   #121 Started shared drive / multi host work
 ## 2.8.1          marc   #124 Adding /dev/shm alternative for other OS
 ##                       #126 SetPrefs not required when non-interactive
+##                       #127 Adding strict mode
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
+IFS=$'\n\t'
 
 typeset str_ProgramVersion="2.8.1"
 typeset       str_Codename="Balaur"
@@ -502,6 +504,7 @@ fi
 #HEADER
 #RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
+set -e
 ## As sson as function is defined, use it to set tmp 
 fn_Mkdir ${dir_Memory}
 
