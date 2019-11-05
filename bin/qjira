@@ -306,6 +306,16 @@ fi
 #_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
 #                                      -H     "Content-Type: application/json" \
 #                                      --data '{"jql":"key = '${TICKET}'""}' "${JIRA_SEARCH_URL}")
+#
+#
+#
+# Return tickets assigned to xxx in state xxx
+#str_Assignee="marc"
+#str_State="OPEN"
+#_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
+                                      -H     "Content-Type: application/json" \
+                                      --data '{"jql":"assignee = '${str_Assignee}' and status = '${str_State}'","fields":["key"]}' \
+                                      "${JIRA_SEARCH_URL}") | jq '.issues | .[] | .key' | tr -d "\"")
 
 
 #echo "==============="
