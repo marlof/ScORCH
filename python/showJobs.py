@@ -1,9 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 ############################################################################################################
 # This program will find Job files in multiple state directories and turn them into a human readable format
 #
 # Created by Marc Loftus 28/10/2017
 #
+# ${dir_Python}/showJobs.py -n $int_MaxShown -o ${file_Cache} -f "${str_Filter}" $*
 #
 ############################################################################################################
 # History
@@ -56,6 +57,32 @@ class colours:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
+class File(file):
+    """ Helper class for file reading """
+    def __init__(self,*args, **kwargs):
+        super(File,self).__init__(*args, **kwargs)
+        self.BLOCKSIZE = 4096
+
+    def head(self, lines_2find=1):
+        self.seek(0)
+        return [super(File, self).next() for x in xrange(lines_2find)]
+
+    def tail(self, lines_2find=1):
+        self.seek(0,2)
+        bytes_in_file = self.tell()
+        lines_found, total_bytes_scanned = 0, 0
+        while (lines_2find +1 > lines_found and
+            bytes_in_file > total_bytes_scanned):
+          byte_block = min(
+            self.BLOCKSIZE,
+            bytes_in_file - total_bytes_scanned)
+          self.seek( -(byte_block + total_bytes_scanned), 2)
+          total_bytes_scanned += byte_block
+          lines_found += self.read(self.BLOCKSIZE).count('\n')
+        self.seek(-total_bytes_scanned,2)
+        line_list = list(self.readlines())
+        return line_list[-lines_2find:]
+
 dir_Run=os.getcwd()
 # Default maxnum
 maxnum = 35
@@ -105,7 +132,7 @@ def fn_ColumnMax(arr_Files,int_Column):
     return int_ColumnMax + 1
 
 def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
-    print os.path.join(dir_Job)
+    print(os.path.join(dir_Job))
     #arr_str_DirList2 = glob.glob(os.path.join(dir_Job)+'*/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     #for str_File in arr_str_DirList2:
     #    print str_File
@@ -210,18 +237,22 @@ def fn_ShowJobs(str_State,temp,maxnum):
                 if re.search("WIP", str_LastLine):
                   ansi_colour=colours.RESET
                 if str_State == "running":
-                  str_StartTime = int(time.time())
+                  #str_StartTime = int(time.time())
                     
                   # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-                  with open(file_JobLog) as origin:
-                    for line in origin:
-                       if not "AUDIT:START:1" in line:
-                          continue
-                       try:
-                          str_StartTime = int(line.split(':')[2])
-                       except IndexError:
-                          print
-                          str_StartTime = int(time.time())
+#                  with open(file_JobLog) as origin:
+#                    for line in origin:
+#                       if not "AUDIT:START:1" in line:
+#                          continue
+#                       try:
+#                          str_StartTime = int(line.split(':')[2])
+#                       except IndexError:
+#                          print
+#                          str_StartTime = int(time.time())
+                  str_StartTime=GetStartTime(file_JobLog)
+
+                      #else:
+                      #  print line
 
 
                   str_CurrentTime=int(time.time())
@@ -235,6 +266,10 @@ def fn_ShowJobs(str_State,temp,maxnum):
                     int_ReleaseWidth,str_JobSplit[5], 
                     str_Time, 
                     str_LastLine[:int_Width-10], colours.RESET))
+                #  with File(file_JobLog) as f:
+                #    for line in f.head(12):
+                #      print line.replace('\n','')
+                #    print f.tail(1)
                 else:
                     if re.search(jobfilter,str_File):
                         print (ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (chr_Owner,int_Count,
@@ -250,10 +285,22 @@ def fn_ShowJobs(str_State,temp,maxnum):
                 b_More = True
                 int_More = int_More + 1
 
+def GetStartTime(file):
+    MAX_READ=range(10)
+    x = int(time.time())
+    with open(file) as origin:
+      for line, _ in zip(origin,MAX_READ):
+        if "AUDIT:START:1" in line:
+          x = int(line.split(':')[2])
+          break 
+    return x
+
+
 
 
 def main(argv):
     outputfile = os.devnull
+    maxnum = 999
     global jobfilter
     jobfilter = ""
     args = sys.argv[1:]
