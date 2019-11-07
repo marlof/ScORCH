@@ -192,7 +192,7 @@
 ##                       #129 Adding timeout feature
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
-IFS=$'\n\t'
+IFS=$' \n\t'
 
 typeset str_ProgramVersion="2.8.1"
 typeset       str_Codename="Balaur"
