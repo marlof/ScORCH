@@ -465,6 +465,7 @@ fn_ExtractPairs()
   GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NA"
   GetVar -pattern "Type"    -name TYPE                   -default ""
   GetVar -pattern "Ticket"  -name TICKET                 -default "ID-${int_JobID}"  
+  GetVar -pattern "Timeout" -name TIMEOUT                -default ""
 }
 ## Enterprise feature available readonly -f fn_ExtractPairs
 

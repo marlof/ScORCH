@@ -566,6 +566,8 @@ readonly -f fn_InstallLatest
 
 fn_Repair()
 {
+  local file_Install=${dir_Etc}/install.txt
+
   # 93 - Fix perms and group settings for extracted file
   echo "str_Group=$str_Group"
   tar tvf ${file_Install}

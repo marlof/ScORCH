@@ -189,6 +189,7 @@
 ## 2.8.1          marc   #124 Adding /dev/shm alternative for other OS
 ##                       #126 SetPrefs not required when non-interactive
 ##                       #127 Adding strict mode
+##                       #129 Adding timeout feature
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 IFS=$'\n\t'

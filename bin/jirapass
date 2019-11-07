@@ -21,6 +21,8 @@ typeset local file_Key=~/.ssh/mykey
 typeset local file_Cred=~/.ssh/jirapass
 str_ProgramName=$(basename $0)
 str_ProgramVersion=1.0
+key_Method=pbkdf2
+#key_Method=aes-256-cbc
 
 fn_Usage()
 {
@@ -50,7 +52,7 @@ fn_Write()
     str_Check2=""
 
     # Get the first password
-    str_Prompt="Enter value to encrypt  : "
+    str_Prompt="Enter username:password  : "
     while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
       [[ ${chr_Input} == $'\0' ]] && break
       str_Prompt="*"
@@ -59,7 +61,7 @@ fn_Write()
     echo
 
     # Get the second password
-    str_Prompt="Confirm value to encrypt: "
+    str_Prompt="Confirm username:password to encrypt: "
     while IFS= read -p "${str_Prompt}" -r -s -n 1 chr_Input ; do
       [[ ${chr_Input} == $'\0' ]] && break
       str_Prompt="*"
@@ -72,36 +74,33 @@ fn_Write()
 
   grep -v "^${WRITE}=" ${file_Cred} >${file_Cred}.tmp
   str_Check1=$(echo -n $str_Check1 | base64)
-  echo "$WRITE=$(echo ${str_Check1} | openssl enc -aes-256-cbc -a -salt -e -pass file:${file_Key})" >> ${file_Cred}.tmp
+  echo "$WRITE=$(echo ${str_Check1} | openssl enc -${key_Method} -a -salt -e -pass file:${file_Key})" >> ${file_Cred}.tmp
   mv ${file_Cred}.tmp ${file_Cred}
   echo "Credential $WRITE written"
 }
 
 fn_Read()
 {
-  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
   str_CRED=$(grep ${READ} ${file_Cred} | cut -d"=" -f2-)
   if [[ ! -z ${str_CRED} ]] ; then
-    echo ${str_CRED} | openssl enc -aes-256-cbc -a -salt -d -pass file:${file_Key}
+    echo ${str_CRED} | openssl enc -${key_Method} -a -salt -d -pass file:${file_Key}
   else
     echo "Cannot find cred"
   fi
-
 }
 
-#fn_List()
-#{
-#  [[ ! -r ${file_Cred} ]]  && echo "Credential file not readable" && exit 1
-#  if [[ -z $GREP ]] ; then
-#    echo "file_Cred:${file_Cred}"
-#    cat ${file_Cred} | cut -d"=" -f1 | sort 
-#  else
-#    grep -i "${GREP}.*\=.*\=" ${file_Cred} | cut -d"=" -f1 | sort
-#  fi
-#}
-
 b_Force=1
-[[ ! -r  ${file_Key} ]] && echo "Error: Cannot read private key file: ${file_Key}"  && exit 1
+if [[ ! -f ${file_Key} ]]  ; then
+  echo "Key file (${file_Key} not available"
+  read -p "Do you want to create a private key now? "
+  case ${REPLY^^} in
+      Y | YES ) echo "Good choice"
+                ssh-keygen -f ${file_Key} ;;
+      *       ) echo "Cannot continue without a key file." ; exit 1 ;;
+  esac
+fi
+
+#[[ ! -r  ${file_Key} ]] && echo "Error: Cannot read private key file: ${file_Key}"  && exit 1
 
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
