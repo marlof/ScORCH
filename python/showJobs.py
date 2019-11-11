@@ -42,6 +42,7 @@ import datetime    # Used for elapsed running time
 import glob
 import tempfile    # Used to have an output file
 import re
+import mmap        # Used to find LAST occurance of TASK:START: even in large log files
 
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
@@ -222,12 +223,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
                     str_JobLogFile = ptr_JobLogFile.readlines()
                     ptr_JobLogFile.close()
                     try:
-                        #str_LastLine   = str_JobLogFile[-1].rstrip('\n').encode("ascii", errors="ignore").decode()
-                        #str_LastLine   = str_JobLogFile[-1].rstrip('\n\r')
-                        #str_LastLine   = repr(str_JobLogFile[-1].rstrip('\n'))
                         str_LastLine   = re.sub(r'[^\x0e-\x7e]',r'\\', str_JobLogFile[-1].rstrip('\n'))
-                        #str_LastLine   = str(re.U(str_JobLogFile[-1]))
-                        # str_LastLine   = set(str_LastLine.printable)
                     except IndexError:
                         str_LastLine   = "Warning: Empty file"
 
@@ -240,24 +236,18 @@ def fn_ShowJobs(str_State,temp,maxnum):
                   #str_StartTime = int(time.time())
                     
                   # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-#                  with open(file_JobLog) as origin:
-#                    for line in origin:
-#                       if not "AUDIT:START:1" in line:
-#                          continue
-#                       try:
-#                          str_StartTime = int(line.split(':')[2])
-#                       except IndexError:
-#                          print
-#                          str_StartTime = int(time.time())
                   str_StartTime=GetStartTime(file_JobLog)
-
-                      #else:
-                      #  print line
-
+                  str_TaskTime=GetRunningTime(file_JobLog)
 
                   str_CurrentTime=int(time.time())
                   str_Time=str_CurrentTime - str_StartTime
                   str_Time=str(datetime.timedelta(seconds=str_Time))
+                  str_Task=str_CurrentTime - str_TaskTime
+                  str_Task=str(datetime.timedelta(seconds=str_Task)) 
+                  #print str_Task  
+                  # if TIMEOUT set
+                  #   if str_Task greter then TIMEOUT
+                  #     set ansi_colour=coulrs.WARNING                
                   print (ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
                     chr_PauseFlag,chr_RuleFlag,
                     int_JobIDWidth,str_JobSplit[1],
@@ -285,18 +275,87 @@ def fn_ShowJobs(str_State,temp,maxnum):
                 b_More = True
                 int_More = int_More + 1
 
-def GetStartTime(file):
+def GetStartTime(filename):
     MAX_READ=range(10)
     x = int(time.time())
-    with open(file) as origin:
+    with open(filename) as origin:
       for line, _ in zip(origin,MAX_READ):
         if "AUDIT:START:1" in line:
-          x = int(line.split(':')[2])
+          try:
+            x = int(line.split(':')[2])
+          except:
+            x = int(time.time())
           break 
     return x
 
+def GetRunningTime(filename):
+    x = int(time.time())
+    for line in reversed(open(filename).readlines()):
+      if "TASK:START" in line:
+        try:
+          x = int(line.split(':')[2])
+        except:
+          x = GetStartTime(filename) #int(time.time())
+        break
+    return x
 
 
+    # Do the operations here when you find the line
+
+
+# Reverse readlines from logfile until string found
+#def reverse_readline(filename, buf_size=8192):
+#    """A generator that returns the lines of a file in reverse order"""
+#    with open(filename) as fh:
+#        segment = None
+#        offset = 0
+#        fh.seek(0, os.SEEK_END)
+#        file_size = remaining_size = fh.tell()
+#        while remaining_size > 0:
+#            offset = min(file_size, offset + buf_size)
+#            fh.seek(file_size - offset)
+#            buffer = fh.read(min(remaining_size, buf_size))
+#            remaining_size -= buf_size
+#            lines = buffer.split('\n')
+#            # The first line of the buffer is probably not a complete line so
+#            # we'll save it and append it to the last line of the next buffer
+#            # we read
+#            if segment is not None:
+#                # If the previous chunk starts right from the beginning of line
+#                # do not concat the segment to the last line of new chunk.
+#                # Instead, yield the segment first 
+#                if buffer[-1] != '\n':
+#                    lines[-1] += segment
+#                else:
+#                    yield segment
+#            segment = lines[0]
+#            for index in range(len(lines) - 1, 0, -1):
+#                if lines[index]:
+#                    yield lines[index]
+#        # Don't yield None if the file was empty
+#        if segment is not None:
+#            yield segment
+
+#def readlines_reverse(filename):
+#    with open(filename) as qfile:
+#        qfile.seek(0, os.SEEK_END)
+#        position = qfile.tell()
+#        line = ''
+#        while position >= 0:
+#            qfile.seek(position)
+#            next_char = qfile.read(1)
+#            if next_char == "\n":
+#                yield line[::-1]
+#                line = ''
+#            else:
+#                line += next_char
+#            position -= 1
+#        yield line[::-1]
+#
+
+#if __name__ == '__main__':
+#    for qline in readlines_reverse(raw_input()):
+#        print qline
 
 def main(argv):
     outputfile = os.devnull

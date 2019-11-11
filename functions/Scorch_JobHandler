@@ -226,6 +226,7 @@ fn_ProcessTask()
     local int_StartTask=\$1
     printf "===================\n" >> "\${file_Log}"
     printf "\$(${fn_LogDate}) Starting task [\${int_StartTask}/\${int_Last}]\n" >> "\${file_Log}"
+    printf "TASK:START:\$(date '+%s')\n"  >> "\${file_Log}"
     declare -f fn_Task_\${int_StartTask} | tail -n +3 | head -n -2 >> "\${file_Log}"
     echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Active}"/\${str_JobName}
     fn_Task_\${int_StartTask}

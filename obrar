@@ -61,8 +61,9 @@
 # 1.6 190225    marc        #97 dir_Orig fixed
 # 1.7 190226    marc        #   Improvements to str_Group settings
 #                           #98 Improved standard error output
+# 1.8 191111    marc        #130 Restricted search to project dir and silence grep signal 13
 # Program settings
-typeset str_ProgramVersion="1.7"
+typeset str_ProgramVersion="1.8"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
@@ -382,7 +383,7 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  typeset local lst_ConfigFiles=$(find -L ${dir_Base} -name ${file_TagDefinition})
+  typeset local lst_ConfigFiles=$(find -L ${dir_Project} -name ${file_TagDefinition})
   if [[ ${#lst_ConfigFiles} = 0 ]] ; then
     printf "Could not find any config files (${file_TagDefinition}) from directory (${dir_Base})\n"
     exit 1
@@ -427,9 +428,9 @@ fn_ListTags()
   typeset local b_Timings="${2:-}"
   [ ! -z ${b_Timings} ] && b_Timings="-w"
   if [[ -z ${str_Grep} ]] ; then
-    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \;
+    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \; 2>/dev/null
   else
-    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \; | grep -i ${b_Timings} ${str_Grep}
+    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \; | grep -i ${b_Timings} ${str_Grep} 2>/dev/null
   fi
   set +x
 }
@@ -442,24 +443,24 @@ fn_ProcessTag()
   Verbose "      Tag : ${str_Tag}"
   Verbose " Tag Args : \"${lst_TagArgs}\""
   Verbose ${SEPERATOR}
-  str_TagLine=$(find -L ${dir_Base} -name ${file_TagDefinition} -${FIND_EXEC} grep -w ^${str_Tag} {} \;)
+  str_TagLine=$(find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -w ^${str_Tag} {} \;)
   typeset local int_TagCount=$(echo "${str_TagLine}" | wc -l )
 
   if [ ${int_TagCount} -ge 2 ] ; then
     Warning "Multiple tags found. Modify or remove tags in the following files:"
-    find -L ${dir_Base} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \;
+    find -L ${dir_Project} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \;
     Error "Modify or remove tags with ${str_Tag}"
   fi
   if [ "${#str_TagLine}" = 0 ] ; then
-    str_TagLine=$(find -L ${dir_Base} -name ${file_TagDefinition} -${FIND_EXEC} grep -iw ^${str_Tag} {} \;)
+    str_TagLine=$(find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -iw ^${str_Tag} {} \;)
     if [ "${#str_TagLine}" != 0 ] ; then
       Error "TAG definitions are case sensitive. Did you mean\n${str_TagLine}"
     else
 	    local str_TagExample=$(${BASH_SOURCE[0]} -l | head -1)
       Error "No TAG definition found.
   
-        Check from the ${dir_Base} directory for files named ${file_TagDefinition}.
-        find -L ${dir_Base} -name ${file_TagDefinition}
+        Check from the ${dir_Base} directory and project for files named ${file_TagDefinition}.
+        find -L ${dir_Project} -name ${file_TagDefinition}
         ${str_ProgramName} is expecting to find a definition in the form
         ${str_TagExample}\n"
 		  #$BASH_SOURCE -l | head -1
@@ -468,7 +469,7 @@ fn_ProcessTag()
   
   # Get project space details from config
   # =====================================
-  typeset local str_Tmp=$(find -L ${dir_Base} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \; )
+  typeset local str_Tmp=$(find -L ${dir_Project} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \; )
   str_Project=$(echo ${str_Tmp#${dir_Project}/} | cut -d/ -f1)
 
   # Process again to remove leading and trailing spaces
