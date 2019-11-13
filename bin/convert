@@ -3,18 +3,28 @@
 
 # Simple script to convert human readable format to Kilobytes for use when checking disk space
 
-typeset str_Value=${1:-0}
-typeset str_Sum="0"
+fn_Usage()
+{
+  echo " - Converts human readble formats to byte size for size comparisons"
+}
 
-# Trick to allow decimals starting with "." i.e. .5G and force cahrs to uppercase
-typeset str_Value="0"${str_Value^^}
+fn_ConvertthKB()
+{
+  local l_str_Value=${1:-"0K"}
+  local l_int_KB="0"
 
-case $str_Value in
-  [0-9]*K     )    str_Sum="${str_Value}"  ;;
-  [0-9]*M     )    str_Sum="${str_Value} * 1024"  ;;
-  [0-9]*G     )    str_Sum="${str_Value} * 1024 * 1024"  ;;
-  [0-9]*T     )    str_Sum="${str_Value} * 1024 * 1024 * 1024"  ;;
-  *           )    >&2 "Bad format" ; exit 1 ;;
-esac
+  # Trick to allow decimals starting with "." i.e. .5G and force cahrs to uppercase
+  typeset l_str_Value="0${l_str_Value^^}"
 
-echo ${str_Sum} | bc -l
+  case $l_str_Value in
+    [0-9]*K     )    l_int_KB=$(echo "${l_str_Value%K*}"                         | bc -l ) ;;
+    [0-9]*M     )    l_int_KB=$(echo "${l_str_Value%M*} * 1024"                  | bc -l ) ;;
+    [0-9]*G     )    l_int_KB=$(echo "${l_str_Value%G*} * 1024 * 1024"           | bc -l ) ;;
+    [0-9]*T     )    l_int_KB=$(echo "${l_str_Value%T*} * 1024 * 1024 * 1024"    | bc -l ) ;;
+    -h | --help )    fn_Usage ;;
+    *           )    >&2 "Bad format" ; exit 1 ;;
+  esac
+  echo "${l_int_KB%.*}"
+}
+
+fn_ConvertthKB $@
