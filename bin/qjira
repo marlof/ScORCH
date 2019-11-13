@@ -224,8 +224,10 @@ fn_ShowTicket()
   if [[ "${DESCRIPTION}" = "1"  ]]  ; then
     printf "Description:\n"
     echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u
+    #echo ${_JIRA_ISSUE_DETAILS} | jq .
   elif [[ ${DESCRIPTION} ]] ; then
     echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u  
+    #echo ${_JIRA_ISSUE_DETAILS} | jq .
   fi
 }
 
@@ -313,9 +315,9 @@ fi
 #str_Assignee="marc"
 #str_State="OPEN"
 #_JIRA_ISSUE_DETAILS=$(curl -s  -X GET -H     "Authorization: Basic ${AUTH_HEADER}" \
-                                      -H     "Content-Type: application/json" \
-                                      --data '{"jql":"assignee = '${str_Assignee}' and status = '${str_State}'","fields":["key"]}' \
-                                      "${JIRA_SEARCH_URL}") | jq '.issues | .[] | .key' | tr -d "\"")
+#                                      -H     "Content-Type: application/json" \
+#                                      --data '{"jql":"assignee = '${str_Assignee}' and status = '${str_State}'","fields":["key"]}' \
+#                                      "${JIRA_SEARCH_URL}") | jq '.issues | .[] | .key' | tr -d "\"")
 
 
 #echo "==============="

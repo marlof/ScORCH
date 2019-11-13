@@ -508,6 +508,8 @@ fn_PIDWait()
         lst_PIDResult="${lst_PIDResult}${int_Task}:0 "
         if [[ -r ${file_Log}.${int_Task} ]] ; then 
           echo ">> SubTask ${int_Task} Output >>"
+          grep -w "fn_Task_${int_Task}_SubTask(" ${file_Job} | awk -F"\t" '"'"'{print $2}'"'"'
+          printf ">> "
           cat ${file_Log}.${int_Task} 
           printf "\\nAUDIT:T:${int_Task}:C\\n" >> "${dir_Active}"/${str_JobName}
           echo "== End SubTask ${int_Task} Output ============"
