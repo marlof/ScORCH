@@ -336,11 +336,11 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
 	  printf " "
     fn_ShowLine "="
 
-    printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | e${dis_ULOn}X${dis_ULOff}it : "
+    printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | ${dis_ULOn}L${dis_ULOff}og | e${dis_ULOn}X${dis_ULOff}it : "
     read ${str_Quick} -t ${int_RefreshRate} char_Choice || :
 
-    case ${char_Choice} in
-      r | R ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_NewRefreshRate
+    case ${char_Choice,,} in
+      r  ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_NewRefreshRate
               if fn_IsNumber $int_NewRefreshRate ; then
                 int_RefreshRate=${int_NewRefreshRate}
               else
@@ -349,8 +349,9 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
                 sleep 2
               fi
               ;;
-	    p | P ) fn_PressEnter ;;
-	    x | X ) break ;;
+      l  ) fn_ViewJob ${dir_Log}/$(basename ${file_Job}).log ;;
+	    p  ) fn_PressEnter ;;
+	    x  ) break ;;
     esac
 
   done

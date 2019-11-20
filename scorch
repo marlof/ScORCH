@@ -190,11 +190,12 @@
 ##                       #126 SetPrefs not required when non-interactive
 ##                       #127 Adding strict mode
 ##                       #129 Adding timeout feature
+## 2.8.2          marc   #132 Allow access to "log" from task list
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
 
-typeset str_ProgramVersion="2.8.1"
+typeset str_ProgramVersion="2.8.2"
 typeset       str_Codename="Balaur"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

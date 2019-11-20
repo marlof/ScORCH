@@ -384,6 +384,9 @@ def main(argv):
     filename = outputfile
     temp = open(filename, 'w+b')
 
+###
+ #   print(maxnum)
+###
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
         maxnum = int(rows) - 10
