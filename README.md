@@ -4,7 +4,7 @@ ScORCH Suite
 Simplicity is a great virtue but it requires hard work to achieve it and education to appreciate it. - Edsger W. Dijkstra
 
 
-DevOps Software Orchestration
+# DevOps Software Orchestration
 
 This will install the latest version (released or otherwise) into the current directory:
 
