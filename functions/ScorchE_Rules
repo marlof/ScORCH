@@ -252,7 +252,7 @@ fn_CheckAuth()
       exit 1
     fi
   fi
-
+  set +e
   grep "^${str_User}:" ${file_Users}
   str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
   case ${str_Authority} in
@@ -261,5 +261,6 @@ fn_CheckAuth()
     F | FULL  )                  str_Authority="Normal"     ;;
     *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
   esac
+  set -e
 }
 readonly -f fn_CheckAuth

@@ -191,6 +191,7 @@
 ##                       #127 Adding strict mode
 ##                       #129 Adding timeout feature
 ## 2.8.2          marc   #132 Allow access to "log" from task list
+##
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
