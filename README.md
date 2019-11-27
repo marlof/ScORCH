@@ -1,7 +1,7 @@
 ScORCH Suite
 ============
 
-Announcing 2.7.5
+Simplicity is a great virtue but it requires hard work to achieve it and education to appreciate it. - Edsger W. Dijkstra
 
 
 DevOps Software Orchestration
