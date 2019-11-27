@@ -191,12 +191,12 @@
 ##                       #127 Adding strict mode
 ##                       #129 Adding timeout feature
 ## 2.8.2          marc   #132 Allow access to "log" from task list
-##
+## 2.8.3 191127   marc   #133 Fix abrupt exit with no users file
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
 
-typeset str_ProgramVersion="2.8.2"
+typeset str_ProgramVersion="2.8.3"
 typeset       str_Codename="Balaur"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
