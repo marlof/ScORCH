@@ -192,6 +192,7 @@
 ##                       #129 Adding timeout feature
 ## 2.8.2          marc   #132 Allow access to "log" from task list
 ## 2.8.3 191127   marc   #133 Fix abrupt exit with no users file
+## 2.8.4 191128   marc   #12  Some estimated run time work
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'

@@ -248,7 +248,7 @@ fn_ShowJobs2()
 fn_DisplayTime()
 {
 
-  local int_Time=$1
+  local int_Time=${1:-}
   local int_Time2=${2:-}
   [ ! -z $int_Time2 ] && int_Time=$((int_Time2-int_Time))
   local int_Days=$((int_Time/60/60/24))

@@ -73,6 +73,10 @@ fn_ProcessRequest()
 
     #[[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
     for ACTION in ${ACTION_LIST} ; do
+
+
+echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
+
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
         int_TaskCount=0

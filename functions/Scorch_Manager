@@ -213,9 +213,9 @@ fn_Admin()
     printf "   .) Build Tar\n"
     printf "   .) Locks\n"
     printf "   .) Install\n"
-    printf "   .) Maintenace\n\n"
-    printf "   .) Function Plugins Manager"
-    printf "   .) Download Plugins"
+    printf "   .) Maintenace\n"
+    printf "   .) Function Plugins Manager\n"
+    printf "   .) Download Plugins\n\n"
   fi
 
 
