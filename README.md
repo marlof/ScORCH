@@ -20,67 +20,36 @@ ScORCH does not require building, but does have a unique directory structure
 
 ```
 scorch/
-
 +--bin/                     Some useful shell scripts
-
 +--etc/                     Config files users and motd
-
 +--functions/               ollections of ScORCH functions
-
 +--jobs/                    Jobs and job status information
-
    +--active/               Job files
-   
    +--archived/             symlinks of deleted jobs
-   
    +--completed/            symlinks of completed jobs
-   
    +--deleted/              symlinks of deleted jobs
-   
    +--failed/               symlinks of jobs that have failed
-   
    +--fixing/               symlinks of failed jobs that have been acknowledged
-   
    +--manual/               symlinks of jobs waiting for manual intervention
-   
    +--new/                  symlinks of new jobs
-   
    +--pending/              symlinks of jobs waiting for other actions
-   
    +--queued/               symlinks of queued jobs waiting for the dispatcher
-   
    +--running/              symlinks of running jobs
-   
    +--starting/             symlinks of jobs waiting for the owners session
-   
-+--plugins/                 ScORCH plugins
-
++--plugins/                 ScORCH plugin
    +--DEMO/
-   
    +--LOCAL/
-   
    +--CUSTONNAME/
-   
 +--projects/                Obrar projects (and sym link ScORCH plugins)
-
    +--common/
-   
       +--(bin)/
-      
       +--etc
-      
       +--functions/
-      
    +--demo/
-   
    +--customname/
-   
 +--python/                  Where show jobs is held in speedier python
-
 +--tmp/                     Holding area for Action buildup
-
 +--var/                     Logs and locks and obrar stats
-
 ```
 
 Standard Features
