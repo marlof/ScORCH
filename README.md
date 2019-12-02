@@ -18,7 +18,7 @@ Brilliant in it's simplicity
 
 ScORCH does not require building, but does have a unique directory structure
 
-`
+```
 scorch/
 
 +--bin/                     Some useful shell scripts
@@ -81,7 +81,7 @@ scorch/
 
 +--var/                     Logs and locks and obrar stats
 
-`
+```
 
 Standard Features
 
