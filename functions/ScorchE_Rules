@@ -191,13 +191,15 @@ fnE_AmendRules()
   printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
 
   read ${str_Quick} -t 60 char_Choice
-
+  set +e
   case ${char_Choice} in
 
-          a | A ) fn_ShowJobs2 manual failed running starting pending queued new
-               fn_ShowLine
-               fn_GetAnswer
-               echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
+          a | A ) fn_ShowJobs manual failed running starting pending queued new
+                  #fn_ShowJobs2 manual failed running starting pending queued new
+                  fn_ShowLine
+                  fn_GetAnswer
+                  [[ "$str_Answer" == "x" ]] || [[ "${str_Answer}" == "" ]] && return 0
+                  echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
 
           d | D ) rm ${file_ActiveJob}.rules 2>/dev/null
                   # if link to active job in pending mv job to queued
@@ -207,6 +209,7 @@ fnE_AmendRules()
           x | X ) return 0 ;;
           *     ) return 0 ;;
   esac
+  set -e
 
 }
 readonly -f fnE_AmendRules
