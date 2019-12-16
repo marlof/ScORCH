@@ -33,6 +33,9 @@
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
+#
+# Notes - working on missing file updates
+# test with ./showJobs.py -n 10 -o /tmp/xxx -f "" new
 ############################################################################################################
 str_ProgramVersion = '1.16'
 
@@ -47,6 +50,13 @@ import mmap        # Used to find LAST occurance of TASK:START: even in large lo
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 
+
+
+#try:
+    # Python 2 forward compatibility
+#    range = xrange
+#except NameError:
+#    pass
 
 class colours:
     HEADER = '\033[95m'
@@ -413,4 +423,3 @@ def main(argv):
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-

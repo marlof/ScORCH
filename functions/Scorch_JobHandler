@@ -756,6 +756,8 @@ GetVar()
 
     b_CreateFailed=1 
     sleep 3
+  else
+    :
   fi
 }
 readonly -f GetVar
