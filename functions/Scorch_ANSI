@@ -1,3 +1,4 @@
+# shellcheck disable=SC2034
 str_ANSI="["
 # Foreground colours
 dis_FBlack="${str_ANSI}30m"
