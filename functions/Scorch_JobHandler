@@ -395,7 +395,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
-          exit 1
+          return 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
 

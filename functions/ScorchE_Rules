@@ -114,7 +114,7 @@ echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime 
           echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
-          exit 1
+          return 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
 #        fn_JobFooter "${file_Job}"
