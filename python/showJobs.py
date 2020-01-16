@@ -142,8 +142,8 @@ def fn_ColumnMax(arr_Files,int_Column):
             int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
 
-def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
-    print(os.path.join(dir_Job))
+#def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
+#    print(os.path.join(dir_Job))
     #arr_str_DirList2 = glob.glob(os.path.join(dir_Job)+'*/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     #for str_File in arr_str_DirList2:
     #    print str_File
@@ -157,7 +157,7 @@ def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
     #    int_TmpMax=len(str_JobSplit[int_Column])
     #    if  int_TmpMax >= int_ColumnMax:
     #        int_ColumnMax = int_TmpMax
-    return 1
+#    return 1
 
 def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
