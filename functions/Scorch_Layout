@@ -362,8 +362,9 @@ fn_ShowTasks()
 {
   ## This functions simply displays the list of tasks that will be run
   ## If a value was passed assume that was the job for which to show the tasks
-  typeset local file_Job="${1:-""}"
-  typeset local int_Answer=
+  local file_Job="${1:-""}"
+  local int_Answer=
+  local str_Answer=""
 
   fn_ShowTop
   fn_ShowLine
@@ -378,7 +379,7 @@ fn_ShowTasks()
     fn_GetAnswer range
     str_Answer=$(fn_Range "${str_Answer}")
 
-    if [ "${str_Answer}" != "x" ] ; then
+    if [ "${str_Answer,,}" != "x " ] ; then
       for int_Answer in ${str_Answer} ; do
         if [[ ${int_Answer} -le 0 ]] || [[ ${int_Answer} -ge ${int_Count} ]] ; then
           printf "Out of range"
