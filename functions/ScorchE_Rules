@@ -102,9 +102,11 @@ echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime 
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 #printf "${fn_Call}: "
+set +u 
         ${fn_Call}
 
         int_ReturnCode=${PIPESTATUS[0]}
+set -u
         # PIPESTATUS AND USE PIPE TEE
         if [[ ${int_ReturnCode} -ne 0 ]] ; then
           echo "exit 1" >> "${file_Job}"
