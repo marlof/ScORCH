@@ -165,6 +165,21 @@ EOF
 
 }
 
+fn_GetTransistionID()
+{
+  local typeset l_str_Ticket=${1}
+  local typeset l_str_Transition="${2}"
+
+  echo ${JIRA_ISSUE_URL}/${TICKET}
+  RESPONSE=$(curl -k -s \
+     -H "Authorization: Basic ${AUTH_HEADER}" \
+     -X GET \
+     -H "Content-Type: application/json" \
+     ${JIRA_ISSUE_URL}/${TICKET}/transitions | jq -r '.transitions[] | select(.name | contains ("'"${l_str_Transition}"'")) .id')
+  fn_CheckResponse $RESPONSE
+  echo $RESPONSE
+}
+
 fn_AssignTicket()
 {
   file_Data=$(mktemp)

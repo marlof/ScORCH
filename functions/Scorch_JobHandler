@@ -170,6 +170,8 @@ Try()
     printf "\n    TRY FAILED..... But will keep calm and carry on.\n"
     printf "\$(${fn_LogDate}) Tried and failed task [\${int_StartTask}/\${int_Last}]\n" >> "\${file_Log}"    
     echo "AUDIT:T:\${int_StartTask}:T" >> "\${file_Job}"
+  else
+    echo "AUDIT:T:\${int_StartTask}:C" >> "\${file_Job}"
   fi
 }
 
@@ -384,8 +386,10 @@ fn_ProcessRequest()
 
         echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
         echo ${fn_Call} #>> "${dir_Log}"/$(basename "${file_Job}").log
+        set +u
         ${fn_Call}
         int_ReturnCode=${PIPESTATUS[0]}
+        set -u
         # PIPESTATUS AND USE PIPE TEE
         if [[ ${int_ReturnCode} -ne 0 ]] ; then
           echo "exit 1" >> "${file_Job}"
@@ -395,7 +399,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
-          exit 1
+          return 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
 
@@ -756,6 +760,8 @@ GetVar()
 
     b_CreateFailed=1 
     sleep 3
+  else
+    :
   fi
 }
 readonly -f GetVar

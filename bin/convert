@@ -17,6 +17,7 @@ fn_ConvertthKB()
   typeset l_str_Value="0${l_str_Value^^}"
 
   case $l_str_Value in
+  	[0-9]*B     )    l_int_KB=$(echo "${l_str_Value%B*} / 1024"            | bc -l ) ;;
     [0-9]*K     )    l_int_KB=$(echo "${l_str_Value%K*}"                         | bc -l ) ;;
     [0-9]*M     )    l_int_KB=$(echo "${l_str_Value%M*} * 1024"                  | bc -l ) ;;
     [0-9]*G     )    l_int_KB=$(echo "${l_str_Value%G*} * 1024 * 1024"           | bc -l ) ;;

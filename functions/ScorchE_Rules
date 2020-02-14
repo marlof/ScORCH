@@ -73,6 +73,10 @@ fn_ProcessRequest()
 
     #[[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
     for ACTION in ${ACTION_LIST} ; do
+
+
+echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
+
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
         int_TaskCount=0
@@ -98,9 +102,11 @@ fn_ProcessRequest()
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
 #printf "${fn_Call}: "
+set +u 
         ${fn_Call}
 
         int_ReturnCode=${PIPESTATUS[0]}
+set -u
         # PIPESTATUS AND USE PIPE TEE
         if [[ ${int_ReturnCode} -ne 0 ]] ; then
           echo "exit 1" >> "${file_Job}"
@@ -110,7 +116,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
-          exit 1
+          return 1
         fi
         echo " $((int_TaskCount - 1)) tasks created"
 #        fn_JobFooter "${file_Job}"
@@ -187,13 +193,15 @@ fnE_AmendRules()
   printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
 
   read ${str_Quick} -t 60 char_Choice
-
+  set +e
   case ${char_Choice} in
 
-          a | A ) fn_ShowJobs2 manual failed running starting pending queued new
-               fn_ShowLine
-               fn_GetAnswer
-               echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
+          a | A ) fn_ShowJobs manual failed running starting pending queued new
+                  #fn_ShowJobs2 manual failed running starting pending queued new
+                  fn_ShowLine
+                  fn_GetAnswer
+                  [[ "$str_Answer" == "x" ]] || [[ "${str_Answer}" == "" ]] && return 0
+                  echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
 
           d | D ) rm ${file_ActiveJob}.rules 2>/dev/null
                   # if link to active job in pending mv job to queued
@@ -203,6 +211,7 @@ fnE_AmendRules()
           x | X ) return 0 ;;
           *     ) return 0 ;;
   esac
+  set -e
 
 }
 readonly -f fnE_AmendRules
@@ -252,7 +261,7 @@ fn_CheckAuth()
       exit 1
     fi
   fi
-
+  set +e
   grep "^${str_User}:" ${file_Users}
   str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
   case ${str_Authority} in
@@ -261,5 +270,6 @@ fn_CheckAuth()
     F | FULL  )                  str_Authority="Normal"     ;;
     *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
   esac
+  set -e
 }
 readonly -f fn_CheckAuth

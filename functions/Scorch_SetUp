@@ -80,6 +80,7 @@ fn_CheckSetUp()
     printf "\n\n"
     arr_Commands="gawk pgrep python"
     str_Install="sudo apt-get install"
+    set +e
     for str_Command in ${arr_Commands} ; do
       printf "\tChecking for ${str_Command}:\t"
       which ${str_Command} 2>/dev/null
@@ -88,6 +89,7 @@ fn_CheckSetUp()
         b_SetUp=1 
       fi
     done
+    set -e
   fi
 
   cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")

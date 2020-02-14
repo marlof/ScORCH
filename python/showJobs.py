@@ -33,6 +33,9 @@
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
+#
+# Notes - working on missing file updates
+# test with ./showJobs.py -n 10 -o /tmp/xxx -f "" new
 ############################################################################################################
 str_ProgramVersion = '1.16'
 
@@ -47,6 +50,13 @@ import mmap        # Used to find LAST occurance of TASK:START: even in large lo
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 
+
+
+#try:
+    # Python 2 forward compatibility
+#    range = xrange
+#except NameError:
+#    pass
 
 class colours:
     HEADER = '\033[95m'
@@ -132,8 +142,8 @@ def fn_ColumnMax(arr_Files,int_Column):
             int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
 
-def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
-    print(os.path.join(dir_Job))
+#def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
+#    print(os.path.join(dir_Job))
     #arr_str_DirList2 = glob.glob(os.path.join(dir_Job)+'*/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     #for str_File in arr_str_DirList2:
     #    print str_File
@@ -147,7 +157,7 @@ def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
     #    int_TmpMax=len(str_JobSplit[int_Column])
     #    if  int_TmpMax >= int_ColumnMax:
     #        int_ColumnMax = int_TmpMax
-    return 1
+#    return 1
 
 def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
@@ -384,6 +394,9 @@ def main(argv):
     filename = outputfile
     temp = open(filename, 'w+b')
 
+###
+ #   print(maxnum)
+###
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
         maxnum = int(rows) - 10
@@ -410,4 +423,3 @@ def main(argv):
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-
