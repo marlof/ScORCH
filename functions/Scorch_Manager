@@ -260,7 +260,7 @@ fn_Admin()
     m | M ) (( b_Restricted != 1 )) && fn_AdminMOTD  ;;
     p | P )                            fn_ShowPrefs ;; #${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
     l | L ) (( b_Power == 1 ))      && fn_LockManager        ;;
-    d | D ) fn_Plugins ;;
+    d | D ) echo "Plugins..."       && sleep 2 && fn_Plugins && sleep 2 ;;
 
     f | F ) (( b_Power == 1 ))      && fnE_PluginManagerMenu ;;
 

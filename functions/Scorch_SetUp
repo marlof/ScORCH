@@ -432,10 +432,14 @@ fn_Plugins()
 {
   echo ""
   if [[ "${str_Protocol}" == "http" ]] ; then
-    printf "\n\n Checking plugins ${str_Protocol}://${dir_URLPlugins}\n"
-    str_Plugins=$(curl ${str_Protocol}://${dir_Location}/${file_Plugins})
+    printf "\n\nChecking available plugins ${str_Protocol}://${dir_URLPlugins}\n"
+    str_Plugins="$(curl ${str_Protocol}://${dir_Location}/${file_Plugins})"
   fi
-  echo ${str_Plugins}
+  printf "\n\n"
+  for each_Plugin in ${str_Plugins} ; do
+    printf "\t[ ] ${each_Plugin}\n"
+  done
+ sleep 5
 }
 readonly -f fn_Plugins
 
