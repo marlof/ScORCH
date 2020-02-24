@@ -1,9 +1,14 @@
-#
+#!/bin/bash
 # Copyright 2016 WebMarcIT Ltd
 #
 # Unauthorised copying of this file, via any medium is strictly prohibited
 # This is the proprietary software of WebMarcIT Ltd
 # Written by marc@webmarcit.com
+# shellcheck disable=SC2034
+# shellcheck disable=SC2086
+# shellcheck disable=SC2129
+# shellcheck disable=SC2140
+# shellcheck disable=SC2154
 
 ## fn_GetRequest()
 ## fn_ProcessRequest()
@@ -28,7 +33,7 @@ fn_GetRequest()
   if [ ! -z "${file_Template}" ] ; then
     [[ $b_NonInteractive ]] || echo "$($fn_LogDate): Processing file:${file_Template}"
     while read -r str_Line ; do
-      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
@@ -37,7 +42,7 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
-      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
@@ -48,8 +53,8 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-        [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
-        [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+        [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
+        [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
         echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi
     done
@@ -75,7 +80,7 @@ fn_ProcessRequest()
     for ACTION in ${ACTION_LIST} ; do
 
 
-echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
+      #echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f "${file_CSV}" -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
 
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
 
@@ -83,7 +88,7 @@ echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime 
         if type -t "SP_${ACTION}" >/dev/null ; then
           fn_Call="SP_${ACTION}"
         else
-          printf "\n\nCannot find a function called SP_${ACTION}\n" # Maybe issue107: or ${fn_Call}\n"
+          printf "\n\nCannot find a function called SP_%s\n# Maybe issue107: or ${fn_Call}\n" "${ACTION}"
           ACTION="no-action"
           fn_Call="no-action"
           fn_PressEnter
@@ -92,7 +97,7 @@ echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f ${file_CSV} -starttime 
         str_Call=${fn_Call#SP_}
                 [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
-        fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
+        fn_CreateFile "${dir_Log}"/"$(basename "${file_Job}").log"
 
         if [[ ! -z "${PARENT_LIST}" ]] ; then
           for str_EachRule in ${PARENT_LIST} ; do
@@ -113,7 +118,7 @@ set -u
           echo "# Template Begin" >> "${file_Job}"
           cat "${file_Request}" >> "${file_Job}"
           echo "# Template End" >> "${file_Job}"
-          echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
+          echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/"$(basename "${file_Job}").log"
           mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
           return 1
@@ -125,11 +130,11 @@ set -u
 
         if [[ ${b_CreateFailed} ]] ; then
           mv "${file_Job}" "${dir_Failed}/."
-          echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
+          echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/"$(basename "${file_Job}").log"
         else
           fn_JobFooter "${file_Job}"
           chmod 770 "${file_Job}"
-          echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
+          echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/"$(basename "${file_Job}").log"
         fi
 
         (( int_JobCount+=1 ))
@@ -143,9 +148,9 @@ set -u
 
           if [[ ${b_Sync} ]] ; then
             mv "${file_Job}" "${dir_Queued}/." 
-            "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 
+            "${file_EachJob}" </dev/null >> "${dir_Log}"/"$(basename "${file_EachJob}").log" 2>&1 
           else
-            mv "${file_Job}" "${dir_Queued}/." && "${dir_Base}"/${str_ProgramName} -background &
+            mv "${file_Job}" "${dir_Queued}/." && "${dir_Base}/${str_ProgramName}" -background &
           fi
         fi
 
@@ -161,7 +166,8 @@ fn_ShowRules()
 {
   ## typeset local file_Job="${1}"
   echo ""
-  [[ -r ${file_ActiveJob}.rules ]] && ( fn_ShowLine "-" "Rules" ; cat ${file_ActiveJob}.rules ; echo "" ) || :
+  [[ -r "${file_ActiveJob}.rules" ]] && ( fn_ShowLine "-" "Rules" ; cat "${file_ActiveJob}.rules" ; echo "" )
+  :
 }
 readonly -f fn_ShowRules
 
@@ -174,7 +180,7 @@ readonly -f fnE_Rules
 fnE_RulesMenu()
 {
   ## printf "\n\n Rules menu "
-  printf " ${dis_ULOn}C${dis_ULOff}hange rules |"
+  printf " %sC%shange rules |" "${dis_ULOn}" "${dis_ULOff}"
 }
 readonly -f fnE_RulesMenu
 
@@ -190,9 +196,9 @@ fnE_AmendRules()
   fn_ShowLine "-"
 
   printf "\n\n "
-  printf " ${dis_ULOn}A${dis_ULOff}dd parent | ${dis_ULOn}D${dis_ULOff}elete rules  | e${dis_ULOn}X${dis_ULOff}it : "
+  printf " %sA%sdd parent | %sD%selete rules  | e%sX%sit : " "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}"
 
-  read ${str_Quick} -t 60 char_Choice
+  read -r ${str_Quick} -t 60 char_Choice
   set +e
   case ${char_Choice} in
 
@@ -201,9 +207,9 @@ fnE_AmendRules()
                   fn_ShowLine
                   fn_GetAnswer
                   [[ "$str_Answer" == "x" ]] || [[ "${str_Answer}" == "" ]] && return 0
-                  echo "PARENT:${arr_Jobs[${str_Answer}]}" >> ${file_ActiveJob}.rules ;;
+                  echo "PARENT:${arr_Jobs[${str_Answer}]}" >> "${file_ActiveJob}.rules" ;;
 
-          d | D ) rm ${file_ActiveJob}.rules 2>/dev/null
+          d | D ) rm "${file_ActiveJob}.rules" 2>/dev/null
                   # if link to active job in pending mv job to queued
                            ;;
 
@@ -247,14 +253,14 @@ fn_CheckAuth()
 
   if [[ ${b_Install} ]] ; then
     printf "\n\n\tInitialising....\n\n"
-    [ ! -f ${file_Users} ] && echo "${str_User}:POWER:ALL" > ${file_Users}
+    [ ! -f "${file_Users}" ] && echo "${str_User}:POWER:ALL" > "${file_Users}"
   fi
 
   printf "\nChecking authority: "
-  if [ ! -r ${file_Users} ] ; then
-    if [ -f ${file_Users} ] ; then
+  if [ ! -r "${file_Users}" ] ; then
+    if [ -f "${file_Users}" ] ; then
       echo "The file ${file_Users} is not readable."
-      ls -l ${file_Users}
+      ls -l "${file_Users}"
       exit 1
     else
       echo "The users file does not exist. Create the users file ${file_Users}"
@@ -262,13 +268,13 @@ fn_CheckAuth()
     fi
   fi
   set +e
-  grep "^${str_User}:" ${file_Users}
-  str_Authority=$(grep "^${str_User}:" ${file_Users} | cut -d":" -f2 | tr [:lower:] [:upper:])
+  grep "^${str_User}:" "${file_Users}"
+  str_Authority=$(grep "^${str_User}:" "${file_Users}" | cut -d":" -f2 | tr '[:lower:]' '[:upper:]')
   case ${str_Authority} in
     P | POWER ) b_Power=1      ; str_Authority="Power User" ;;
     R | REST* ) b_Restricted=1 ; str_Authority="View Only"  ;;
     F | FULL  )                  str_Authority="Normal"     ;;
-    *         ) printf "\n${str_Authority}: Authority Level not set correctly.\nCheck with the ${str_ProgramName} administrator.\n" ; exit 1 ;;
+    *         ) printf "\n%s: Authority Level not set correctly.\nCheck with the %s administrator.\n" "${str_Authority}" "${str_ProgramName}" ; exit 1 ;;
   esac
   set -e
 }

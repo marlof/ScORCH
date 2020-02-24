@@ -1,9 +1,10 @@
-#
+#!/bin/bash
 # Copyright 2016 WebMarcIT Ltd
 #
 # Unauthorised copying of this file, via any medium is strictly prohibited
 # This is the proprietary software of WebMarcIT Ltd
 # Written by marc@webmarcit.com
+# shellcheck disable=SC2154
 # for x in * ; do echo $x ; echo "===========" ; grep ^[a-z].*() $x; read; done
 
 ## fnE_Set()
@@ -41,24 +42,24 @@ fnE_MkOpenScorch()
 ##typeset str_ProgramVersion="1.9"
 ##typeset    str_ProgramName=$(basename "$0")
   if [[ -f ${dir_Base}/${str_ProgramName} ]] ; then
-    sed -n -e '/^#!\/bin\/bash$/,/^#HEADER$/{/^#HEADER$/d;p}' ${dir_Base}/${str_ProgramName} > ${file_OpenScorch}
-    for file_EachFunction in $(find -L ${dir_Functions} -name "Scorch_*") ; do
+    sed -n -e '/^#!\/bin\/bash$/,/^#HEADER$/{/^#HEADER$/d;p}' "${dir_Base}/${str_ProgramName}" > "${file_OpenScorch}"
+    for file_EachFunction in $(find -L "${dir_Functions}" -name "Scorch_*") ; do
       echo "Processing ${file_EachFunction}"
-      cat ${file_EachFunction} | grep -v "^##" >> ${file_OpenScorch}  	
+      grep -v "^##" "${file_EachFunction}" >> "${file_OpenScorch}"
     done
-    sed -n -e '/^#FOOTER$/,//{//!p}' ${dir_Base}/${str_ProgramName} >> ${file_OpenScorch}
+    sed -n -e '/^#FOOTER$/,//{//!p}' "${dir_Base}/${str_ProgramName}" >> "${file_OpenScorch}"
     echo "Created ${file_OpenScorch} $(date) by ${str_User}"
-    ls -l     ${file_OpenScorch}
-    md5sum    ${file_OpenScorch} > ${file_OpenScorch}.md5
-    sha256sum ${file_OpenScorch} > ${file_OpenScorch}.sha256
+    ls -l     "${file_OpenScorch}"
+    md5sum    "${file_OpenScorch}" > "${file_OpenScorch}.md5"
+    sha256sum "${file_OpenScorch}" > "${file_OpenScorch}.sha256"
 
     ## Enterprise version
     file_EnterpriseScorch=${dir_Base}/escorch.${str_ProgramVersion}
     echo "Creating EnterpriseScorch"
-    cd ${dir_Base}
-    tar cfz ${file_EnterpriseScorch}.tar.gz ${str_ProgramName} $(basename ${dir_Functions}) $(basename ${dir_Python})
-    md5sum    ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.md5
-    sha256sum ${file_EnterpriseScorch}.tar.gz > ${file_EnterpriseScorch}.sha256
+    cd "${dir_Base}" || Error "Cannot cd to Base ${dir_Base}"
+    tar cfz "${file_EnterpriseScorch}.tar.gz" "${str_ProgramName}" "$(basename "${dir_Functions}") $(basename "${dir_Python}")"
+    md5sum    "${file_EnterpriseScorch}.tar.gz" > "${file_EnterpriseScorch}.md5"
+    sha256sum "${file_EnterpriseScorch}.tar.gz" > "${file_EnterpriseScorch}.sha256"
   fi
   sleep 3
 }
@@ -69,13 +70,13 @@ fnE_MkEscorchtar()
   echo "Basedir : ${dir_Base}"
   echo "Program : ${str_ProgramName}"
   echo "Function: ${dir_Functions}"
-  cd ${dir_Base}
-  tar cf scorch.tar ${str_ProgramName} python functions plugins/DEMO
+  cd "${dir_Base}" || Error "Cannot cd to Base ${dir_Base}"
+  tar cf scorch.tar "${str_ProgramName}" python functions plugins/DEMO
 
   md5sum scorch.tar > scorch.tar.md5
-  mv scorch.tar      escorch.${str_ProgramVersion}.tar
-  mv scorch.tar.md5  escorch.${str_ProgramVersion}.tar.md5.txt
-  echo ${str_ProgramVersion} > version.txt
+  mv scorch.tar      "escorch.${str_ProgramVersion}.tar"
+  mv scorch.tar.md5  "escorch.${str_ProgramVersion}.tar.md5.txt"
+  echo "${str_ProgramVersion}" > version.txt
   echo "Done"
   sleep 3
 }

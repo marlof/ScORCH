@@ -1,4 +1,5 @@
-##
+#!/bin/bash
+#
 ## Copyright 2016 WebMarcIT Ltd
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,9 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
+# shellcheck disable=SC2016
+# shellcheck disable=SC2154
+
 
 ## This file contains functions to set and display layout
 ## fn_Dispatcher()        Runs the dispatcher in a while loop for a number of attempts
@@ -21,6 +25,8 @@
 ## fn_CheckDispatcher()   Checks that the lock file matches the process of the dispatcher (Only yhe Dispatch host should do this)
 ## fn_RunJobs()           Each sessions will check for owned jobs in the run state to start
 ## fn_LockManager()
+# shellcheck disable=SC2162
+
 
 
 fn_Dispatcher()
@@ -47,15 +53,15 @@ fn_Dispatcher()
 
       for file_EachJob in ${arr_PendingJobs} ; do
         echo "Checking rules for $file_EachJob"
-        if [ -r "${dir_Active}/$(basename ${file_EachJob})".rules ] ; then
+        if [ -r "${dir_Active}/$(basename "${file_EachJob}")".rules ] ; then
           ## Check for Parent
-          arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename ${file_EachJob})".rules | cut -d: -f2)
+          arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename "${file_EachJob}")".rules | cut -d: -f2)
 
           typeset local b_ParentComplete=0
           for file_EachParent in ${arr_Parents} ; do
             if [[ "${file_EachParent}" = "${file_EachJob}" ]] ; then
                fn_Audit "${file_EachJob}" "Cyclic dependency. Failing job" "rules"
-               mv ${dir_Pending}/${file_EachJob} ${dir_Failed}
+               mv "${dir_Pending}"/"${file_EachJob}" "${dir_Failed}"
             fi
 
             str_ParentState=$(basename $(dirname $(find -L ${dir_Job} -name ${file_EachParent} | grep -v "/active/")))
@@ -166,8 +172,10 @@ fn_CheckDispatcher()
 
       #echo "This is not the dispatch host but need to check that the file is still healthy"
 
-      local int_LockDate=$(date "+%s" -d "$(  ls -l "${file_DispatchLock}" | awk -F" " '{print $6, $7, $8}' )" )
-      local int_NowDate=$(date "+%s")
+      local int_LockDate
+      int_LockDate=$(date "+%s" -d "$(  ls -l "${file_DispatchLock}" | awk -F" " '{print $6, $7, $8}' )" )
+      local int_NowDate
+      int_NowDate=$(date "+%s")
       if (( int_NowDate - int_LockDate > 100 )) ; then
         echo "The local file may be stale. There will be a short delay while checking"
         ls -l "${file_DispatchLock}"
@@ -237,17 +245,17 @@ fn_RunJobs()
       if [[ -z ${str_Group} ]] ; then
         nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
       else
-        newgrp ${str_Group} << EOGROUP
+        newgrp "${str_Group}" << EOGROUP
         nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 EOGROUP
       fi
     else
       ## Fail the job as not executable
       #echo "Job not executable - running with bash"
-      if [[ -z ${str_Group} ]] ; then
+      if [[ -z "${str_Group}" ]] ; then
         nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
       else
-        newgrp ${str_Group} << EOGROUP
+        newgrp "${str_Group}" << EOGROUP
         nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
 EOGROUP
       fi
@@ -266,8 +274,8 @@ fn_LockManager()
     fn_ShowTop
     fn_ShowLine
     int_Count=1
-    for file_Lock in $(ls ${dir_Lock}) ; do
-      printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s | "   "${int_Count}"
+    for file_Lock in $(ls "${dir_Lock}") ; do
+      printf "%s%s%${int_Column1Width}s | "  "${dis_Reset}" "${str_StatusColour}" "${int_Count}"
       printf "${file_Lock} -> $(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)\n"
       arr_Locks[${int_Count}]="${file_Lock}"
       (( int_Count+=1 ))
@@ -280,7 +288,7 @@ fn_LockManager()
     else
       fn_ShowLine "="
 
-      printf "\n Select job number lock to delete | e${dis_ULOn}X${dis_ULOff}it : "
+      printf "\n Select job number lock to delete | e%sX%sit : " "${dis_ULOn}" "${dis_ULOff}"
 
       read -e -t 30 char_Choice
       [[ "${char_Choice}" = "" ]] && char_Choice="x"

@@ -1,4 +1,4 @@
-##
+#!/bin/bash
 ## Copyright 2016 WebMarcIT Ltd
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,12 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
+# shellcheck disable=SC2086
+# shellcheck disable=SC2140
+# shellcheck disable=SC2154
+# shellcheck disable=SC2162
+
+
 
 ## These functions record an audit in a standardised way
 ## fn_LogWhy()
@@ -20,8 +26,11 @@
 
 fn_LogWhy()
 {
-  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
-  printf "\n\n $(basename ${file_Job})\n\n"
+  local file_Log
+  file_Log="${dir_Log}"/"$(basename "${file_Job}").log"
+  printf "\n\n"
+  basename "${file_Job}"
+  printf "\n\n"
   read -e -p " Enter a reason: " str_Answer
   echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" >/dev/null
 }
@@ -29,14 +38,14 @@ readonly -f fn_LogWhy
 
 fn_Audit()
 {
-  typeset local file_Job="${1}"                             # The Job to update
-  typeset local str_Transition="${2}"                       # The transition being performed
-  typeset local str_Dispatcher="${3:-}"
+  local file_Job="${1}"                             # The Job to update
+  local str_Transition="${2}"                       # The transition being performed
+  local str_Dispatcher="${3:-}"
   [[ "${str_Transition}" = "deleted" ]] && fn_LogWhy
   if [[ "${str_Dispatcher}" ]] ; then
-    echo "$(${fn_LogDate}) ${str_Transition}"                            | tee -a "${dir_Active}/$(basename ${file_Job})" "${dir_Log}/$(basename ${file_Job}).log" >/dev/null
+    echo "$(${fn_LogDate}) ${str_Transition}"                            | tee -a "${dir_Active}"/"$(basename "${file_Job}")" "${dir_Log}"/"$(basename ${file_Job}).log" >/dev/null
   else
-    echo "$(${fn_LogDate}) ${str_User} ran transition ${str_Transition}" | tee -a "${dir_Active}/$(basename ${file_Job})" "${dir_Log}/$(basename ${file_Job}).log" >/dev/null
+    echo "$(${fn_LogDate}) ${str_User} ran transition ${str_Transition}" | tee -a "${dir_Active}"/"$(basename "${file_Job}")" "${dir_Log}"/"$(basename ${file_Job}).log" >/dev/null
   fi
 }
 readonly -f fn_Audit
