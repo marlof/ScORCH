@@ -1,3 +1,4 @@
+#!/bin/bash
 ##
 ## Copyright 2016 WebMarcIT Ltd
 ##
@@ -196,7 +197,7 @@ if [[ "\${str_Mode}" == "skip" ]] ; then
   done
 else
   while (( int_Count <= int_Last )) ; do
-    if [[ "F R" =~ "\$(echo \${JOB[T\${int_Count}]})" ]] ; then
+    if [[ "F R K" =~ "\$(echo \${JOB[T\${int_Count}]})" ]] ; then
       echo \${int_Count}
     fi
     (( int_Count++ ))

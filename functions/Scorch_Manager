@@ -1,4 +1,4 @@
-##
+#!/bin/bash
 ## Copyright 2016 WebMarcIT Ltd
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,7 @@ fn_SkipFailed()
   int_Count=1
   while (( int_Count <= int_Last )) ; do
     [[ "F" == "${JOB[T${int_Count}]}" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
+    [[ "K" == "${JOB[T${int_Count}]}" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
     (( int_Count++ ))
   done
 }
@@ -319,29 +320,36 @@ fn_Cancel()
   fn_CheckOwner "${file_Link}"
   echo "${file_Link}"
   if [[ "${str_JobState}" = "running" ]] ; then
+
     printf "From AUDIT PID:"
     int_PID=$(grep "^AUDIT:PID:" ${file_Log} | tail -1 | cut -d: -f3)
-#    ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v bash | grep -v grep
-#    int_PID=$(ps -fu ${str_User} | grep $(basename ${file_Link}) | grep -v grep | awk -F" " '{print $2}')
-#    echo ${int_PID} 
-    echo "Processes running at termination:" >> ${file_Log}
-    ps -fu ${str_User} >> ${file_Log}
-    echo "Process tree at termination:" >> ${file_Log}
-    pstree -p ${int_PID} >> ${file_Log}
-    printf "\n Killing Process with PID[${int_PID}]\n"
-    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3)
-    kill ${int_PID}
+
+    echo "Processes running at termination:" | tee -a ${file_Log}
+    ps -fu ${str_User}                       | tee -a ${file_Log}
+
+    echo "Process tree at termination:"      | tee -a ${file_Log}
+    pstree -p ${int_PID}                     | tee -a ${file_Log}
+
+    printf "\n Killing Process with PID[${int_PID}]\n" | tee -a ${file_Log}
+    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3) || :
+    kill -15 ${int_PID}                      | tee -a ${file_Log}   
+
+    echo "AUDIT:T:${int_KillTask}:K" >> "${file_Link}"
     mv ${file_Link} ${dir_Failed}
+
     fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
     fn_LogWhy
+
   elif  [[ "${str_JobState}" = "failed"  ]] || [[ "${str_JobState}" = "manual"  ]]; then
-    int_KillTask=$(grep "^AUDIT:T:.*:" ${file_Link} | tail -1 | cut -d: -f3)
+    int_KillTask=$(grep "^AUDIT:T:.*:" ${file_Link} | tail -1 | cut -d: -f3) || int_KillTask="unknown"
     mv ${file_Link} ${dir_Completed}
     fn_LogWhy
     fn_Audit "${file_Link}" "aborted during task ${int_KillTask:-0}"
     printf "\n\n Aborted Job : ${file_Link}"
   else
+
     echo "Incorrect call"
+
   fi
   fn_PressEnter
 }
@@ -369,7 +377,7 @@ fn_AdminFunctions()
       case ${char_Choice} in
 
         ## Abort Failed or Running jobs
-        h | H ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
+        k | K | c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
 
         ## View CSV
         #c | C ) ${cmd_Editor} "${file_CSV}" ;;
@@ -436,7 +444,16 @@ fn_AdminFunctions()
         ## Unqueue Job(s) back to New State
         u | U ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_Job}" unqueued
-                mv "${file_Link}" "${dir_New}"  
+                if [ -L ${file_Link} ] ; then
+                  mv "${file_Link}" "${dir_New}"
+                else
+                  echo "The job is no longer in an unqueable state. Checking starting state" | tee -a "${file_Log}"
+                  local file_NameJob=$(basename ${file_Link})
+                  if find -L "${dir_Starting}" -name "${file_NameJob}" ; then
+                    mv "${dir_Starting}"/"${file_NameJob}" "${dir_New}/."
+                  fi
+                  sleep 120
+                fi
                 return 0 ;;
 
         ## Task View
