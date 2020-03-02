@@ -377,7 +377,7 @@ fn_AdminFunctions()
       case ${char_Choice} in
 
         ## Abort Failed or Running jobs
-        k | K | c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ;;
+        k | K | c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ; return 0 ;;
 
         ## View CSV
         #c | C ) ${cmd_Editor} "${file_CSV}" ;;
