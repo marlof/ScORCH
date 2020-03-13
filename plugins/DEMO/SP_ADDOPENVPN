@@ -1,0 +1,11 @@
+SP_ADDOPENVPN()
+{
+	SP_UPGRADE-LINUX
+	Task "sudo apt install -y openvpn easy-rsa"
+	Task "sudo apt install network-manager-openvpn network-manager-openvpn-gnome"
+	Manual "Open Settings-->Network On VPN click + OPENVPN
+  <Add values from ovpn file>
+  
+	In Advanced <add additional values> eg Use LZO data compression
+	And change to correct security cipher and MHAC"
+}
