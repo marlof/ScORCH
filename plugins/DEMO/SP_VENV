@@ -1,0 +1,14 @@
+SP_VENV()
+{
+  GetVar -pattern "PYTHON" -name "str_PVER" -default "3.9"
+  Task "sudo -n true" OR Manual "Exit scorch and run    sudo true    "
+  Task "sudo add-apt-repository ppa:deadsnakes/ppa"
+  Task "sudo apt-get -y update"
+  Task "sudo apt-get -y install python${str_PVER}"
+  Task "sudo apt-get -y install python${str_PVER}-venv python${str_PVER}-dev"
+  Task "mkdir -p ~/.venvs"
+  Task "python${str_PVER} -m venv ~/.venvs/python-${str_PVER}"
+  Task "sudo apt install -y python3-venv"
+  Message "Now you can run the following
+    source ~/.venvs/python-${str_PVER}/bin/activate"
+}

@@ -1,0 +1,5 @@
+SP_ADDJQ()
+{
+        SP_UPGRADE-LINUX
+        Task "sudo apt install -y jq"
+}

@@ -1,0 +1,9 @@
+SP_REMMINA()
+{
+  SP_UPGRADE-LINUX
+  Task "sudo apt-add-repository ppa:remmina-ppa-team/remmina-next"
+  Task "sudo apt update"
+  Task "sudo apt install -y remmina remmina-plugin-rdp remmina-plugin-secret"
+  Task "sudo apt-cache search remmina-plugin"
+  Message "Use sudo apt-cache search remmina-plugin to list available plugins"
+}
