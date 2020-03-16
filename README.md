@@ -39,7 +39,7 @@ scorch/
 +--plugins/                 ScORCH plugin
    +--DEMO/
    +--LOCAL/
-   +--CUSTONNAME/
+   +--CUSTOM/               Directory for plugins local to a customer
 +--projects/                Obrar projects (and sym link ScORCH plugins)
    +--common/
       +--(bin)/
