@@ -1,5 +1,7 @@
 # Customer backups
 .[0-9].*.backup
+# Customer plugins
+plugins/CUSTOM
 my*.sublime*
 var
 tmp
