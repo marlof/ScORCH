@@ -199,13 +199,14 @@
 ## 2.8.8 200109   marc   #137 Fix failing exits from plugins
 ## 2.8.9 200116   marc   #136 Fixed fail from exit tasks
 ## 2.9.0 200302   marc   Hangup to kill improvements
+## 2.9.1 200321   marc   Python3 for showJobs
 # shellcheck disable=SC2034
 # shellcheck source=/dev/null
 ## Determine the program name and the running directory
 set -uo pipefail     # -e is not used yet as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
 
-typeset str_ProgramVersion="2.9.0"
+typeset str_ProgramVersion="2.9.1"
 typeset       str_Codename="Balaur"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
