@@ -83,14 +83,14 @@ fn_ProcessRequest()
       #echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f "${file_CSV}" -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
 
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
-
+      
+        fn_Call="no-action"
         int_TaskCount=0
         if type -t "SP_${ACTION}" >/dev/null ; then
           fn_Call="SP_${ACTION}"
         else
           printf "\n\nCannot find a function called SP_%s\n# Maybe issue107: or ${fn_Call}\n" "${ACTION}"
           ACTION="no-action"
-          fn_Call="no-action"
           fn_PressEnter
           return 0
         fi
