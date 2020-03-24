@@ -18,6 +18,16 @@
 ## fnE_AmendRules()
 ## fn_ExtractPairs()
 ## fn_CheckAuth()
+fn_NiceTime()
+{
+  local hours= minutes= seconds=
+  local time=
+  time=${1%.*}
+  ((hours=${time}/3600))
+  ((minutes=${time}%3600/60))
+  ((seconds=${time}%60))
+  printf "%02dh %02dm %02ds\n" $hours $minutes $seconds
+}
 
 fn_GetRequest()
 {
@@ -38,19 +48,36 @@ fn_GetRequest()
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
   else
-    printf "\n help <plugin>    at any time for additional parameters\n\n"
+    printf "\n help <plugin>    at any time for additional parameters\n"
+    printf " info <plugin>    for further information\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
       str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       if [[  ${str_ULine} =~ HELP ]] ; then
-        typeset local str_Help=${str_Line#help }
+        local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
           declare -f fn_ExtractPairs | grep -w "GetVar"
           echo "==CUSTOM============="
           declare -f "SP_${str_Help}" | grep -w "GetVar"
           echo "==============="
+        fi
+      elif [[ ${str_ULine} =~ INFO ]]; then
+        local str_Info=${str_Line#info }
+        # scorchdb -f $file_CSV +job $str_Info -time | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }'
+        local int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
+        local int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  awk '{ sum += $1 } END { if (NR > 0) print sum / NR }')
+        local int_FailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep "\-1$" | wc -l)
+        printf "\n"
+        printf "Total number of jobs logged    : %s\n" ${int_JobCount}
+        if [[ ${int_JobCount} -ge 1 ]] ; then
+          #printf "Total number of failures       : $(grep $str_Info $file_CSV | cut -d"," -f6)"
+          printf "Number of deleted jobs         : %s\n" ${int_FailCount}
+          printf "Average number of  failures    : %s\n" ${int_NonFailCount}
+          printf "Max run time                   : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  awk 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))\n"
+          printf "Average run time               : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  awk '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)\n"
+          printf "\n\n"
         fi
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
