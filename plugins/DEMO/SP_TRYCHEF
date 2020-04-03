@@ -1,0 +1,8 @@
+SP_TRYCHEF()
+{
+  Task "mkdir ~/try-chef"
+  Task "cd ~/try-chef"
+  Task "wget https://raw.githubusercontent.com/learn-chef/chef/master/docker-compose.yml"
+  Task "docker-compose pull"
+  Task "docker-compose up -d"
+}
