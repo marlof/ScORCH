@@ -407,6 +407,7 @@ readonly -f fn_IsAlreadyRunning
 
 fn_CheckLatest()
 {
+  set +e
   echo ""
   if [[ "${str_Protocol}" == "http" ]] ; then
     printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
@@ -414,7 +415,11 @@ fn_CheckLatest()
     if fn_IsNumber ${str_LatestVersion} ; then
     #if [[ $? == 0 ]] ; then
       echo "$str_LatestVersion"
+    elif [[ "${str_LatestVersion}" == "" ]]; then
+      printf "\n\n There may have been an error when checking the version"
+      fn_PressEnter
     else
+      #statements
       printf "\n\n"
       printf " Latest version <${str_LatestVersion}> may not have be released.\n"
       #printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
@@ -426,6 +431,7 @@ fn_CheckLatest()
   else
     str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2 | head -1 )
   fi
+  set -e
 }
 readonly -f fn_CheckLatest
 
