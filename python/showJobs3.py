@@ -33,8 +33,9 @@
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
+# 1.17      Marc Loftus     20/02/2020      Python 3
 ############################################################################################################
-str_ProgramVersion = '1.16'
+str_ProgramVersion = '1.17'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
