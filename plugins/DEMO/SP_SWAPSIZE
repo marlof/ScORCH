@@ -1,0 +1,15 @@
+SP_SWAPSIZE()
+{
+  # Change the swapsize space
+  # Starting with Ubuntu 17.04, the swap partition was replaced by a swap file.
+  # The main advantage of the swap file is easy resizing.
+  
+  Task "sudo -n true" OR Manual "Exit scorch and run sudo true"
+  GetVar -pattern "Size" -name "SWAPSIZE" -default 4
+  
+  Task "sudo swapoff -a"
+  Task "sudo dd if=/dev/zero of=/swapfile bs=1G count=$SWAPSIZE"
+  Task "sudo chmod 600 /swapfile"
+  Task "sudo mkswap /swapfile"
+  Task "sudo swapon /swapfile"
+}
