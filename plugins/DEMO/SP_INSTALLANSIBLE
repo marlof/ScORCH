@@ -1,0 +1,7 @@
+SP_INSTALLANSIBLE()
+{
+  SP_UPGRADE-LINUX
+  Task "sudo apt install software-properties-common"
+  Task "sudo apt-add-repository --yes --update ppa:ansible/ansible"
+  Task "sudo apt install ansible"
+}
