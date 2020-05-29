@@ -8,7 +8,7 @@
 
 fnE_PluginManagerMenu()
 {
-  typeset local char_Choice=
+  typeset local char_Choice=""
   while : ; do
 
     fn_ShowTop
@@ -37,7 +37,7 @@ fnE_PluginManagerMenu()
     printf "\n\n "
     printf " ${dis_ULOn}T${dis_ULOff}oggle | e${dis_ULOn}X${dis_ULOff}it : "
 
-    read ${str_Quick} -t 60 char_Choice
+    read ${str_Quick} -t 60 char_Choice || :
 
     case ${char_Choice} in
 
