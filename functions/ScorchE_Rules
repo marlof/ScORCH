@@ -280,7 +280,7 @@ fn_CheckAuth()
 
   if [[ ${b_Install} ]] ; then
     printf "\n\n\tInitialising....\n\n"
-    [ ! -f "${file_Users}" ] && echo "${str_User}:POWER:ALL" > "${file_Users}"
+    [ ! -s "${file_Users}" ] && echo "${str_User}:POWER:ALL" > "${file_Users}"
   fi
 
   printf "\nChecking authority: "
