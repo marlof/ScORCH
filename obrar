@@ -62,14 +62,17 @@
 # 1.7 190226    marc        #   Improvements to str_Group settings
 #                           #98 Improved standard error output
 # 1.8 191111    marc        #130 Restricted search to project dir and silence grep signal 13
+# 1.9 200529    marc        shellcheck start
+# shellcheck disable=SC2174
+
 # Program settings
-typeset str_ProgramVersion="1.8"
+typeset str_ProgramVersion="1.9"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
 typeset             str_OS="$(uname -o)"
 #typeset           dir_Orig="$(pwd)/${dir_Run}"
-typeset           dir_Orig="$(cd $dir_Run && pwd)"
+typeset           dir_Orig="$(cd "$dir_Run" && pwd)"
 typeset        cmd_LogDate="date +%y%m%d-%H%M%S"
 typeset           file_Log=/dev/null
 typeset   int_WarningCount=0
@@ -102,7 +105,7 @@ typeset str_FunctionIdentifier="fn_"
 typeset SEPERATOR="====================================================================="
 
 # System maintainable
-typeset       dir_Base=$(cd ${dir_Run} && pwd || /tmp )
+typeset       dir_Base=$(cd "${dir_Run}" && pwd || /tmp )
 typeset    dir_Project=${dir_Base}/${str_CommonBase}
 typeset     dir_Common=${dir_Base}/${str_CommonBase}/${str_CommonName}
 typeset        dir_Etc=${dir_Common}/${str_Etc}
@@ -131,29 +134,29 @@ typeset      str_Group=
 
 
 # These function definitions are being stubbed until real one loaded
-fn_LogDate() { printf "$($cmd_LogDate) $@\n";}
-Message() { printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log} ;}
+fn_LogDate() { printf "$($cmd_LogDate) %s\n" "$*";}
+Message() { printf "$($cmd_LogDate) %15s INFO  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log} ;}
 Message()
 {
   #echo $str_Logging
 if [ ! -z ${str_Logging} ] ; then
-  printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log}
+  printf "$($cmd_LogDate) %15s INFO  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log}
 else 
-  printf "$($cmd_LogDate) %15s FUNC  $@\n" "[${str_FunctionName}:${int_WarningCount}]"
+  printf "$($cmd_LogDate) %15s FUNC  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"
 fi
 #printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" >> ${file_Log}
 #echo >> $LOG_FILE "INFORM[${PROG_NAME}] $1 (on `date '+%D %T'`)"
 # LIBRARY FUNCTION 
 # DO NOT MODIFY
 }
-Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};}
-Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After ${int_EndTime} seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log} ; exit 1;}
-Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  $@\n" "[${str_FunctionName}:${int_WarningCount}]" | tee -a ${file_Log};}
+Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
+Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 1;}
+Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
 
 fn_GetJobID()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   # Function to create an atomic action of getting and recording a new job id
 
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
@@ -161,7 +164,7 @@ fn_GetJobID()
 
   typeset local file_JobIDLock="${file_JobID}".lock
   #fn_CreateFile "$file_JobIDLock"
-  if ( set -o noclobber; > "${file_JobIDLock}") 2> /dev/null ; then
+  if ( set -o noclobber; true > "${file_JobIDLock}") 2> /dev/null ; then
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
     else
@@ -196,13 +199,17 @@ fn_CreateFile()
 {
   typeset local file_Name="${1:-}"
   typeset local b_Blank="${2:-}"
-  touch "${file_Name}"
-  [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
+  if touch "${file_Name}" ; then
+    :
+  else
+    echo "Error: Cannot create file ${file_Name}"
+    exit 1
+  fi
   chmod 664 "${file_Name}" 2>/dev/null
-  [[ "${b_Blank}" ]] && > "${file_Name}"
+  [[ "${b_Blank}" ]] && true > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${file_Name} || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
+    chgrp ${str_Group} "${file_Name}" || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
   else
     :
     Verbose "Creating default file $file_Name <${str_Group}>"
@@ -216,7 +223,7 @@ fn_Mkdir()
   mkdir -p -m 770 "${dir_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} ${dir_Name} || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+    chgrp ${str_Group} "${dir_Name}" || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
   else
     :
     Verbose "Creating dir $dir_Name <${str_Group}>"
@@ -296,10 +303,10 @@ fn_Timings()
   if [ -r "${file_Timing}" ] ; then
     Message "Timings function:${str_FunctionName}"
     printf "Runs\tMin\tMax\tAverage\n"
-    cat ${file_Timing} | sed 's/,/\t/g'
+    sed 's/,/\t/g' "${file_Timing}"
   else
     Message "Checking TAGs"
-    typeset local str_Functions="$(fn_ListTags ${str_FunctionName} timings | cut -d"|" -f4)"
+    typeset local str_Functions="$(fn_ListTags "${str_FunctionName}" timings | cut -d"|" -f4)"
     Verbose "Functions: <${str_Functions}>"
     if [ ! -z "${str_Functions}" ] ; then
       for str_EachFunction in ${str_Functions} ; do
@@ -308,7 +315,7 @@ fn_Timings()
         if [ -r "${file_Timing}" ] ; then
           Message "Timings function:${str_EachFunction}"
           printf "Runs\tMin\tMax\tAverage\n"
-          cat ${file_Timing} | sed 's/,/\t/g'
+          sed 's/,/\t/g' "${file_Timing}"
         else
           Warning "No functions timing file found ${file_Timing}"
         fi
@@ -322,18 +329,18 @@ readonly -f fn_Timings
 
 fn_CheckSetUp()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   typeset b_SetUp=         # Is this the first run
 
   if [[ ! -z ${str_Group} ]] ; then
     # Check str_Group is ont of groups
-    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
+    if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
     else
-      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
+      printf "\n\n Error: %s is using a group account of %s but you are not a member.\n" "${str_ProgramName}" "${str_Group}"
       printf "\n Your available groups are:\n "
       groups
-      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator.\n"
+      printf "\n\n Check with %s administrator, or a system administrator.\n" "${str_ProgramName}"
       exit 1
     fi
   fi
@@ -355,23 +362,23 @@ fn_CheckSetUp()
     printf "\n Creating common example ${str_ProgramName}.def file \n Example ${str_ProgramName}.env\n"
     
     # Create COMMON space
-    fn_CreateFile ${dir_Common}/${str_Etc}/${file_TagDefinition}
-    fn_CreateFile ${dir_Common}/${str_Etc}/${file_Config}
-    fn_Mkdir ${dir_Common}/${str_Functions}
+    fn_CreateFile "${dir_Common}/${str_Etc}/${file_TagDefinition}"
+    fn_CreateFile "${dir_Common}/${str_Etc}/${file_Config}"
+    fn_Mkdir "${dir_Common}/${str_Functions}"
 
     # Create DEMO space
-    fn_Mkdir ${dir_Project}/demo/${str_Etc} ${dir_Project}/demo/${str_Functions}
-    fn_CreateFile ${dir_Project}/demo/${str_Etc}/${file_Config}
+    fn_Mkdir "${dir_Project}/demo/${str_Etc} ${dir_Project}/demo/${str_Functions}"
+    fn_CreateFile "${dir_Project}/demo/${str_Etc}/${file_Config}"
 
     # Create DEMO tag
-    if [[ ! -f ${dir_Project}/demo/${str_Etc}/${file_TagDefinition} ]] ; then 
-      printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | ${str_FunctionIdentifier}Demo1" >> ${dir_Project}/demo/${str_Etc}/${file_TagDefinition}
+    if [[ ! -f "${dir_Project}/demo/${str_Etc}/${file_TagDefinition}" ]] ; then 
+      printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | ${str_FunctionIdentifier}Demo1" >> "${dir_Project}/demo/${str_Etc}/${file_TagDefinition}"
     fi
     # Create DEMO function
-    printf "${str_FunctionIdentifier}Demo1()\n{\n  Message \"Sleeping for \$TIME seconds\"\n  sleep \$TIME\n}\n" > ${dir_Project}/demo/${str_Functions}/${str_FunctionIdentifier}Demo1
+    printf "${str_FunctionIdentifier}Demo1()\n{\n  Message \"Sleeping for \$TIME seconds\"\n  sleep \$TIME\n}\n" > "${dir_Project}/demo/${str_Functions}/${str_FunctionIdentifier}Demo1"
  
     # Clear stats file
-    > ${dir_Timings}/${str_FunctionIdentifier}Demo1${str_TimingExt}
+    true > "${dir_Timings}/${str_FunctionIdentifier}Demo1${str_TimingExt}"
     exit 0
   fi
 
@@ -383,14 +390,14 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  typeset local lst_ConfigFiles=$(find -L ${dir_Project} -name ${file_TagDefinition})
+  typeset local lst_ConfigFiles=$(find -L "${dir_Project}" -name "${file_TagDefinition}")
   if [[ ${#lst_ConfigFiles} = 0 ]] ; then
     printf "Could not find any config files (${file_TagDefinition}) from directory (${dir_Base})\n"
     exit 1
   fi
 
   Verbose "Making log directory mkdir -p -m 775 ${dir_LogBase}"
-  fn_Mkdir ${dir_LogBase}
+  fn_Mkdir "${dir_LogBase}"
 
   [[ -z ${file_TagDefinition} ]] && Error "No file_TagDefinition defined"
   [[ -z ${str_Tag}     ]] && Error "No TAG passed"
@@ -400,7 +407,7 @@ readonly -f fn_CheckSetUp
 
 fn_Header()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   Message ${SEPERATOR}
   Message "     User : $(whoami)"
   Message "      Ran : ${dir_Run}/${str_ProgramName} ${lst_ProgramArgs} ${str_Tag} ${lst_TagArgs}"
@@ -422,15 +429,15 @@ fn_ListTags()
 {
   # Return a list of TAG that match the users optional search string
   # file_TagDefinition=
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   Verbose "Checking for file_TagDefinition files <${file_TagDefinition}> from ${dir_Project}"
   typeset local  str_Grep="${1:-}"
   typeset local b_Timings="${2:-}"
-  [ ! -z ${b_Timings} ] && b_Timings="-w"
-  if [[ -z ${str_Grep} ]] ; then
-    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \; 2>/dev/null
+  [ ! -z "${b_Timings}" ] && b_Timings="-w"
+  if [[ -z "${str_Grep}" ]] ; then
+    find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -v ^# {} \; 2>/dev/null
   else
-    find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -v ^# {} \; | grep -i ${b_Timings} ${str_Grep} 2>/dev/null
+    find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -v ^# {} \; | grep -i ${b_Timings} ${str_Grep} 2>/dev/null
   fi
   set +x
 }
@@ -439,24 +446,25 @@ readonly -f fn_ListTags
 
 fn_ProcessTag()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   Verbose "      Tag : ${str_Tag}"
   Verbose " Tag Args : \"${lst_TagArgs}\""
   Verbose ${SEPERATOR}
-  str_TagLine=$(find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -w ^${str_Tag} {} \;)
+  str_TagLine=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -w ^${str_Tag} {} \;)
   typeset local int_TagCount=$(echo "${str_TagLine}" | wc -l )
 
   if [ ${int_TagCount} -ge 2 ] ; then
     Warning "Multiple tags found. Modify or remove tags in the following files:"
-    find -L ${dir_Project} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \;
+    find -L "${dir_Project}" -name "${file_TagDefinition}" -exec grep -l -w ^${str_Tag} {} \;
     Error "Modify or remove tags with ${str_Tag}"
   fi
   if [ "${#str_TagLine}" = 0 ] ; then
-    str_TagLine=$(find -L ${dir_Project} -name ${file_TagDefinition} -${FIND_EXEC} grep -iw ^${str_Tag} {} \;)
+    str_TagLine=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -iw ^${str_Tag} {} \;)
     if [ "${#str_TagLine}" != 0 ] ; then
       Error "TAG definitions are case sensitive. Did you mean\n${str_TagLine}"
     else
-	    local str_TagExample=$(${BASH_SOURCE[0]} -l | head -1)
+	    local str_TagExample
+      str_TagExample=$(${BASH_SOURCE[0]} -l | head -1)
       Error "No TAG definition found.
   
         Check from the ${dir_Base} directory and project for files named ${file_TagDefinition}.
@@ -469,27 +477,27 @@ fn_ProcessTag()
   
   # Get project space details from config
   # =====================================
-  typeset local str_Tmp=$(find -L ${dir_Project} -name ${file_TagDefinition} -exec grep -l -w ^${str_Tag} {} \; )
-  str_Project=$(echo ${str_Tmp#${dir_Project}/} | cut -d/ -f1)
+  typeset local str_Tmp=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -exec grep -l -w ^${str_Tag} {} \; )
+  str_Project=$(echo "${str_Tmp#${dir_Project}/}" | cut -d/ -f1)
 
   # Process again to remove leading and trailing spaces
-  str_Project=$(echo ${str_Project} | tr [:lower:] [:upper:] )
-  str_LProject=$(echo ${str_Project} | tr [:upper:] [:lower:])
+  str_Project=$(echo "${str_Project}" | tr [:lower:] [:upper:] )
+  str_LProject=$(echo "${str_Project}" | tr [:upper:] [:lower:])
   Message "Project space : <${str_Project}>"
   
-  Message "  Tag definition : $(echo ${str_TagLine} | cut -d'|' -f1,3,4)"
+  Message "  Tag definition : $(echo "${str_TagLine}" | cut -d'|' -f1,3,4)"
   
   # Get tag arguments list from config
   # ==================================
-  typeset local str_ConfigArgs=$(echo ${str_TagLine} | awk -F"|" '{print $3}')
+  typeset local str_ConfigArgs=$(echo "${str_TagLine}" | awk -F"|" '{print $3}')
   Verbose "  Tag arg check : <${str_ConfigArgs}>"
 
   # Process required and optional arguments against passed arugments
   for str_EachConfigArg in ${str_ConfigArgs} ; do
     Verbose "  Config definition : <${str_EachConfigArg}>"
-         str_Required=$(echo ${str_EachConfigArg} | cut -d: -f1)
-     str_VariableName=$(echo ${str_EachConfigArg} | cut -d: -f2)
-    str_ArgumentLabel=$(echo ${str_EachConfigArg} | cut -d: -f3)
+         str_Required=$(echo "${str_EachConfigArg}" | cut -d: -f1)
+     str_VariableName=$(echo "${str_EachConfigArg}" | cut -d: -f2)
+    str_ArgumentLabel=$(echo "${str_EachConfigArg}" | cut -d: -f3)
     if $(typeset -p ${str_VariableName} >/dev/null 2>&1 ) ; then
       Warning "${str_VariableName} is either a reserved ${str_ProgramName} variable or system variable."
       Message "Remove it or change it in the definition file."
@@ -561,12 +569,12 @@ fn_SourceSpaceEnvFile()
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
   Verbose "  Looking for a environment ${file_Config} config file in ${dir_Project}/${str_LProject}/${str_Etc}"
   if [ -r "${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}" ] ; then
-    Verbose "$(ls -l ${dir_Project}/${str_LProject}/${str_Etc}/${file_Config})"
+    Verbose "$(ls -l "${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}")"
     Message "Loading env file ${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}"
     # Protect the main session by checking the env file can be sourced
-    bash ${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}
+    bash "${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}"
     if [ $? -eq 0 ] ; then
-      source ${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}
+      source "${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}"
     else
       Error "There were issues loading the env file"
     fi
@@ -580,7 +588,7 @@ readonly -f fn_SourceSpaceEnvFile
 
 fn_ProcessFunctions()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   typeset local lst_Functions=$(echo ${str_TagLine} | cut -d'|' -f4)
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
 
@@ -590,7 +598,7 @@ fn_ProcessFunctions()
     Message ${SEPERATOR}
     # Setting audit line 
     str_FunctionName=${str_Function}
-    typeset -f ${str_Function} >/dev/null 2>&1
+    typeset -f "${str_Function}" >/dev/null 2>&1
     if [ $? = 0 ] ; then
       # COMMON Function being used
       Verbose "Common function found"
