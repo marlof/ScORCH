@@ -33,5 +33,5 @@ if ! grep $(whoami) etc/users ; then
   echo "$(whoami):POWER:ALL" >> etc/users
 fi
 ./scorch -a DEMO-HOSTNAME -o ENV:TEST1
-./scorch
+
 
