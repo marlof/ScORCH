@@ -286,7 +286,7 @@ fn_FormatTasks()
     [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find-L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
     case ${str_JobState} in
       queued  | pending | new ) int_Task=$(grep "^int_ResumePoint=" ${file_Job} | head -1 | cut -d"=" -f2) ;;
-      failed  | fixing        ) int_Task=$(grep "Resume point:" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | awk -F":" '{print $NF}') ;;
+      failed  | fixing        ) int_Task=$(grep "Resume point:" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | ${cmd_AWK} -F":" '{print $NF}') ;;
       running                 ) int_Task=$(grep "[0-9]*-[0-9]* Starting task" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2 | cut -d"/" -f1 ) ;;
       completed               ) int_Task=$(grep "[0-9]*-[0-9]* Completed task \[" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2- | cut -d"/" -f1); (( int_Task++ )) ;;
     esac

@@ -65,9 +65,9 @@ fn_GetRequest()
         fi
       elif [[ ${str_ULine} =~ INFO ]]; then
         local str_Info=${str_Line#info }
-        # scorchdb -f $file_CSV +job $str_Info -time | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }'
+        # scorchdb -f $file_CSV +job $str_Info -time | ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }'
         local int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
-        local int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  awk '{ sum += $1 } END { if (NR > 0) print sum / NR }')
+        local int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }')
         local int_FailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep "\-1$" | wc -l)
         printf "\n"
         printf "Total number of jobs logged    : %s\n" ${int_JobCount}
@@ -75,8 +75,8 @@ fn_GetRequest()
           #printf "Total number of failures       : $(grep $str_Info $file_CSV | cut -d"," -f6)"
           printf "Number of deleted jobs         : %s\n" ${int_FailCount}
           printf "Average number of  failures    : %s\n" ${int_NonFailCount}
-          printf "Max run time                   : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  awk 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))\n"
-          printf "Average run time               : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  awk '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)\n"
+          printf "Max run time                   : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  ${cmd_AWK} 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))\n"
+          printf "Average run time               : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)\n"
           printf "\n\n"
         fi
       else

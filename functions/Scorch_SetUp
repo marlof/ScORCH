@@ -74,12 +74,10 @@ fn_CheckSetUp()
   done
 
   typeset local arr_Files="${file_DispatchLog}"
-#  which gawk  2>/dev/null || printf "\n\tgawk not installed. Ubuntu: sudo apt-get install gawk\n"
-#  which pgrep 2>/dev/null || printf "\n\tpgrep not installed. Ubuntu: sudo apt-get install pgrep\n"
 
   if [[ ! ${b_NonInteractive} ]] ; then
     printf "\n\n"
-    arr_Commands="gawk pgrep python"
+    arr_Commands="awk pgrep python"
     str_Install="sudo apt-get install"
     set +e
     for str_Command in ${arr_Commands} ; do
@@ -93,7 +91,7 @@ fn_CheckSetUp()
     set -e
   fi
 
-  cmd_AWK=$(which gawk 2>/dev/null) || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
+  cmd_AWK=$(which awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
   [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: ${cmd_AWK}\n"
 
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
@@ -611,6 +609,6 @@ fn_FileOwner()
 {
   # Takes an argument of a filename (or dirname) and return the owner
   local file_Name=$1
-  [[ -r ${file_Name} ]] && ls -ld ${file_Name} | awk -F" " '{print $3}' || echo "unknown"
+  [[ -r ${file_Name} ]] && ls -ld ${file_Name} | ${cmd_AWK}} -F" " '{print $3}' || echo "unknown"
 }
 readonly -f fn_FileOwner
