@@ -362,6 +362,7 @@ fn_CheckSetUp()
     printf "\n Creating common example ${str_ProgramName}.def file \n Example ${str_ProgramName}.env\n"
     
     # Create COMMON space
+    fn_Mkdir "${dir_Common}/${str_Etc}/"
     fn_CreateFile "${dir_Common}/${str_Etc}/${file_TagDefinition}"
     fn_CreateFile "${dir_Common}/${str_Etc}/${file_Config}"
     fn_Mkdir "${dir_Common}/${str_Functions}"
