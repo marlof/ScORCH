@@ -63,10 +63,11 @@
 #                           #98 Improved standard error output
 # 1.8 191111    marc        #130 Restricted search to project dir and silence grep signal 13
 # 1.9 200529    marc        shellcheck start
+# 1.10 200613   marc        #146 Directory fixes for install 
 # shellcheck disable=SC2174
 
 # Program settings
-typeset str_ProgramVersion="1.9"
+typeset str_ProgramVersion="1.10"
 typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
@@ -105,17 +106,17 @@ typeset str_FunctionIdentifier="fn_"
 typeset SEPERATOR="====================================================================="
 
 # System maintainable
-typeset       dir_Base=$(cd "${dir_Run}" && pwd || /tmp )
-typeset    dir_Project=${dir_Base}/${str_CommonBase}
-typeset     dir_Common=${dir_Base}/${str_CommonBase}/${str_CommonName}
-typeset        dir_Etc=${dir_Common}/${str_Etc}
-typeset        dir_Var=${dir_Base}/${str_Var}
-typeset  dir_Functions=${dir_Common}/${str_Functions}
+typeset       dir_Base="$(cd "${dir_Run}" && pwd || /tmp )"
+typeset    dir_Project="${dir_Base}/${str_CommonBase}"
+typeset     dir_Common="${dir_Base}/${str_CommonBase}/${str_CommonName}"
+typeset        dir_Etc="${dir_Common}/${str_Etc}"
+typeset        dir_Var="${dir_Base}/${str_Var}"
+typeset  dir_Functions="${dir_Common}/${str_Functions}"
 typeset    dir_LogBase="${dir_Var}/${str_ProgramName}/${str_Log}/"
 typeset  str_LogPrefix="$(date +%y%m%d-%H%M%S)-"
 #typeset      _Log=$(date +%Y%m)
-typeset        dir_Tmp=${dir_Base}/${str_Tmp}
-typeset    dir_Timings=${dir_Var}/${str_ProgramName}/${str_Timings}
+typeset        dir_Tmp="${dir_Base}/${str_Tmp}"
+typeset    dir_Timings="${dir_Var}/${str_ProgramName}/${str_Timings}"
 typeset      int_JobID=
 typeset int_ReturnCode=
 typeset      b_Install=
@@ -362,13 +363,14 @@ fn_CheckSetUp()
     printf "\n Creating common example ${str_ProgramName}.def file \n Example ${str_ProgramName}.env\n"
     
     # Create COMMON space
-    fn_Mkdir "${dir_Common}/${str_Etc}/"
+    fn_Mkdir      "${dir_Common}/${str_Etc}/"
     fn_CreateFile "${dir_Common}/${str_Etc}/${file_TagDefinition}"
     fn_CreateFile "${dir_Common}/${str_Etc}/${file_Config}"
-    fn_Mkdir "${dir_Common}/${str_Functions}"
+    fn_Mkdir      "${dir_Common}/${str_Functions}"
 
     # Create DEMO space
-    fn_Mkdir "${dir_Project}/demo/${str_Etc} ${dir_Project}/demo/${str_Functions}"
+    fn_Mkdir      "${dir_Project}/demo/${str_Etc}"
+    fn_Mkdir      "${dir_Project}/demo/${str_Functions}"
     fn_CreateFile "${dir_Project}/demo/${str_Etc}/${file_Config}"
 
     # Create DEMO tag
