@@ -577,11 +577,14 @@ readonly -f fn_InstallLatest
 
 fn_Repair()
 {
-  local file_Install=${dir_Etc}/install.txt
+  local file_Install="${dir_Etc}/install.txt"
 
   # 93 - Fix perms and group settings for extracted file
   echo "str_Group=$str_Group"
-  tar tvf ${file_Install}
+  echo "file_Install=${file_Install}"
+  if [[ -f "${file_Install}" ]] ; then
+    cat "${file_Install}"
+  fi
   ls -lH $dir_Orig
   file $dir_Orig/*
   echo "and bin"
