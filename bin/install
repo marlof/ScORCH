@@ -30,6 +30,7 @@ export PATH=${PATH}:$(pwd)
 ./obrar -install
 ./scorch -install
 if ! grep $(whoami) etc/users ; then
+  mkdir -p etc
   echo "$(whoami):POWER:ALL" >> etc/users
 fi
 #echo "Try running    ./scorch -a DEMO-HOSTNAME -o ENV:TEST1"
