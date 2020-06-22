@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 ############################################################################################################
 # This program will find Job files in multiple state directories and turn them into a human readable format
 #
@@ -33,11 +33,9 @@
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
-#
-# Notes - working on missing file updates
-# test with ./showJobs.py -n 10 -o /tmp/xxx -f "" new
+# 1.17      Marc Loftus     20/02/2020      Python 3
 ############################################################################################################
-str_ProgramVersion = '1.16'
+str_ProgramVersion = '1.17'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
@@ -50,67 +48,6 @@ import mmap        # Used to find LAST occurance of TASK:START: even in large lo
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 
-
-
-#try:
-    # Python 2 forward compatibility
-#    range = xrange
-#except NameError:
-#    pass
-
-class colours:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    RESET = '\033[0m'
-
-class File(file):
-    """ Helper class for file reading """
-    def __init__(self,*args, **kwargs):
-        super(File,self).__init__(*args, **kwargs)
-        self.BLOCKSIZE = 4096
-
-    def head(self, lines_2find=1):
-        self.seek(0)
-        return [super(File, self).next() for x in xrange(lines_2find)]
-
-    def tail(self, lines_2find=1):
-        self.seek(0,2)
-        bytes_in_file = self.tell()
-        lines_found, total_bytes_scanned = 0, 0
-        while (lines_2find +1 > lines_found and
-            bytes_in_file > total_bytes_scanned):
-          byte_block = min(
-            self.BLOCKSIZE,
-            bytes_in_file - total_bytes_scanned)
-          self.seek( -(byte_block + total_bytes_scanned), 2)
-          total_bytes_scanned += byte_block
-          lines_found += self.read(self.BLOCKSIZE).count('\n')
-        self.seek(-total_bytes_scanned,2)
-        line_list = list(self.readlines())
-        return line_list[-lines_2find:]
-
-dir_Run=os.getcwd()
-# Default maxnum
-maxnum = 35
-b_More = False
-int_More = 0
-
-# Set up variables
-#if os.name == "nt":
-    # Windows
-#    print("Not yet onfigured for windows")
-#    dir_Base  = "C:\\Users\\Marc\\Google Drive\\WebMarcIT\\scorch\\ScORCH\\"
-#    dir_Job   = dir_Base + "\\jobs\\"
-#    dir_Log   = dir_Base + "\\var\\log\\"
-#    cmd_Clear = "os.system('cls')"
-#    exit()
-#else:
-    # Everything else
 dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dir_Job   = dir_Base + "/jobs/"
 dir_Log   = dir_Base + "/var/log/"
@@ -127,11 +64,71 @@ int_PID               = os.getpid()
 int_Rows, int_Columns = os.popen('stty size', 'r').read().split()
 list_Dir              = []
 
+dir_Run=os.getcwd()
+# Default maxnum
+maxnum = 35
+b_More = False
+int_More = 0
+
+
+class colours:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+
+# class File(file):
+#     """ Helper class for file reading """
+#     def __init__(self,*args, **kwargs):
+#         super(File,self).__init__(*args, **kwargs)
+#         self.BLOCKSIZE = 4096
+
+#     def head(self, lines_2find=1):
+#         self.seek(0)
+#         return [super(File, self).next() for x in xrange(lines_2find)]
+
+#     def tail(self, lines_2find=1):
+#         self.seek(0,2)
+#         bytes_in_file = self.tell()
+#         lines_found, total_bytes_scanned = 0, 0
+#         while (lines_2find +1 > lines_found and
+#             bytes_in_file > total_bytes_scanned):
+#           byte_block = min(
+#             self.BLOCKSIZE,
+#             bytes_in_file - total_bytes_scanned)
+#           self.seek( -(byte_block + total_bytes_scanned), 2)
+#           total_bytes_scanned += byte_block
+#           lines_found += self.read(self.BLOCKSIZE).count('\n')
+#         self.seek(-total_bytes_scanned,2)
+#         line_list = list(self.readlines())
+#         return line_list[-lines_2find:]
+
+
+# Set up variables
+#if os.name == "nt":
+    # Windows
+#    print("Not yet onfigured for windows")
+#    dir_Base  = "C:\\Users\\Marc\\Google Drive\\WebMarcIT\\scorch\\ScORCH\\"
+#    dir_Job   = dir_Base + "\\jobs\\"
+#    dir_Log   = dir_Base + "\\var\\log\\"
+#    cmd_Clear = "os.system('cls')"
+#    exit()
+#else:
+    # Everything else
+
+
 def fn_ShowLine(cha_LineChar,str_LineTitle):
     ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
         This can actually show a row of strings but they my not fill the whole depending on string width '''
     parity=(len(cha_LineChar))
-    print( "%s"% cha_LineChar * (3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - (3/parity) - 1 ) )
+    #print(str_LineTitle.center(int(int_Columns),cha_LineChar))
+    int_remaining = int(int(int_Columns)/parity) - int(3/parity) 
+    print("%s"% cha_LineChar * int(3/parity) + str_LineTitle.ljust(int_remaining, cha_LineChar))
+    #print( "%s"% cha_LineChar * int(3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - int(3/parity) - 1 ) )
 
 def fn_ColumnMax(arr_Files,int_Column):
     int_ColumnMax=0
@@ -142,8 +139,8 @@ def fn_ColumnMax(arr_Files,int_Column):
             int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
 
-#def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
-#    print(os.path.join(dir_Job))
+def fn_ColumnMax2(dir_Job,arr_str_Dirs,int_Column):
+    print(os.path.join(dir_Job))
     #arr_str_DirList2 = glob.glob(os.path.join(dir_Job)+'*/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
     #for str_File in arr_str_DirList2:
     #    print str_File
@@ -157,7 +154,7 @@ def fn_ColumnMax(arr_Files,int_Column):
     #    int_TmpMax=len(str_JobSplit[int_Column])
     #    if  int_TmpMax >= int_ColumnMax:
     #        int_ColumnMax = int_TmpMax
-#    return 1
+    return 1
 
 def fn_ShowJobs(str_State,temp,maxnum):
     '''ShowLine2 takes a state argument which is turned into a directory location
@@ -218,7 +215,7 @@ def fn_ShowJobs(str_State,temp,maxnum):
             if int_Count <= maxnum:
                 #print("ok", int_Count, maxnum)
                 ''' Class handling '''
-
+                #with open(temp, 'w+a') as temp: 
                 temp.write('arr_States['+str(int_Count)+']='+str_State+'\n')
                 temp.write('arr_Jobs['+str(int_Count)+']='+str_File+'\n')
 
@@ -391,12 +388,8 @@ def main(argv):
             list_Dir.append(args[0])
             args = args[1:] # shift
 
-    filename = outputfile
-    temp = open(filename, 'w+b')
+    temp = open(outputfile, 'w+')
 
-###
- #   print(maxnum)
-###
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
         maxnum = int(rows) - 10

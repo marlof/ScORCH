@@ -77,7 +77,7 @@ fn_CheckSetUp()
 
   if [[ ! ${b_NonInteractive} ]] ; then
     printf "\n\n"
-    arr_Commands="awk pgrep python"
+    arr_Commands="awk pgrep python3"
     str_Install="sudo apt-get install"
     set +e
     for str_Command in ${arr_Commands} ; do
