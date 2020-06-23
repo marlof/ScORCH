@@ -276,9 +276,10 @@ fn_CheckAuth()
   ##     root::all
   ##     user::DEMO
   file_Users=${dir_Etc}/users
-  fn_CreateFile "$file_Users"
+
 
   if [[ ${b_Install} ]] ; then
+    fn_CreateFile "$file_Users"
     printf "\n\n\tInitialising....\n\n"
     [ ! -s "${file_Users}" ] && echo "${str_User}:POWER:ALL" > "${file_Users}"
   fi
