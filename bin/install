@@ -54,6 +54,8 @@ while [[ ! -z $b_Group ]] ; do
 done
 
 tar xf $SCORCH_TAR && rm $SCORCH_TAR
+mkdir -m 770 etc
+mkdir -m 770 plugins
 export PATH=${PATH}:$(pwd)
 ./obrar  -install
 ./scorch -install
