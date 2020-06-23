@@ -14,8 +14,9 @@ echo $file_Latest
 SCORCH_TAR=/tmp/scorch.tar.$$
 curl -o $SCORCH_TAR $file_Latest
 
-b_Group=
-while [[ -z $b_Group ]] ; do
+
+b_Group=${1:""}
+while [[ ! -z $b_Group ]] ; do
   read -ers -n1 -p "Do you want to setup for group use? (y/n): "
   if [ ${REPLY^^} == "Y" ] ; then
     read -p "Enter the group name: "
@@ -38,7 +39,7 @@ while [[ -z $b_Group ]] ; do
       echo "Change scorch to be typeset         str_Group=deployr"
 
       newgrp $REPLY
-      b_Group=1 
+      b_Group= 
     else
       echo "No group of that name in /etc/group"
       echo ""
@@ -48,17 +49,18 @@ while [[ -z $b_Group ]] ; do
     fi
   else
     echo "No group chosen... Setting up automatically"
-    b_Group=0
-    tar xf $SCORCH_TAR && rm $SCORCH_TAR
-    export PATH=${PATH}:$(pwd)
-    ./obrar  -install
-    ./scorch -install
-    mkdir -p etc
-    if ! grep $(whoami) etc/users 2>/dev/null ; then
-      echo "$(whoami):POWER:ALL" >> etc/users
-    fi
+    b_Group=
   fi
 done
+
+tar xf $SCORCH_TAR && rm $SCORCH_TAR
+export PATH=${PATH}:$(pwd)
+./obrar  -install
+./scorch -install
+mkdir -p etc
+if ! grep $(whoami) etc/users 2>/dev/null ; then
+  echo "$(whoami):POWER:ALL" >> etc/users
+fi
 
 #if [ ${b_Group} == "1" ] ; then
 #  echo "You are still logged into new group $REPLY. It is recommended that you logout and back in"
