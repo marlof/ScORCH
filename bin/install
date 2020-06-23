@@ -24,11 +24,17 @@ while [[ -z $b_Group ]] ; do
       echo ""
       echo "Run the following commands manaully:"
       echo ""
+      echo "chgrp $REPLY ."
+      echo "chmod g+x ."
       echo "tar xf $SCORCH_TAR && rm $SCORCH_TAR"
+      echo "echo \"$(whoami):POWER:ALL\" >> etc/users"
+      echo "chmo 750 etc"
+      echo "touch -m 660 var/log/dispatch.log"
       echo "export PATH=${PATH}:$(pwd)"
       echo "./obrar  -install"
       echo "./scorch -install"
-      echo "echo \"$(whoami):POWER:ALL\" >> etc/users"
+      echo "Change scorch to be typeset         str_Group=deployr"
+
       newgrp $REPLY
       b_Group=1 
     else
@@ -52,6 +58,6 @@ while [[ -z $b_Group ]] ; do
   fi
 done
 
-if [ ${b_Group} == "1" ] ; then
-  echo "You are still logged into new group $REPLY. It is recommended that you logout and back in"
-fi
+#if [ ${b_Group} == "1" ] ; then
+#  echo "You are still logged into new group $REPLY. It is recommended that you logout and back in"
+#fi
