@@ -17,9 +17,9 @@ curl -o $SCORCH_TAR $file_Latest
 
 tar xf $SCORCH_TAR && rm $SCORCH_TAR
 export PATH=${PATH}:$(pwd)
-./obrar -install
+./obrar  -install
 ./scorch -install
 mkdir -p etc
-if ! grep $(whoami) etc/users ; then
+if ! grep $(whoami) etc/users 2>/dev/null ; then
   echo "$(whoami):POWER:ALL" >> etc/users
 fi
