@@ -3,36 +3,23 @@
 str_Protocol="http"
 dir_Location="autoscorch.com/downloads"
 file_Version="version.txt"
-file_OVersion="obrarversion.txt"
 
-str_LatestVersion=
 
 str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
 file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"
 
-str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_OVersion})
-file_OLatest="${str_Protocol}://${dir_Location}/obrar.${str_LatestVersion}"
-
 
 echo $file_Latest
-#LATEST=$(curl http://autoscorch.com/downloads/version.txt)
 
 SCORCH_TAR=/tmp/scorch.tar.$$
 curl -o $SCORCH_TAR $file_Latest
-
-OBRAR=obrar
-curl -o $OBRAR $file_OLatest
-chmod 755 obrar
 
 
 tar xf $SCORCH_TAR && rm $SCORCH_TAR
 export PATH=${PATH}:$(pwd)
 ./obrar -install
 ./scorch -install
+mkdir -p etc
 if ! grep $(whoami) etc/users ; then
-  mkdir -p etc
   echo "$(whoami):POWER:ALL" >> etc/users
 fi
-#echo "Try running    ./scorch -a DEMO-HOSTNAME -o ENV:TEST1"
-
-
