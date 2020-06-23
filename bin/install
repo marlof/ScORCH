@@ -31,6 +31,7 @@ while [[ ! -z $b_Group ]] ; do
       echo "mkdir -m 770 plugins"
       echo "tar xf $SCORCH_TAR && rm $SCORCH_TAR"
       echo "echo \"$(whoami):POWER:ALL\" >> etc/users"
+      echo "chmod 750  etc/users"
       echo "chmo 750 etc"
       echo "touch -m 660 var/log/dispatch.log"
       echo "export PATH=${PATH}:$(pwd)"
@@ -53,9 +54,9 @@ while [[ ! -z $b_Group ]] ; do
   fi
 done
 
-tar xf $SCORCH_TAR && rm $SCORCH_TAR
 mkdir -m 770 etc
 mkdir -m 770 plugins
+tar xf $SCORCH_TAR && rm $SCORCH_TAR
 export PATH=${PATH}:$(pwd)
 ./obrar  -install
 ./scorch -install
