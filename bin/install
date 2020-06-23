@@ -14,6 +14,27 @@ echo $file_Latest
 SCORCH_TAR=/tmp/scorch.tar.$$
 curl -o $SCORCH_TAR $file_Latest
 
+b_Group=
+while [[ -z $b_Group ]] ; do
+read -ers -n1 -p "Do you want to setup for group use? (y/n): "
+if [ ${REPLY^^} == "Y" ] ; then
+  read -p "Enter the group name: "
+  if grep -w $REPLY /etc/group ; then
+    echo "Setting the write group to $REPLY during install..."
+    newgrp $REPLY
+    b_Group=1 
+  else
+    echo "No group of that name in /etc/group"
+    echo ""
+    echo "Check for the correct group name and try again, or chose No"
+    echo ""
+    echo ""
+  fi
+else
+  echo "No group chosen"
+  b_Group=0
+fi
+done
 
 tar xf $SCORCH_TAR && rm $SCORCH_TAR
 export PATH=${PATH}:$(pwd)
@@ -22,4 +43,7 @@ export PATH=${PATH}:$(pwd)
 mkdir -p etc
 if ! grep $(whoami) etc/users 2>/dev/null ; then
   echo "$(whoami):POWER:ALL" >> etc/users
+fi
+if [ ${b_Group} == "1" ] ; then
+  echo "You are still logged into new group $REPLY. It is recommended that you logout and back in"
 fi
