@@ -39,7 +39,7 @@ while [[ -z $b_Group ]] ; do
       echo ""
     fi
   else
-    echo "No group chosen... Setting up automatically""
+    echo "No group chosen... Setting up automatically"
     b_Group=0
     tar xf $SCORCH_TAR && rm $SCORCH_TAR
     export PATH=${PATH}:$(pwd)
