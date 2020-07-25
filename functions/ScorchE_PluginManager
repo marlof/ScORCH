@@ -1,14 +1,18 @@
-#
+#!/bin/bash
 # Copyright 2016 WebMarcIT Ltd
 #
 # Unauthorised copying of this file, via any medium is strictly prohibited
 # This is the proprietary software of WebMarcIT Ltd
 # Written by marc@webmarcit.com
+#
+# shellcheck disable=SC2059
+# shellcheck disable=SC2154
+#
 ## fnE_PluginManagerMenu()
 
 fnE_PluginManagerMenu()
 {
-  typeset local char_Choice=""
+  local char_Choice=""
   while : ; do
 
     fn_ShowTop
@@ -18,26 +22,28 @@ fnE_PluginManagerMenu()
     int_Count=1
 
     typeset -a arr_Plugins
-    arr_Plugins=( $(find -L ${dir_Plugins} -name "XSP_*") $(find -L ${dir_Plugins} -name "SP_*") )
+    arr_Plugins=( $(find -L "${dir_Plugins}" -name "XSP_*" | sort ) $(find -L "${dir_Plugins}" -name "SP_*" | sort) )
 
-    for each_Plugin in ${arr_Plugins[@]} ; do
+    for each_Plugin in "${arr_Plugins[@]}" ; do
       printf "%3s "  ${int_Count}
-      if [[ "$(basename ${each_Plugin})" =~ "XSP" ]] ; then 
-        printf "[X] %s\n" $(basename ${each_Plugin})
+      if [[ "$(basename "${each_Plugin}")" =~ "XSP" ]] ; then 
+        #printf "[X] %s - %s\n"  $(basename $(dirname ${each_Plugin})) $(basename ${each_Plugin})
+        printf "[x] %s - %s\n"  "$(dirname "${each_Plugin##${dir_Plugins}}")"  "$(basename "${each_Plugin}")"
       else
-        printf "[ ] %s\n" $(basename ${each_Plugin})
+        #printf "[ ] %s - %s\n"  $(basename $(dirname ${each_Plugin})) $(basename ${each_Plugin})
+        printf "[ ] %s - %s\n"  "$(dirname "${each_Plugin##${dir_Plugins}}")"  "$(basename "${each_Plugin}")"
       fi
       (( int_Count++ ))
     done
 
-    lst_Plugins="$(find -L ${dir_Plugins} -name "XSP_*") $(find -L ${dir_Plugins} -name "SP_*")"
+    #lst_Plugins="$(find -L "${dir_Plugins}" -name "XSP_*") $(find -L "${dir_Plugins}" -name "SP_*") | sort"
 
     fn_ShowLine "-"
 
     printf "\n\n "
     printf " ${dis_ULOn}T${dis_ULOff}oggle | e${dis_ULOn}X${dis_ULOff}it : "
 
-    read ${str_Quick} -t 60 char_Choice || :
+    read -r "${str_Quick}" -t 60 char_Choice || :
 
     case ${char_Choice} in
 
@@ -56,8 +62,8 @@ fnE_PluginManagerMenu()
 
                         # Arrays start at 0 not 1
                         (( int_Answer-- ))
-                        dir_Plugin=$(dirname ${arr_Plugins[$int_Answer]})
-                        file_Plugin=$(basename ${arr_Plugins[$int_Answer]})
+                        dir_Plugin=$(dirname "${arr_Plugins[$int_Answer]}")
+                        file_Plugin=$(basename "${arr_Plugins[$int_Answer]}")
 
                         if [[ "${file_Plugin}" =~ "XSP" ]] ; then 
                           mv "${arr_Plugins[$int_Answer]}" "${dir_Plugin}/${file_Plugin:1}"

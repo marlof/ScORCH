@@ -1,7 +1,0 @@
-SP_ADDGO()
-{
-        SP_UPGRADE-LINUX
-        Task "sudo add-apt-repository ppa:longsleep/golang-backports"
-        Task "sudo apt update"
-        Task "sudo apt install -y golang-go"
-}
