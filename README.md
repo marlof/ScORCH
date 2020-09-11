@@ -1,4 +1,4 @@
-[![GitHub issues](https://img.shields.io/github/issues/marlof/ScORCH)](https://github.com/marlof/ScORCH/issues)
+[![GitHub license](https://img.shields.io/github/license/marlof/ScORCH)](https://github.com/marlof/ScORCH/blob/master/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/marlof/ScORCH)](https://github.com/marlof/ScORCH/issues)
 
 ScORCH Suite
 ============
