@@ -1,4 +1,4 @@
-https://img.shields.io/github/issues/marlof/ScORCH
+[![GitHub issues](https://img.shields.io/github/issues/marlof/ScORCH)](https://github.com/marlof/ScORCH/issues)
 
 ScORCH Suite
 ============
