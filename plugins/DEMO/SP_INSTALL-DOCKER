@@ -44,6 +44,7 @@ SP_INSTALL-DOCKER()
   
   
     Message "If you require docker access run the following:     sudo usermod -aG docker $(whoami)"
+    Manual "As root start the docker deamon:    dockerd"
     Task "docker images"
     Task "docker run hello-world"
     Message "If you require Compose: sudo curl -L "https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose"
