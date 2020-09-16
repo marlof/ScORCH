@@ -1,9 +1,9 @@
 SP_INSTALLPSQL()
 {
   SP_UPGRADE-LINUX
-  Task "# certs "
-  Task "# wget keys"
-  Task "# Postgres repo"
-  Task "sudo apt-add-repository --yes --update ppa:ansible/ansible"
+  Task "sudo apt-get install wget ca-certificates"
+  Task "wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -"
+  Task "sudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt/bionic-pgdg main\" >> /etc/apt/sources.list.d/pgdg.list'"
+  Task "sudo apt-get update"
   Task "sudo apt install -y postgresql postgresql-contrib"
 }
