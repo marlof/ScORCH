@@ -21,9 +21,9 @@ SP_INSTALL-DOCKER()
           Task "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\""
           Task "sudo apt-get update"
           if [[ ! -z ${DOCKER_VERSION} ]] ; then
-            Task "sudo apt-get install docker-ce=${DOCKER_VERSION}"
+            Task "sudo apt-get -y install docker-ce=${DOCKER_VERSION}"
           else
-            Task "sudo apt-get install docker-ce docker-ce-cli containerd.io"
+            Task "sudo apt-get -y install docker-ce docker-ce-cli containerd.io"
           fi
           if [[ $(uname -v) =~ "Microsoft" ]] ; then
             # Likely running Ubuntu under bash for windows - we can connect to the windows docker engine
