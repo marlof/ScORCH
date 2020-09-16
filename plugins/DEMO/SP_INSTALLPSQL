@@ -1,0 +1,9 @@
+SP_INSTALLPSQL()
+{
+  SP_UPGRADE-LINUX
+  Task "# certs "
+  Task "# wget keys"
+  Task "# Postgres repo"
+  Task "sudo apt-add-repository --yes --update ppa:ansible/ansible"
+  Task "sudo apt install -y postgresql postgresql-contrib"
+}
