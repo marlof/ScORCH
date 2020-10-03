@@ -1,12 +1,13 @@
 SP_UPGRADE-LINUX()
 {
 
-  Task "sudo -n true" OR Manual "Exit scorch and run sudo true"
+  Task "sudo -n true" OR Manual "Exit scorch and run sudo true before restarting."
 
   case $(grep "ID=" /etc/os-release | cut -d"=" -f2) in
   
     centos ) echo centos-esk
           Task "sudo yum check-update"
+          Task "sudo yum update"
     
     ;;
     debian | ubuntu ) echo debian-esk
