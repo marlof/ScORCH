@@ -16,7 +16,7 @@ SP_UPGRADE-LINUX()
     ;;
          
     fedora ) echo Red-hat-esk
-          Manual "Find out how to update manually"
+          Task "sudo dnf upgrade"
     ;;
     
   esac
