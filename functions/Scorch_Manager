@@ -377,7 +377,13 @@ fn_AdminFunctions()
       case ${char_Choice} in
 
         ## Abort Failed or Running jobs
-        k | K | c | C ) fn_Cancel "${file_Link}" "${str_JobState}" ; return 0 ;;
+        k | K | c | C ) 
+                        if [[ "${str_JobState}" == "running" ]] ; then
+                          fn_Cancel "${file_Link}" "${str_JobState}" ; return 0
+                        else
+                          fn_CopyTemplate "${file_Link}"
+                        fi
+                        ;;
 
         ## View CSV
         #c | C ) ${cmd_Editor} "${file_CSV}" ;;
@@ -468,7 +474,7 @@ fn_AdminFunctions()
                 return 0 ;;
 
         ## Amend Job rules
-        c | C ) fnE_AmendRules        ;;
+        a | A ) fnE_AmendRules        ;;
        # t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
         t*    ) if (( b_Quick )); then
                   fn_CatchWord ${char_Choice} "tail tasks"

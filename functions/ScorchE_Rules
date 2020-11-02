@@ -207,7 +207,7 @@ readonly -f fnE_Rules
 fnE_RulesMenu()
 {
   ## printf "\n\n Rules menu "
-  printf " %sC%shange rules |" "${dis_ULOn}" "${dis_ULOff}"
+  printf " %sA%smend rules |" "${dis_ULOn}" "${dis_ULOff}"
 }
 readonly -f fnE_RulesMenu
 
