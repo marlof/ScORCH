@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016 WebMarcIT Ltd
+# Copyright 2020 WebMarcIT Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ EXAMPLES
 # -long   -a   -i   -x   -p   -s   -t   -b   -w
 
 #typeset arr_Options=""
-STRINGS=$(which strings || echo "cat")
+STRINGS=$(which strings 2>/dev/null || echo "cat")
 
 # Get the full list of paramaters
 # ===============================
