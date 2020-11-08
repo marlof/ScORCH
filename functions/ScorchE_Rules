@@ -102,15 +102,11 @@ fn_ProcessRequest()
     echo "${str_EachFile}"
 
     fn_ExtractPairs
-
     #[[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
     for ACTION in ${ACTION_LIST} ; do
 
-
       #echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f "${file_CSV}" -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
-
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
-      
         fn_Call="no-action"
         int_TaskCount=0
         if type -t "SP_${ACTION}" >/dev/null ; then
@@ -122,7 +118,7 @@ fn_ProcessRequest()
           return 0
         fi
         str_Call=${fn_Call#SP_}
-                [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
+        [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
         fn_CreateFile "${dir_Log}"/"$(basename "${file_Job}").log"
 

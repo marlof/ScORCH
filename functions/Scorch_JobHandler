@@ -298,6 +298,8 @@ fn_GetSent() { : ; } ; readonly -f fn_GetSent
 
 fn_NewJob()
 {
+  file_Template=${1:-}
+  echo "${file_Template}"
   fn_ShowTop
   fn_ShowLine "-"
   fn_LoadFunctions "${dir_Plugins}" "SP_"
@@ -646,7 +648,7 @@ Task()
 #    *                        ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t| tee -a \"\${file_Log}${str_LogExtension}\" ${str_AltTask} ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
     *                         ) printf "fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac
-  (( int_TaskCount++ ))
+  (( int_TaskCount++ )) || true
 }
 readonly -f Task
 

@@ -22,6 +22,7 @@
 ## fn_ViewJob()
 ## fn_EditJob()
 ## fn_Cancel()
+## fn_CopyTemplate()
 ## fn_AdminFunctions()
 ## fn_CatchWord()
 ## fn_Filter()
@@ -354,6 +355,24 @@ fn_Cancel()
   fn_PressEnter
 }
 
+fn_CopyTemplate()
+{
+  typeset local    file_Link="$1"
+  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  typeset local file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
+
+  printf "\n\n Template\n ==========\n\n"
+  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
+  cat "${file_TmpCopy}"
+
+  if fn_Confirm "Copying template to new job" ; then
+    "${dir_Base}"/${str_ProgramName} -f "${file_TmpCopy}" -p "${dir_Plugins}/." -j "${dir_Job}/."
+    echo " New job created from template"
+    sleep 2
+  fi
+}
+readonly -f fn_CopyTemplate
+
 fn_AdminFunctions()
 {
   typeset local char_Choice=${1}
@@ -376,14 +395,14 @@ fn_AdminFunctions()
 
       case ${char_Choice} in
 
+        c | C ) fn_CopyTemplate "${file_Link}" ;;
         ## Abort Failed or Running jobs
-        k | K | c | C ) 
-                        if [[ "${str_JobState}" == "running" ]] ; then
-                          fn_Cancel "${file_Link}" "${str_JobState}" ; return 0
-                        else
-                          fn_CopyTemplate "${file_Link}"
-                        fi
-                        ;;
+        k | K ) if [[ "${str_JobState}" == "running" ]] ; then
+                  fn_Cancel "${file_Link}" "${str_JobState}" ; return 0
+                else
+                  echo "Cannot kill a job that is not running." ; sleep 2
+                fi
+                ;;
 
         ## View CSV
         #c | C ) ${cmd_Editor} "${file_CSV}" ;;
