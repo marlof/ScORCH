@@ -365,6 +365,10 @@ fn_CopyTemplate()
   sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
   cat "${file_TmpCopy}"
 
+  if fn_Confirm "Do you wish to modify the template" ; then
+    vi "${file_TmpCopy}"
+  fi
+
   if fn_Confirm "Copying template to new job" ; then
     "${dir_Base}"/${str_ProgramName} -f "${file_TmpCopy}" -p "${dir_Plugins}/." -j "${dir_Job}/."
     echo " New job created from template"
@@ -495,10 +499,10 @@ fn_AdminFunctions()
         ## Amend Job rules
         a | A ) fnE_AmendRules        ;;
        # t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
-        t*    ) if (( b_Quick )); then
+        t* | T*  ) if (( b_Quick )); then
                   fn_CatchWord ${char_Choice} "tail tasks"
                 else
-                  if [[ ${char_Choice} == "t" ]] ; then
+                  if [[ ${char_Choice} == "t" ]] || [[ ${char_Choice} == "T" ]] ; then
                     fn_ShowTasks "${file_Job}"
                   elif [[ ${char_Choice} == "tail" ]] ; then
                     trap "return 0" 2 ; tail -f "${file_Log}"
