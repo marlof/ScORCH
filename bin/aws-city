@@ -1,3 +1,4 @@
 #!/bin/bash
-dir_Scorch=/opt/scorch
+dir_Run="$(dirname "$0")"
+dir_Scorch="$(cd $dir_Run && cd .. && pwd)"
 ${dir_Scorch}/bin/scorchdb -f ${dir_Scorch}/etc/regions.txt -name $*
