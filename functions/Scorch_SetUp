@@ -410,7 +410,7 @@ fn_CheckLatest()
   if [[ "${str_Protocol}" == "http" ]] ; then
     printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
     str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
-    if fn_IsNumber ${str_LatestVersion} ; then
+    if fn_IsNumber ${str_LatestVersion/\./} ; then
     #if [[ $? == 0 ]] ; then
       echo "$str_LatestVersion"
     elif [[ "${str_LatestVersion}" == "" ]]; then
