@@ -115,7 +115,7 @@ fn_CreateTicket()
   [[ -z $PROJECT ]] && echo "Project not set" && fn_Usage && exit 1
   #!/bin/bash
   file_Data=$(mktemp)
-  #_JIRA="http://ukdc1-tc-jir02.worldpaytd.local:8080/rest/api/2/issue/"
+  #_JIRA="http://ukdc1-tc-jir02.mydomain.local:8080/rest/api/2/issue/"
   cat >> ${file_Data} << EOF
 {
     "fields": {
