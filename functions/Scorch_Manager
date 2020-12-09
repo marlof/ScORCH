@@ -21,6 +21,7 @@
 ## fn_Admin()
 ## fn_ViewJob()
 ## fn_EditJob()
+## fn_Kill()
 ## fn_Cancel()
 ## fn_CopyTemplate()
 ## fn_AdminFunctions()
@@ -312,7 +313,7 @@ fn_EditJob()
 }
 readonly -f fn_EditJob
 
-fn_Cancel()
+fn_Kill()
 {
   typeset local    file_Link="$1"
   typeset local str_JobState="$2"
@@ -354,6 +355,27 @@ fn_Cancel()
   fi
   fn_PressEnter
 }
+readonly -f fn_Kill
+
+fn_Cancel()
+{
+  typeset local    file_Link="$1"
+  typeset local str_JobState="$2"
+  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+
+  fn_CheckOwner "${file_Link}"
+  echo "Aborting ${file_Link}..."
+  int_CancelTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3) || :
+  int_CancelTask=${int_CancelTask:-0}
+
+  echo "AUDIT:T:${int_CancelTask}:A" >> "${file_Link}"
+  fn_Audit "${file_Job}" "aborted [Task ${int_CancelTask}]"
+
+  mv ${file_Link} ${dir_Completed}
+
+  fn_PressEnter
+}
+readonly -f fn_Cancel
 
 fn_CopyTemplate()
 {
@@ -397,16 +419,18 @@ fn_AdminFunctions()
       fn_CheckDispatcher
 
 
-      case ${char_Choice} in
+      case ${char_Choice^^} in
 
         c | C ) fn_CopyTemplate "${file_Link}" ;;
         ## Abort Failed or Running jobs
         k | K ) if [[ "${str_JobState}" == "running" ]] ; then
-                  fn_Cancel "${file_Link}" "${str_JobState}" ; return 0
+                  fn_Kill "${file_Link}" "${str_JobState}" ; return 0
                 else
                   echo "Cannot kill a job that is not running." ; sleep 2
                 fi
                 ;;
+
+        CANCEL ) fn_Cancel "${file_Link}" "${str_JobState}" ; return 0 ;;
 
         ## View CSV
         #c | C ) ${cmd_Editor} "${file_CSV}" ;;

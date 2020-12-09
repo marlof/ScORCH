@@ -481,7 +481,7 @@ fn_ContextMenu()
 #  [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
   [[ "${b_RunningJobs}" ]]                                && printf "${dis_ULOn}K${dis_ULOff}ill | "
-  [[ "${b_FailedJobs}"  ]]                                && [[ "${str_State}" ]]  && printf "${dis_ULOn}C${dis_ULOff}ancel | "
+  [[ "${b_FailedJobs}"  ]]                                && [[ "${str_State}" ]]  && printf "${dis_ULOn}Cancel${dis_ULOff} | "
   [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}D${dis_ULOff}elete | "
 
   [[ ! "${str_State}" ]]  && printf "${dis_ULOn}A${dis_ULOff}dmin | "
