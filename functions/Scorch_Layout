@@ -106,7 +106,7 @@ fn_ShowTop()
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
          "df:${str_DiskUsage}%" "${str_License}" "${str_Authority}" "${str_Group}"
-  [[ ${cmd_TPUT} != "echo" ]] && tput cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
+  [[ ${cmd_TPUT} != "echo" ]] && ${cmd_TPUT} cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
 
 
   ## Reset the Array for Jobs and States
@@ -164,8 +164,8 @@ fn_ShowJobs2()
 
   file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
   echo "#$$" > "${file_Cache}"
-  int_ScreenWidth=$(echo ${COLUMNS})
-  int_ScreenWidth=$(tput cols)
+  [[ ${cmd_TPUT} != "echo" ]] && int_ScreenWidth=$(${cmd_TPUT} cols) ||  int_ScreenWidth=$(echo ${COLUMNS})
+
   for str_State in ${@} ; do
     printf "${dis_Reset}"
 

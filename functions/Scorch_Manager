@@ -59,7 +59,7 @@ readonly -f fn_Filter
 fn_Manager()
 {
   typeset local char_Choice=
-  tput rmam
+  ${cmd_TPUT} rmam
   hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
   trap ':' SIGWINCH
   while : ; do

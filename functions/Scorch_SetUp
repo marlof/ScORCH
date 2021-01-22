@@ -93,12 +93,13 @@ fn_CheckSetUp()
 
   cmd_AWK=$(which awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
   [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: ${cmd_AWK}\n"
-
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo \"\""
+
+  ( tput reset ) || cmd_TPUT="echo"
   (( b_NonInteractive == 1 )) && cmd_CLEAR="echo \"\""
 
-#  cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
+  #cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""
 
 
   if [[ ${b_SetUp} ]] ; then
@@ -181,6 +182,7 @@ fn_HouseKeeping()
   # Daily jobs moved to archive directory after a period of if more than MaxJobs
   # Old Archived jobs are tar'd up after DaysDeleted
   echo "Housekeeping...."
+  set +e
 
   typeset local     int_MaxJobs=${int_MaxShown}
   typeset local int_DaysDeleted=10
@@ -198,7 +200,6 @@ fn_HouseKeeping()
   # Remove old completed links
   find -L -H "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
   find -L "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
-
   # Remove old deleted links
   find -L "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
@@ -221,6 +222,7 @@ fn_HouseKeeping()
   # Clean Up cache files
   find -L "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
   find -L "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null
+  :
 }
 readonly -f fn_HouseKeeping
 
@@ -410,7 +412,7 @@ fn_CheckLatest()
   if [[ "${str_Protocol}" == "http" ]] ; then
     printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
     str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
-    if fn_IsNumber ${str_LatestVersion/\./} ; then
+    if fn_IsNumber "${str_LatestVersion/\./}" ; then
     #if [[ $? == 0 ]] ; then
       echo "$str_LatestVersion"
     elif [[ "${str_LatestVersion}" == "" ]]; then
