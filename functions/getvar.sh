@@ -10,8 +10,8 @@ GetVar()
   # =============================================================================
   #
   # Given    KEYNAME : VALUE
-  # In a template, 
-  # 
+  # In a template,
+  #
   # -label  "<key name>"          specifies the key name search string
   # -name   "<variable name>"  the global variable to assign the VALUE to
   # -c                         Enforce case in the label pattern
@@ -30,7 +30,7 @@ GetVar()
   typeset local b_List=
   typeset local b_Upper=
   typeset local b_Lower=
- 
+
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
       case "${1}" in
@@ -49,7 +49,7 @@ GetVar()
   ## Awk is a pain if the items are in a list so handle lists separately
   ## ===================================================================
   if [ "${b_List}" ] ; then
-    ## Lists can be passed as a space, comma or ampersand separated list 
+    ## Lists can be passed as a space, comma or ampersand separated list
     ## i.e. KEYWORD : ENV1, ENV2 ENV3 & ENV4
     str_Value="$(${cmd_AWK} 'BEGIN {
        FS=":"
@@ -63,7 +63,7 @@ GetVar()
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
          $2=$2;
-         print $2}'       "${file_Request}" )" 
+         print $2}'       "${file_Request}" )"
   fi
 
   ## If a value hasnt been found or is empty, use the default if one is set
