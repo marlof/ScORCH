@@ -212,6 +212,7 @@
 ## 2.9.11 201107  marc   "T" task not registered
 ## 2.9.12 201208  marc   "cancel" a task fixed
 ## 2.9.13 210122  marc   tput fails in some systems
+##        210130  marc   Added installation owner
 # shellcheck disable=SC2034
 # shellcheck source=/dev/null
 ## Determine the program name and the running directory
