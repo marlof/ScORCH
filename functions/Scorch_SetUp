@@ -453,21 +453,26 @@ readonly -f fn_Plugins
 fn_PullRelease()
 {
   # Pull the release file from source
-  printf " Pulling release\n"
-  printf " ===============\n"
-  printf " Retrieving MD5      (${file_Latest}.md5.txt): "
-  fn_CreateFile ${file_MD5}
-  str_Ouput=$(curl -s -o ${file_MD5} ${file_Latest}.md5.txt)
-  if [[ $? == 0 ]]  ; then
-    echo "OK"
-    echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+  stat -c '%U' ${dir_Base}/${str_ProgramName}
+  fn_PressEnter
+  if [ -w $(dirname ${file_MD5}) ] ; then
+    printf " Pulling release\n"
+    printf " ===============\n"
+    printf " Retrieving MD5      (${file_Latest}.md5.txt): "
+    fn_CreateFile ${file_MD5}
+    str_Ouput=$(curl -s -o ${file_MD5} ${file_Latest}.md5.txt)
+    if [[ $? == 0 ]]  ; then
+      echo "OK"
+      echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+    else
+      echo "Error"
+      echo ${str_Ouput}
+      fn_PressEnter
+      return 1
+    fi
   else
-    echo "Error"
-    echo ${str_Ouput}
-    fn_PressEnter
-    return 1
+    printf " Installation is retricted to the install owner: $(stat -c '%U' ${dir_Base}/${str_ProgramName})"
   fi
-
   #str_MD5=${str_MD5% *}
 
   printf " Retrieving tar file (${file_Latest}): "
