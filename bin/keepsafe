@@ -179,11 +179,11 @@ fn_Checks()
   fi
 
   # Check openssl
-  if ! which ${SSL} 2>/dev/null ; then
+  if ! which ${SSL} > /dev/null 2>&1 ; then
     echo ${SSL}  is not available on this system
     exit 1
   fi
-  
+
   #$SSL help | grep $CIPHER
   [[ ! -r  ${file_Key} ]] && echo "Error: Cannot read private key file <${file_Key}>"  && exit 1
 
