@@ -27,7 +27,8 @@
 ## History
 ## 1.0  181110     marc        First release
 ## 1.1  181207     marc        Improvements
-typeset str_ProgramVersion="1.1"
+## 1.2  210315     marc        Changing jshon to jq for some systems
+typeset str_ProgramVersion="1.2"
 
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
@@ -205,11 +206,10 @@ EOF
 
 fn_ShowTicket()
 {
-  _JIRA_ISSUE_DETAILS=$(${CURL} -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
+  _JIRA_ISSUE_DETAILS=$(${CURL} -k -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
                              -H "Content-Type: application/json" \
                              --data '{"jql":"key = '${TICKET}'"}' \
                              "${JIRA_SEARCH_URL}")
-  #echo "DETAILS:$_JIRA_ISSUE_DETAILS" 
   [[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
 
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
@@ -217,11 +217,12 @@ fn_ShowTicket()
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"          && Error "Password may be valid but account may be temporarily locked"
   [[ -z ${_JIRA_ISSUE_DETAILS} ]] && Error "Jira page seems blank - has jira $JIRA_SERVER started correctly '${dir_Orig}/${str_ProgramName}'"
   if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
-    if echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
+    #if echo "${_JIRA_ISSUE_DETAILS}" ; then #| jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then
+    if echo "${_JIRA_ISSUE_DETAILS}" | jq '.errorMessages' | grep -q "does not exist for field 'key'" ; then
       echo "Ticket '${TICKET}' cannot be found"
     else
       echo "Error. Check jira API messages:"
-      echo "${_JIRA_ISSUE_DETAILS}" | jshon -e errorMessages -a -u
+      echo "${_JIRA_ISSUE_DETAILS}" | jq '.errorMessages' #| jshon -e errorMessages -a -u
     fi
     exit 1
   elif echo ${_JIRA_ISSUE_DETAILS} | grep -q '^{"startAt":' ; then
@@ -234,15 +235,15 @@ fn_ShowTicket()
     exit 1
   fi
 
-  [[ ${STATUS} ]]      && printf "Status:"      && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e status -e name -u
-  [[ ${ASSIGNEE} ]]    && printf "Assignee:"    && echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e assignee -e name -u
+  [[ ${STATUS} ]]      && printf "Status:"   && echo ${_JIRA_ISSUE_DETAILS} | jq '.issues[].fields .status .name' #| jshon -e issues -a -e fields -e status -e name -u
+  [[ ${ASSIGNEE} ]]    && printf "Assignee:" && echo ${_JIRA_ISSUE_DETAILS} | jq '.issues[].fields .assignee .name' #| jshon -e issues -a -e fields -e assignee -e name -u
   if [[ "${DESCRIPTION}" = "1"  ]]  ; then
     printf "Description:\n"
-    echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u
-    #echo ${_JIRA_ISSUE_DETAILS} | jq .
+    #echo ${_JIRA_ISSUE_DETAILS} #| jshon -e issues -a -e fields -e description -u
+    echo ${_JIRA_ISSUE_DETAILS} | jq '.issues[].fields .description' #.description' #.description' # | grep "\"description\":"
   elif [[ ${DESCRIPTION} ]] ; then
-    echo ${_JIRA_ISSUE_DETAILS} | jshon -e issues -a -e fields -e description -u  
-    #echo ${_JIRA_ISSUE_DETAILS} | jq .
+    #echo ${_JIRA_ISSUE_DETAILS} #| jshon -e issues -a -e fields -e description -u  
+    echo ${_JIRA_ISSUE_DETAILS} | jq '.issues[].fields' | grep -v "\"customfield_[0-9]*\": null"
   fi
 }
 
@@ -359,4 +360,3 @@ fi
 #      done <<< "${_ISSUE_DESCRIPTION}"
 #      echo ""
 #   fi
-
