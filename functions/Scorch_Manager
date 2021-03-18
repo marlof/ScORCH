@@ -402,6 +402,13 @@ readonly -f fn_CopyTemplate
 fn_AdminFunctions()
 {
   typeset local char_Choice=${1}
+  typeset local str_TaskChoice=
+
+  if ! fn_IsNumber ${char_Choice} ; then
+    str_TaskChoice=$(echo ${char_Choice} | tr -d [0-9])
+    char_Choice=$(echo ${char_Choice} | tr -d [A-z])
+  fi
+
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
   ##if [[ ${char_Choice} -lt ${int_Count} ]] ; then
@@ -415,7 +422,11 @@ fn_AdminFunctions()
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
-      read ${str_Quick} -t 30 char_Choice || :
+      if [ -z ${str_TaskChoice} ] ; then
+        read ${str_Quick} -t 30 char_Choice || :
+      else
+        char_Choice=${str_TaskChoice}
+      fi
       fn_CheckDispatcher
 
 
@@ -537,6 +548,7 @@ fn_AdminFunctions()
         x | X ) return 0 ;;
         *     ) return 0 ;;
       esac
+      str_TaskChoice=
     done
   else 
     echo "Out of range"
