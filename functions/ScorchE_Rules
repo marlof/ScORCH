@@ -247,14 +247,15 @@ readonly -f fnE_AmendRules
 
 fn_ExtractPairs()
 {
-  GetVar -pattern "From"    -name FROM
-  GetVar -pattern "Sent"    -name SENT
-  GetVar -pattern "Action"  -name ACTION_LIST      -list
-  GetVar -pattern "Release" -name RELEASE                -default ""
-  GetVar -pattern "Enviro"  -name ENVIRONMENT_LIST -list -default "NA"
-  GetVar -pattern "Type"    -name TYPE                   -default ""
-  GetVar -pattern "Ticket"  -name TICKET                 -default "ID-${int_JobID}"
-  GetVar -pattern "Timeout" -name TIMEOUT                -default ""
+  GetVar -pattern "From"     -name FROM
+  GetVar -pattern "Sent"     -name SENT
+  GetVar -pattern "Action"   -name ACTION_LIST      -list
+  GetVar -pattern "Release"  -name RELEASE                -default ""
+  GetVar -pattern "Enviro"   -name ENVIRONMENT_LIST -list -default "NA"
+  GetVar -pattern "Type"     -name TYPE                   -default ""
+  GetVar -pattern "Ticket"   -name TICKET                 -default "ID-${int_JobID}"
+  GetVar -pattern "Timeout"  -name TIMEOUT                -default ""
+  GetVar -pattern "Schedule" -name SCHEDULE               -default ""
 
   GetVar -pattern "Label"  -name LABEL                   -default ""
   GetVar -pattern "Parent" -name PARENT_LIST -list       -default ""

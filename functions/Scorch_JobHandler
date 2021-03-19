@@ -449,19 +449,19 @@ fn_GetJobID()
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
   
   typeset local file_JobIDLock="${file_JobID}".lock
-  if $(which flock) ; then
-  fn_CreateFile $file_JobIDLock
-  (
-    flock -w 1 200
-    if [ -r "${file_JobID}" ] ; then
-      int_JobID=$(cat "${file_JobID}")
-    else
-      int_JobID=0
-    fi
-    (( int_JobID+=1 ))
-    echo ${int_JobID} > "${file_JobID}"
-    echo ${int_JobID}
-  ) 200> "${file_JobIDLock}"
+  if which flock >/dev/null 2>&1 ; then
+    fn_CreateFile $file_JobIDLock
+    (
+      flock -w 1 200
+      if [ -r "${file_JobID}" ] ; then
+        int_JobID=$(cat "${file_JobID}")
+      else
+        int_JobID=0
+      fi
+      (( int_JobID+=1 ))
+      echo ${int_JobID} > "${file_JobID}"
+      echo ${int_JobID}
+    ) 200> "${file_JobIDLock}"
   else
     int_JobID=$(cat "${file_JobID}")
      (( int_JobID+=1 ))
@@ -691,7 +691,7 @@ PluginError(){ echo ${1} >> "${dir_Log}"/$(basename "${file_Job}").log 2>&1 ; ((
 #}
 
 
-GetVar()
+OGetVar()
 {
   # Exception to the naming convention is GetVar. This is used in plugins by users
   #
@@ -775,9 +775,9 @@ GetVar()
     :
   fi
 }
-readonly -f GetVar
+#readonly -f GetVar
 
-NGetVar()
+GetVar()
 {
   typeset local str_Pattern=
   typeset local str_Name=
@@ -803,16 +803,14 @@ NGetVar()
     done
   fi
 
-  grep -i "${str_Pattern}" ${file_Request}
   _tmp=$(grep -i "^ *${str_Pattern} *:" ${file_Request})
-  echo "TMP is <${_tmp}>"
-  Nstr_Name=${_tmp%%:*}
-  Nstr_Value=${_tmp##*:}
-  [[ "${b_Upper}"   ]] && Nstr_Value=${Nstr_Value^^}
-  [[ "${b_Lower}"   ]] && Nstr_Value=${Nstr_Value,,}
+  str_Value=${_tmp#*:}
+  [[ "${str_Value}" ]] || str_Value=${str_Default}  
+  [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
+  [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
+  str_Name="$(echo -e "${str_Name}" | tr -d '[:space:]')"
 
-  echo ${Nstr_Name}"=\"${Nstr_Value}\""
-  sleep 5
+  eval "${str_Name}=\"${str_Value}\""
 }
 
 fn_Transition()
