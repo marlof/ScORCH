@@ -5,6 +5,7 @@ fn_Demo2()
   sleep $TIME
   ls /tmp/x /tmp/y
   Message "Above command ls /tmp/x may create a standard error"
+  Message "This is to show that scripts must handle their own errors and return a non-zero upon failure"
   Message "Sleeping in backgroud 10 seconds before touching /tmp/x"
   #(sleep 10 && touch /tmp/x) &
   return 0
