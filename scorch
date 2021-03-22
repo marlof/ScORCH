@@ -546,10 +546,10 @@ fi
 #HEADER
 #RESERVED FOR LOADING OPENSCROCH - DO NOT REMOVE
 fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
-set -e
 ## As sson as function is defined, use it to set tmp 
 fn_Mkdir "${dir_Memory}"
 fn_Mkdir "${dir_LogSpace}"
+set -e
 
 
 #echo "$(fn_CheckLicense)" &&
