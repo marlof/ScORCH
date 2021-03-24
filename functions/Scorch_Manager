@@ -432,7 +432,7 @@ fn_AdminFunctions()
 
       case ${char_Choice^^} in
 
-        c | C ) fn_CopyTemplate "${file_Link}" ;;
+        c | C ) fn_CopyTemplate "${file_ActiveJob}" ;;
         ## Abort Failed or Running jobs
         k | K ) if [[ "${str_JobState}" == "running" ]] ; then
                   fn_Kill "${file_Link}" "${str_JobState}" ; return 0
