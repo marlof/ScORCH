@@ -887,7 +887,7 @@ fn_Transition()
                   ;;
         resume  ) fn_CheckOwner "${file_Job}"
                   fn_LogWhy
-                  fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint "${file_Log}") ))"
+                  fn_UpdateResumePoint "${file_Job}" "$(fn_GetResumePoint "${file_Log}")"
                   mv "${file_Link}" "${str_Target}"/.    ;;
         pause   ) fn_CheckOwner "${file_Job}"
                   if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then

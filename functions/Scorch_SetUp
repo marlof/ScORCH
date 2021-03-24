@@ -348,7 +348,7 @@ fn_UpdateResumePoint()
   fn_CreateFile "${file_Job}".tmp blank
   sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ "${file_Job}" > "${file_Job}".tmp
   [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/dev/null
-  [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
+  [[ "${int_ResumePoint}" != "unknown" ]] && [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint
 
