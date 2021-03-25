@@ -633,7 +633,7 @@ Task()
 
   if [[ "${b_Background}" ]] ; then
     ## The task is part of a group
-    ((  int_SubTask++ ))
+    ((  int_SubTask+=1 ))
     str_GroupTask="_SubTask"
     printf "fn_Task_${int_TaskCount}(){ fn_Task_${int_TaskCount}${str_GroupTask} &
     lst_PID=\"\${lst_PID} ${int_TaskCount}:\$!\";}\t#${str_ProgramName}_SubTask\n" >> "${file_Job}"
@@ -691,7 +691,7 @@ PluginError(){ echo ${1} >> "${dir_Log}"/$(basename "${file_Job}").log 2>&1 ; ((
 #}
 
 
-OGetVar()
+GetVar()
 {
   # Exception to the naming convention is GetVar. This is used in plugins by users
   #
@@ -777,7 +777,7 @@ OGetVar()
 }
 #readonly -f GetVar
 
-GetVar()
+OGetVar()
 {
   typeset local str_Pattern=
   typeset local str_Name=
