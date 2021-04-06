@@ -13,5 +13,5 @@ SP_INSTALL-VAULT()
   Task "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
   Task "sudo yum -y install vault"
 
-  Task "which vault"
+  Task "vault --version"
 }
