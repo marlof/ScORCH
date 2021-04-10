@@ -1,0 +1,12 @@
+SP_VECTOR()
+{
+  # https://developer.anki.com/vector/docs/install-linux.html
+  SP_UPDATE_LINUX
+  
+  Task "sudo apt-get install python3"
+  Task "sudo apt install python3-pip"
+  Task "sudo apt-get install python3-pil.imagetk"
+  Task "python3 -m pip install --user anki_vector"
+  Task "python3 -m pip install --user --upgrade anki_vector"
+  Manual  "Run the following command. You will be prompted for   python3 -m anki_vector.configure"
+}
