@@ -600,8 +600,8 @@ fn_PIDWait()
 }
 
 ' >> "${file_Job}"
-	#printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PID}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
-	b_StartGroupAdded=1
+  #printf "fn_GroupWait()\n{\n  wait\n  echo \"\${arr_PID}\" >> \"\${file_Log}\"\n}\n\n" >> "${file_Job}"
+    b_StartGroupAdded=1
   fi
   int_SubTask=0
 }
@@ -690,6 +690,16 @@ PluginError(){ echo ${1} >> "${dir_Log}"/$(basename "${file_Job}").log 2>&1 ; ((
 #  echo "Depricated: Use Manual"
 #}
 
+Trim()
+{
+  local var="$*"
+  # remove leading whitespace characters
+  var="${var#"${var%%[![:space:]]*}"}"
+  # remove trailing whitespace characters
+  var="${var%"${var##*[![:space:]]}"}"   
+  printf '%s' "$var"
+}
+readonly -f Trim
 
 GetVar()
 {
@@ -763,6 +773,8 @@ GetVar()
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
+  str_Value=$(Trim $str_Value)
+#echo $(Trim $str_Value))
   eval "${str_Name}=\"${str_Value}\""
   #[[ "${b_Mandatory}" ]] && echo "mandatory value requested <${str_Name}>" && sleep 10
   if [[ "${b_Mandatory}" ]] && [[ -z "${str_Value}" ]] ; then
@@ -857,7 +869,7 @@ fn_Transition()
         fn_PressEnter
         return 0 
       fi
-	    if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
+      if [[ ${int_Choice} -le 0 ]] || [[ ${int_Choice} -ge ${int_Count} ]] ; then
         printf "Out of range" 
         fn_PressEnter
         return 0
