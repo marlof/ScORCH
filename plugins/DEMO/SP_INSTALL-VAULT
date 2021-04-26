@@ -1,0 +1,17 @@
+SP_INSTALL-VAULT()
+{
+
+  Task "sudo true"
+
+# Ubuntu
+#  Task "curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -"
+#  Task "sudo apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\""
+#  Task "sudo apt-get update && sudo apt-get install vault"
+
+# Redhat/Centos
+  Task "sudo yum install -y yum-utils"
+  Task "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
+  Task "sudo yum -y install vault"
+
+  Task "vault --version"
+}

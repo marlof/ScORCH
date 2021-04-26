@@ -1,21 +1,17 @@
 SP_DEMO-KAFKA()
 {
-
   SP_INSTALL-DOCKER
 
   GetVar -pattern "Topic" -name TOPIC -default "NEW-SCORCH-TOPIC"
   DOCKER="docker run --rm -i --net=host landoop/fast-data-dev"
 
-  Message "Kafka Installation"
+  Message "Kafka Installation..."
   Task "docker pull landoop/fast-data-dev:latest"
   Task "docker run --rm --name=kafka-box -i -p 2181:2181 -p 3030:3030 -p 8081:8081 -p 8082:8082 -p 8083:8083 -p 9092:9092 -p 9581:9581 -p 9582:9582 -p 9583:9583 -p 9584:9584 -e ADV_HOST=127.0.0.1 landoop/fast-data-dev:latest &"
   Message "Waiting for docker to start the kafka image"
-  #Manual "Run in bash     docker exec -it kafka-box bash"
-
 
   # List the available Kafka Topics
   Task "$DOCKER kafka-topics --zookeeper localhost:2181 --list"
-
 
   # Show version of kafka
   Task "$DOCKER kafka-topics --version"
@@ -26,26 +22,17 @@ SP_DEMO-KAFKA()
   # Connect to the docler instance, connect to the zookeeper server increase the partitions  
   Task "$DOCKER kafka-topics --alter  --zookeeper localhost:2181 --partitions 16                     --topic ${TOPIC^^}"
 
-
   # If the new value is smaller than the old value, the number of partitions will not be reduced. 
 
   # Insert data into the Kafka topic :
   Task "$DOCKER kafka-console-producer --broker-list localhost:9092 --topic ${TOPIC^^}"
+  
   # After this command you need to type the data you want.
-  # All records should e in the same format, consistancy is key.
+  # All records should be in the same format, consistancy is key.
 
   # Count the number of records that exist in all partitions of a kafka topic
   Task "$DOCKER kafka-run-class kafka.tools.GetOffsetShell --broker-list localhost:9092 --time -1 --topic ${TOPIC^^} | awk -F: '{print \$3}' | awk -F: 'BEGIN{sum=0} {sum+=\$1} END{print sum}'"
 
   # View the data in a topic on screen
   Task "$DOCKER kafka-console-consumer --from-beginning --bootstrap-server localhost:9092 --topic ${TOPIC^^}"
-
-
-
-
-  #Message "Run in bash     kafka-topics --zookeeper localhost:2181 --list"
-  #Message "Run in bash     kafka-topics --version"
-  #Message "Adding Data to Kafka - Create a new kafka topic called $TOPIC"
-  #Message "Run in bash  kafka-topics --create --zookeeper localhost:2181 --partitions 2  --replication-factor 1 --topic ${TOPIC^^}"
-  #Message  "Run in bash  kafka-topics --alter  --zookeeper localhost:2181 --partitions 16 --topic ${TOPIC^^} --timeout-ms 200"
 }
