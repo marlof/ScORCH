@@ -1,6 +1,7 @@
 SP_AWS-LIST-AZONES()
 {
-  arr_PROFILE=$(scorchdb -f ~/scorchgrp/etc/regions.txt -profile ${ENVIRONMENT})
+  [[ $ENVIRONMENT == "NA" ]] && ENVIRONMENT=""
+  arr_PROFILE=$(scorchdb -f ${dir_Etc}/regions.txt -profile ${ENVIRONMENT})
   # Assert that the result is in the list of returned values from the first column of file
   for str_PROFILE in ${arr_PROFILE} ; do
     Message "Availability Zones for ${str_PROFILE}"
