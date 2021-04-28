@@ -24,7 +24,7 @@ ScORCH does not require building, but does have a unique directory structure
 scorch/
 +--bin/                     Some useful shell scripts
 +--etc/                     Config files users and motd
-+--functions/               ollections of ScORCH functions
++--functions/               Collections of ScORCH functions
 +--jobs/                    Jobs and job status information
    +--active/               Job files
    +--archived/             symlinks of deleted jobs
