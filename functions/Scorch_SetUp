@@ -311,10 +311,10 @@ fn_CreateFile()
   typeset local b_Blank="${2:-""}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
-  chmod 660 "${file_Name}" 2>/dev/null
+  chmod 660 "${file_Name}" 2>/dev/null || :
   [[ "${b_Blank}" ]] && > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
-    chgrp ${str_Group} ${file_Name} 2>/dev/null
+    chgrp ${str_Group} ${file_Name} 2>/dev/null || :
   fi
 }
 readonly -f fn_CreateFile
