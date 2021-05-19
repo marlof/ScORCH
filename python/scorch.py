@@ -1,5 +1,23 @@
 #!/usr/bin/python3
+'''
+scorch py development only
+
+Optional arguments:
+-h , --help       show this message and exit
+
+
+== Examples ==
+
+x y z
+
+== History ==
+
+<github>
+
+
+'''
 import logging
+import time
 
 LOG_FORMAT = "%(asctime)s %(levelname)-8s - %(message)s"
 logging.basicConfig(filename = "/tmp/lumberjack.log",
@@ -18,10 +36,19 @@ logging.basicConfig(filename = "/tmp/lumberjack.log",
 #logging.error('I told you to be careful - Youve ERRORed')
 #logging.critical('XXX XXX XXX CRITICAL XXX XXX XXX')
 
+global warncount
 warncount = 0
-define Warn(msg):
+def warn(msg):
   logging.warning(msg)
-  warncount = warncount++
+  #warncount += 1
+
+def yesno(prompt):
+  '''returns True if answer is y or Y'''
+  answer = input(prompt + " (Y/N): ")
+  return answer.strip().lower() == "y"
+
+
+
 
 Debug    = logging.debug
 Message  = logging.info
@@ -30,4 +57,15 @@ Error    = logging.error
 Critical = logging.critical
 Debug('Hello')
 Warning('This is a warning')
-Warn('This is also a warn warning')
+warn('This is also a warn warning')
+if yesno('Did this work?'):
+  print("It's a yes from me")
+else:
+  print("That's a shame")
+
+job_status = 'unknown'
+wait_time = 20
+while True:
+  logging.info('Job status: {}'.format(job_status))
+  if job_status == 'complete' : break
+  time.sleep(wait_time)

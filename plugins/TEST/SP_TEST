@@ -1,0 +1,11 @@
+SP_TEST()
+{
+  GetVar -pattern "Test" -name TEST -default "" 
+#  MYTEST="echo"
+#  REGION="eu-west2b"
+#  #Message "$MYTEST Test"
+  Task "cp /tmp/$TEST/x /tmp/."
+#  DOCKER="docker run --rm --name aws2terra -e AWS_REGION=${REGION} "
+#  Task "$DOCKER aws2terra s3"
+#  Task "echo $SCHEDULE"
+}
