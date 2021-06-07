@@ -1,4 +1,4 @@
-SP_UPGRADE-LINUX()
+SP_UPDATE-LINUX()
 {
 
   Task "sudo -n true" OR Manual "Exit scorch and run sudo true before restarting."
