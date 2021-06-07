@@ -8,7 +8,7 @@ SP_INSTALL-DOCKER()
   
   case $(grep "^ID=" /etc/os-release | cut -d"=" -f2) in
   
-    centos ) echo centos-esk
+    centos | ol ) echo centos-esk
           Task "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
           Task "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
           Task "sudo yum install -y docker-ce docker-ce-cli containerd.io"
