@@ -1,0 +1,11 @@
+SP_JAVA()
+{
+  # Simple Java installation using a gz local file from 
+  # https://www.oracle.com/uk/java/technologies/javase/javase-jdk8-downloads.html
+  Task "sudo true"
+  Task "sudo mkdir -p /usr/lib/java"
+  Task "sudo tar zxvf jdk-8u291-linux-x64.tar.gz -C /usr/lib/java"
+  Task "sudo update-alternatives --install \"/usr/bin/java\" \"java\" \"/usr/lib/java/jdk1.8.0_291/bin/java\" 1"
+  Task "sudo update-alternatives --set java /usr/lib/java/jdk1.8.0_291/bin/java"
+  Task "java -version"
+}
