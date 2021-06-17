@@ -1,0 +1,17 @@
+SP_NEXUS()
+{
+    Task "sudo true"
+
+    SP_UPDATE-LINUX
+    SP_INSTALL-DOCKER
+
+    Task "docker pull sonatype/nexus3"
+    Task "docker images"
+    Message "Creating Persistent Data Volume"
+    #Task "docker volume create --name nexus-data"
+    Task "sudo mkdir -p /nexus-data"
+    Task "sudo chown -R azureuser:epp_admin /nexus-data"
+    Task "sudo chmod -R 775 /nexus-data"
+    Task "docker run -d -p 8081:8081 --name nexus -v /nexus-data:/nexus-data sonatype/nexus3"
+    Task "curl http://localhost:8081/"
+}
