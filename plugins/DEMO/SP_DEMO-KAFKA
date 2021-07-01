@@ -24,8 +24,8 @@ SP_DEMO-KAFKA()
 
   # If the new value is smaller than the old value, the number of partitions will not be reduced. 
 
-  # Insert data into the Kafka topic :
-  Task "$DOCKER kafka-console-producer --broker-list localhost:9092 --topic ${TOPIC^^}"
+  Message "Insert data into the Kafka topic with the console-producer"
+  Message "$DOCKER kafka-console-producer --broker-list localhost:9092 --topic ${TOPIC^^}"
   
   # After this command you need to type the data you want.
   # All records should be in the same format, consistancy is key.
