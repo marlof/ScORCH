@@ -1,0 +1,20 @@
+SP_AZCLI()
+{
+
+  REPO="[azure-cli]
+  name=Azure CLI
+  baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+  enabled=1
+  gpgcheck=1
+  gpgkey=https://packages.microsoft.com/keys/microsoft.asc"
+
+
+  Task "sudo true"
+  Task "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc"
+
+  Task "echo -e \"$REPO\" | sudo tee /etc/yum.repos.d/azure-cli.repo"
+
+  Task "sudo dnf install -y azure-cli"
+
+  Task "az --version"
+}

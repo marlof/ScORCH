@@ -1,0 +1,9 @@
+SP_INSTALLTERRAFORM()
+{
+    SP_UPDATE-LINUX
+    Task "sudo true"
+    Task "sudo yum install -y yum-utils"
+    Task "sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
+    Task "sudo yum -y install terraform"
+    Task "terraform -y"
+}

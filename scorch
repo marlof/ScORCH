@@ -94,7 +94,6 @@
 ## 1.29           marc
 ## 1.30           marc   shell read command now reads in raw (-e)
 ## 1.31           marc   cache file no longer shared
-## git config --global core.editor "'C:\Users\marc\Downloads\Sublime Text Build 3143 x64\sublime_text.exe' -multiInst -nosession"
 ## 1.32           marc   Resume after pause fixed issue #31
 ##                       Pause and Rules flags shown on showJob #32
 ## 1.33           marc   read quick for experts and slow for novice

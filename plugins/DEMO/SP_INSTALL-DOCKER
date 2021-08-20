@@ -5,15 +5,19 @@ SP_INSTALL-DOCKER()
   SP_UPDATE-LINUX
   
   
-  
-  case $(grep "^ID=" /etc/os-release | cut -d"=" -f2) in
+  OS=$(grep "^ID=" /etc/os-release | cut -d"=" -f2 | tr -d '"')
+  case ${OS} in
   
     centos ) echo centos-esk
           Task "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
           Task "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo"
           Task "sudo yum install -y docker-ce docker-ce-cli containerd.io"
+          ;;
     
-    ;;
+    ol ) echo "Oracle Linux"
+          Task "sudo yum install docker"
+          ;;
+    
     debian | ubuntu ) echo debian-esk
           Task "sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common"
           Task "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
@@ -31,13 +35,18 @@ SP_INSTALL-DOCKER()
             Task "docker -H localhost:2375 images"
             Task "export DOCKER_HOST=localhost:2375"
           fi
-    ;;
+          ;;
          
     fedora ) echo Red-hat-esk
           Task "sudo dnf -y install dnf-plugins-core"
           Task "sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo"
           Task "sudo dnf install docker-ce docker-ce-cli containerd.io"
-    ;;
+          ;;
+          
+    * ) echo "No docker configured"
+          Message "Couldnt find a docker for OS ID: $OS"
+          Manual "Install a docker for $OS manually"
+          ;;
     
   esac
 #  if [ -r /usr/bin/lsb_release] ; then
