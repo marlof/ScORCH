@@ -30,6 +30,8 @@
 
 fn_SkipFailed()
 {
+  local file_Job="${1}"                             # The Job to update
+
   int_Count=1
   int_Last=$(grep "^AUDIT:T:*:" ${file_Job} | cut -d: -f 3 | sort -n | tail -1)
   declare -A JOB
@@ -58,7 +60,7 @@ readonly -f fn_Filter
 
 fn_Manager()
 {
-  typeset local char_Choice=
+  local char_Choice=
   ${cmd_TPUT} rmam
   hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
   trap ':' SIGWINCH
@@ -280,8 +282,8 @@ fn_Admin()
 
 fn_ViewJob()
 {
-  typeset local file_Orig="$1"
-  typeset local file_View="${file_Orig}.$$"
+  local file_Orig="$1"
+  local file_View="${file_Orig}.$$"
   cp "${file_Orig}" "${file_View}"
   ${cmd_Editor} "${file_View}"
   if ! diff "${file_Orig}" "${file_View}" ; then
@@ -300,9 +302,9 @@ readonly -f fn_ViewJob
 
 fn_EditJob()
 {
-  typeset local file_Orig="$1"
+  local file_Orig="$1"
   fn_CheckOwner "${file_Orig}"
-  typeset local file_Edit="${file_Orig}.$$"
+  local file_Edit="${file_Orig}.$$"
   cp "${file_Orig}" "${file_Edit}"
   ${cmd_Editor} "${file_Edit}"
   if ! diff "${file_Orig}" "${file_Edit}" ; then
@@ -315,9 +317,9 @@ readonly -f fn_EditJob
 
 fn_Kill()
 {
-  typeset local    file_Link="$1"
-  typeset local str_JobState="$2"
-  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  local    file_Link="$1"
+  local str_JobState="$2"
+  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
 
   fn_CheckOwner "${file_Link}"
   echo "${file_Link}"
@@ -340,12 +342,12 @@ fn_Kill()
     mv ${file_Link} ${dir_Failed}
 
     fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
-    fn_LogWhy
+    fn_LogWhy "${file_Link}"
 
   elif  [[ "${str_JobState}" = "failed"  ]] || [[ "${str_JobState}" = "manual"  ]]; then
     int_KillTask=$(grep "^AUDIT:T:.*:" ${file_Link} | tail -1 | cut -d: -f3) || int_KillTask="unknown"
+    fn_LogWhy "${file_Link}"
     mv ${file_Link} ${dir_Completed}
-    fn_LogWhy
     fn_Audit "${file_Link}" "aborted during task ${int_KillTask:-0}"
     printf "\n\n Aborted Job : ${file_Link}"
   else
@@ -359,9 +361,9 @@ readonly -f fn_Kill
 
 fn_Cancel()
 {
-  typeset local    file_Link="$1"
-  typeset local str_JobState="$2"
-  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  local    file_Link="$1"
+  local str_JobState="$2"
+  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
 
   fn_CheckOwner "${file_Link}"
   echo "Aborting ${file_Link}..."
@@ -379,9 +381,9 @@ readonly -f fn_Cancel
 
 fn_CopyTemplate()
 {
-  typeset local    file_Link="$1"
-  typeset local     file_Log="${dir_Log}/$(basename ${file_Link})".log
-  typeset local file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
+  local    file_Link="$1"
+  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  local file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
 
   printf "\n\n Template\n ==========\n\n"
   sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
@@ -401,8 +403,8 @@ readonly -f fn_CopyTemplate
 
 fn_AdminFunctions()
 {
-  typeset local char_Choice=${1}
-  typeset local str_TaskChoice=
+  local char_Choice=${1}
+  local str_TaskChoice=
 
   if ! fn_IsNumber ${char_Choice} ; then
     str_TaskChoice=$(echo ${char_Choice} | tr -d [0-9])
@@ -411,14 +413,14 @@ fn_AdminFunctions()
 
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
-  ##if [[ ${char_Choice} -lt ${int_Count} ]] ; then
+    #local       file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
+    local        str_Job="${arr_Jobs[${char_Choice}]}"
+    local file_ActiveJob="${dir_Active}/${str_Job}"
+           file_Log="${dir_Log}/${str_Job}".log
 
-    typeset         str_JobState="${arr_States[${char_Choice}]}"
-    typeset local       file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
-    typeset local      file_Link="${dir_Job}/${str_JobState}/${arr_Jobs[${char_Choice}]}"
-    typeset local file_ActiveJob="${dir_Active}/${arr_Jobs[${char_Choice}]}"
-    typeset local       file_Log="${dir_Log}/$(basename ${file_Job})".log
     while : ; do
+      local str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name ${str_Job} -print| grep -v ${dir_Active} )))
+      local    file_Link="${dir_Job}/${str_JobState}/${str_Job}"
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}
@@ -457,17 +459,17 @@ fn_AdminFunctions()
 
         ## Delete Job(s)
         d | D ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_Job}" deleted
-                echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
+                fn_Audit "${file_ActiveJob}" deleted
+                echo ",,,$(date +%s),${str_Job},,,-1,${str_User}" >> "${file_CSV}"
                 mv "${file_Link}" "${dir_Deleted}"
                 chmod 660 "${file_ActiveJob}"
                 return 0 ;;
 
         ## Queue Job(s)
         q | Q ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_Job}" queued
-                fn_UpdateResumePoint "${file_Job}" 0
-                if [ -r "${dir_Active}/$(basename ${file_Job})".rules ] ; then
+                fn_Audit "${file_ActiveJob}" queued
+                fn_UpdateResumePoint "${file_ActiveJob}" 0
+                if [ -r "${dir_Active}/${str_Job}".rules ] ; then
                   mv "${file_Link}" "${dir_Pending}"
                 else
                   mv "${file_Link}" "${dir_Queued}"
@@ -476,47 +478,41 @@ fn_AdminFunctions()
 
         ## Resume Job(s)
         r | R ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_Job}" "resumed task:$(fn_GetResumePoint ${file_Log} ) "
-                fn_LogWhy
-                fn_UpdateResumePoint "${file_Job}" $(fn_GetResumePoint ${file_Log})
+                fn_Audit "${file_ActiveJob}" "resumed task:$(fn_GetResumePoint ${file_Log})"
+                fn_UpdateResumePoint "${file_ActiveJob}" $(fn_GetResumePoint ${file_Log})
                 mv "${file_Link}" "${dir_Queued}"
                 return 0 ;;
 
         ## Skip a task in Job(s)
         s | S ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_Job}" "skipped task:$(fn_GetResumePoint ${file_Log} ) "
-                fn_LogWhy
-                fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
-                fn_SkipFailed "${file_Job}"
-                #echo "AUDIT:T:${int_Task}:S" >> "${file_Jobh}"
-
+                fn_Audit "${file_ActiveJob}" "skipped task:$(fn_GetResumePoint ${file_Log})"
+                fn_UpdateResumePoint "${file_ActiveJob}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
+                fn_SkipFailed "${file_ActiveJob}"
+                #echo "AUDIT:T:${int_Task}:S" >> "${file_ActiveJob}"
                 mv "${file_Link}" "${dir_Queued}"
                 return 0 ;;
 
         ## Pause Job(s)
         p | P ) fn_CheckOwner "${file_ActiveJob}"
-                if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
-                  rm "${dir_Active}"/"$(basename "${file_Job}").pause"
-                  fn_Audit "${file_Job}" "pause removed. Current task will continue"
+                if [ -f "${file_ActiveJob}.pause" ] ; then
+                  rm "${file_ActiveJob}.pause"
+                  fn_Audit "${file_ActiveJob}" "pause removed. Current task will continue"
                 else
-                  touch "${dir_Active}"/"$(basename "${file_Job}").pause"
-                  fn_Audit "${file_Job}" "pause set. Current task will not complete"
+                  touch "${file_ActiveJob}.pause"
+                  fn_Audit "${file_ActiveJob}" "pause set. Current task will not complete"
                 fi
-                fn_LogWhy		
                 return 0 ;;
 
         ## Unqueue Job(s) back to New State
         u | U ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_Job}" unqueued
+                fn_Audit "${file_ActiveJob}" unqueued
                 if [ -L ${file_Link} ] ; then
-                  mv "${file_Link}" "${dir_New}"
+                  mv "${file_Link}" "${dir_New}" || :
                 else
-                  echo "The job is no longer in an unqueable state. Checking starting state" | tee -a "${file_Log}"
-                  local file_NameJob=$(basename ${file_Link})
-                  if find -L "${dir_Starting}" -name "${file_NameJob}" ; then
-                    mv "${dir_Starting}"/"${file_NameJob}" "${dir_New}/."
+                  echo "The job is no longer in queue. Checking starting state...." | tee -a "${file_Log}"
+                  if find -L "${dir_Starting}" -name "${str_Job}" ; then
+                    mv "${dir_Starting}/${str_Job}" "${dir_New}/."
                   fi
-                  sleep 120
                 fi
                 return 0 ;;
 
@@ -526,19 +522,21 @@ fn_AdminFunctions()
         f | F ) echo " "
                 read -e -p " You may provide a keyword or tracking id: " str_Reply
                 [[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
-                fn_Audit "${file_Job}" "fix in progress"
+                fn_Audit "${file_ActiveJob}" "fix in progress"
                 mv "${file_Link}" "${dir_Fixing}"
                 echo "$(${fn_LogDate}) Fix in progress${str_Reply}. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}"
                 return 0 ;;
 
         ## Amend Job rules
-        a | A ) fnE_AmendRules        ;;
-       # t     ) fn_CatchWord ${char_Choice} "tail tasks" ;;
-        t* | T*  ) if (( b_Quick )); then
+        a  | A ) fnE_AmendRules        ;;
+
+        # Tasks or tails
+        t* | T*  ) 
+                if (( b_Quick )); then
                   fn_CatchWord ${char_Choice} "tail tasks"
                 else
                   if [[ ${char_Choice} == "t" ]] || [[ ${char_Choice} == "T" ]] ; then
-                    fn_ShowTasks "${file_Job}"
+                    fn_ShowTasks "${file_ActiveJob}"
                   elif [[ ${char_Choice} == "tail" ]] ; then
                     trap "return 0" 2 ; tail -f "${file_Log}"
                   fi

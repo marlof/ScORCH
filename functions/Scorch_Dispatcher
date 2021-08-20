@@ -89,7 +89,7 @@ fn_Dispatcher()
     ## Move queued jobs to start state
     ## Job lock example: JobLock.DEMO-GROUP2_ST1  ->  Job_ID-251_251.DEMO-GROUP2.1_DEMO-GROUP2_ST1_
     typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
-  	if [[ "${arr_QueuedJobs}" ]] ; then
+    if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
         str_QueueLock=$(echo "${file_EachJob}" | ${cmd_AWK} -F"_" '{print $4"_"$5}')
         file_QueueLock="${file_JobLock}.${str_QueueLock}"
