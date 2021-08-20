@@ -33,7 +33,7 @@ SP_DEMO-HOSTNAME()
   # System : DEMO
   # Action : RANDOM
   # Parent : ABC
-  echo "${PARENT_LIST}" ; sleep 2
+  #echo "${PARENT_LIST}" ; sleep 2
   if [[ ! -z ${PARENT_LIST} ]] ; then
     for str_EachParent in ${PARENT_LIST} ; do
       Task "echo parent ${str_EachParent}"

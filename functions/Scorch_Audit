@@ -33,7 +33,7 @@ fn_LogWhy()
   echo ${file_Log}
   printf "\n\n"
   read -e -p " Enter a reason: " str_Answer
-  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" #>/dev/null
+  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" >/dev/null
 }
 readonly -f fn_LogWhy
 
@@ -42,9 +42,10 @@ fn_Audit()
   local file_Job="${1}"                             # The Job to update
   local str_Transition="${2}"                       # The transition being performed
   local str_Dispatcher="${3:-}"
-  local file_Log="${dir_Log}"/"$(basename "${file_Job}").log"
+  local file_Log
+  file_Log="${dir_Log}"/"$(basename "${file_Job}").log"
 
-  [[ "del ski res pau" =~ "${str_Transition:0:3}" ]] && fn_LogWhy "${file_Job}" # Add skipped / resumed / paused
+  [[ "del ski res pau" =~ ${str_Transition:0:3} ]] && fn_LogWhy "${file_Job}" # Add skipped / resumed / paused
   if [[ "${str_Dispatcher}" ]] ; then
     echo "$(${fn_LogDate}) ${str_Transition}"                            | tee -a "${file_Job}" "${file_Log}" >/dev/null
   else

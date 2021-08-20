@@ -47,6 +47,8 @@
 ## fn_SetJobOwner()
 ## fn_CheckOwner()
 ## fn_JobState()
+# shellcheck disable=SC2154
+
 
 
 
@@ -59,9 +61,12 @@ fn_JobHeader()
 
   typeset local file_Job=${1}
   echo "Creating ${file_Job}"
+  printf "\tactive file\t"
   fn_CreateFile "${dir_Active}/$(basename ${file_Job})" blank
+  printf "Done\n\tsym-link\t"
   ln -s "${dir_Active}/$(basename "${file_Job}")" "${file_Job}"
-  fn_CreateFile "${file_Job}"
+  printf "Done\n\tadding header\t"
+  #fn_CreateFile "${file_Job}"
   cat > "${file_Job}" << EOF
 #!/bin/bash
 
@@ -209,6 +214,7 @@ int_Count=0
 }
 
 EOF
+printf "Done\n"
 }
 readonly -f fn_JobHeader
 
@@ -219,8 +225,8 @@ fn_JobFooter()
   ## The file to be appended to is passed as a variable
 
   typeset local file_Job="${1}"
+  printf "\tadding footer\t"
 
-  ## echo "Adding footer to ${file_Job}"
   (( int_TaskCount-- ))
   cat >> "${file_Job}" << EOF
 
@@ -292,6 +298,7 @@ EOF
   cat "${file_Request}" >> "${file_Job}"
   echo "# Template End" >> "${file_Job}"
   chmod 770 "${file_Job}"
+  printf "Done\n\n"
 }
 readonly -f fn_JobFooter
 
@@ -363,11 +370,10 @@ fn_ProcessRequest()
 
   int_JobID=$(fn_GetJobID)
   # Multi Action is enterprise feature
-  ls ${dir_Tmp}/${str_ProgramName}.$$.*
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
-    echo "${str_EachFile}"
+    #echo "${str_EachFile}"
 
     fn_ExtractPairs
     [[ "${b_Debug}" ]] && echo "Action List: ${ACTION_LIST}"
@@ -380,6 +386,7 @@ fn_ProcessRequest()
           fn_Call="SP_${ACTION}"
         else
           printf "\n\nCannot find a function called SP_${ACTION}\n"
+    
           fn_PressEnter
           return 0
         fi
@@ -387,14 +394,22 @@ fn_ProcessRequest()
         [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
         fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
+        
+        
+        
+        
+        
+        
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
+        printf "\t${fn_Call}: "
 
-        echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
-        echo ${fn_Call} #>> "${dir_Log}"/$(basename "${file_Job}").log
+        #echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
+        #echo ${fn_Call} #>> "${dir_Log}"/$(basename "${file_Job}").log
+        
         set +u
-        ${fn_Call}
-        int_ReturnCode=${PIPESTATUS[0]}
+          ${fn_Call}
+          int_ReturnCode=${PIPESTATUS[0]}
         set -u
         # PIPESTATUS AND USE PIPE TEE
         if [[ ${int_ReturnCode} -ne 0 ]] ; then
@@ -407,28 +422,24 @@ fn_ProcessRequest()
           fn_PressEnter
           return 1
         fi
-        echo " $((int_TaskCount - 1)) tasks created"
+        printf "\t%s tasks added\n" $((int_TaskCount -1 ))
 
         if [[ ${b_CreateFailed} ]] ; then
           mv "${file_Job}" "${dir_Failed}/."
           echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
         else
           fn_JobFooter "${file_Job}"
-          #chmod 770 "${file_Job}"
+          chmod 770 "${file_Job}"
           echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         fi
         
         (( int_JobCount+=1 ))
         b_StartGroupAdded=
 
-
-        
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
           mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
         fi
         if [[ ${b_Start} ]] ; then
-          #nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
-
           if [[ ${b_Sync} ]] ; then
             mv "${file_Job}" "${dir_Queued}/." 
             "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 

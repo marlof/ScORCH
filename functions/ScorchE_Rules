@@ -20,7 +20,9 @@
 ## fn_CheckAuth()
 fn_NiceTime()
 {
-  local hours= minutes= seconds=
+  local hours=
+  local minutes=
+  local seconds=
   local time=
   time=${1%.*}
   ((hours=${time}/3600))
@@ -66,18 +68,24 @@ fn_GetRequest()
       elif [[ ${str_ULine} =~ INFO ]]; then
         local str_Info=${str_Line#info }
         # scorchdb -f $file_CSV +job $str_Info -time | ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }'
-        local int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
-        local int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }')
-        local int_FailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep "\-1$" | wc -l)
+        local int_JobCount=
+        int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
+        local int_NonFailCount
+        int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }')
+        local int_FailCount=
+        int_FailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep "\-1$" | wc -l)
         printf "\n"
         printf "Total number of jobs logged    : %s\n" ${int_JobCount}
         if [[ ${int_JobCount} -ge 1 ]] ; then
           #printf "Total number of failures       : $(grep $str_Info $file_CSV | cut -d"," -f6)"
           printf "Number of deleted jobs         : %s\n" ${int_FailCount}
           printf "Average number of  failures    : %s\n" ${int_NonFailCount}
-          printf "Max run time                   : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  ${cmd_AWK} 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))\n"
-          printf "Average run time               : $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)\n"
+          printf "Max run time                   : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  ${cmd_AWK} 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))
+          printf "Average run time               : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)
           printf "\n\n"
+          printf "\n help <plugin>    at any time for additional parameters\n"
+          printf " info <plugin>    for further information\n\n"
+          printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
         fi
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
@@ -91,21 +99,20 @@ readonly -f fn_GetRequest
 
 fn_ProcessRequest()
 {
-  typeset local int_JobCount=1
-  typeset local int_FileCount=1
+  local int_JobCount=1
+  local int_FileCount=1
 
   int_JobID=$(fn_GetJobID)
 
   for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
-    echo "${str_EachFile}"
+    #echo "${str_EachFile}"
 
     fn_ExtractPairs
-    #[[ "${b_Debug}" ]] && echo "Action: ${ACTION}"
+
     for ACTION in ${ACTION_LIST} ; do
 
-      #echo "Last ${ACTION} took $(fn_DisplayTime $(scorchdb -f "${file_CSV}" -starttime -endtime -failure "\.${ACTION}\." | tail -1))"
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
         fn_Call="no-action"
         int_TaskCount=0
@@ -129,12 +136,16 @@ fn_ProcessRequest()
         fi
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
-#printf "${fn_Call}: "
-set +u 
-        ${fn_Call}
+        printf "\t${fn_Call}: "
 
-        int_ReturnCode=${PIPESTATUS[0]}
-set -u
+
+
+
+        set +u 
+          ${fn_Call}
+          int_ReturnCode=${PIPESTATUS[0]}
+        set -u
+
         # PIPESTATUS AND USE PIPE TEE
         if [[ ${int_ReturnCode} -ne 0 ]] ; then
           echo "exit 1" >> "${file_Job}"
@@ -146,10 +157,7 @@ set -u
           fn_PressEnter
           return 1
         fi
-        echo " $((int_TaskCount - 1)) tasks created"
-#        fn_JobFooter "${file_Job}"
-#        echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
-#        (( int_JobCount+=1 ))
+        printf "\t\t%s tasks added\n" $((int_TaskCount -1 ))
 
         if [[ ${b_CreateFailed} ]] ; then
           mv "${file_Job}" "${dir_Failed}/."
@@ -168,7 +176,6 @@ set -u
         fi
         if [[ ${b_Start} ]] ; then
           #nohup "${dir_Base}"/${str_ProgramName} -background -j ${dir_Job} </dev/null >> "${file_ProgLog}" &
-
           if [[ ${b_Sync} ]] ; then
             mv "${file_Job}" "${dir_Queued}/." 
             "${file_EachJob}" </dev/null >> "${dir_Log}"/"$(basename "${file_EachJob}").log" 2>&1 
