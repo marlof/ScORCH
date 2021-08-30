@@ -561,7 +561,7 @@ set -e
 #echo "$(fn_CheckLicense)" &&
 ENTERPRISE=1
 
-if [[ ! -z $ENTERPRISE ]] ; then
+if [[ -n $ENTERPRISE ]] ; then
   fn_LoadFunctions "${dir_Functions}" "ScorchE_"
   str_License="Enterprise"
 else
