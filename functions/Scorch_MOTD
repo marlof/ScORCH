@@ -1,3 +1,4 @@
+#!/bin/bash
 ##
 ## Copyright 2016 WebMarcIT Ltd
 ##
@@ -24,15 +25,16 @@
 ## fn_DisplayMOTD()
 ## fn_AdminMOTD()
 ## fn_EditMOTD()
+# shellcheck disable=SC2154
 
 fn_DisplayMOTD()
 {
   ## Display the last line of the message of the day log file
   ## 
-  typeset local str_MOTD=
+  local str_MOTD=
   if [ -r "${file_MOTD}" ] ; then
     str_MOTD=$(tail -1 "${file_MOTD}" | cut -d"+" -f2-)
-    [ "${str_MOTD}" ] && printf "Notice ${str_MOTD}\n" && fn_ShowLine "=" || :
+    [ "${str_MOTD}" ] && printf "Notice %s\n" "${str_MOTD}"  && fn_ShowLine "=" || :
   fi
 }
 readonly -f fn_DisplayMOTD
@@ -46,14 +48,14 @@ fn_AdminMOTD()
     fn_ShowTop
     printf "\n\n"
     fn_ShowLine "=" "MOTD"
-    [[ -r ${file_MOTD} ]] && tail ${file_MOTD} || :
+    [[ -r ${file_MOTD} ]] && tail "${file_MOTD}" || :
     fn_ShowLine
     fn_DisplayMOTD
     printf "\n"
-    printf "${dis_ULOn}E${dis_ULOff}dit | "
-    printf " e${dis_ULOn}X${dis_ULOff}it : "
+    printf "%sE%sdit | " ${dis_ULOn} ${dis_ULOff}
+    printf " e%sX%sit : " ${dis_ULOn} ${dis_ULOff}
 
-    read ${str_Quick} -t ${int_Refresh} char_Choice
+    read ${str_Quick} -t "${int_Refresh}" char_Choice
 
     case ${char_Choice} in
       e | e ) fn_EditMOTD  ;;
@@ -68,8 +70,8 @@ fn_EditMOTD()
 {
   ## Allow authorised users to change the contents of message of the day
 
-  typeset local str_MOTD
-  fn_CreateFile ${file_MOTD} 2>/dev/null
+  local str_MOTD
+  fn_CreateFile "${file_MOTD}" 2>/dev/null
 
   printf "\n\n Enter new message (or enter to blank out last message): \n "
   read -e str_MOTD

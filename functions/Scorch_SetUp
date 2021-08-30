@@ -37,7 +37,7 @@
 ## fn_InstallLatest()
 ## fn_CheckMaint()
 ## fn_FileOwner()
-
+# shellcheck source=~/scorch.pref
 
 
 # Some global variables for setup functions
@@ -52,7 +52,7 @@ fn_CheckSetUp()
                                  dir_Running dir_Superseded dir_Manual dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
-  [[ ${b_Install} ]] && fn_Mkdir $(dirname ${file_MOTD}) && fn_CreateFile $file_MOTD
+  [[ ${b_Install} ]] && fn_Mkdir "$(dirname ${file_MOTD})" && fn_CreateFile $file_MOTD
 
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d "${!p_Variable}" ]] ; then
@@ -118,8 +118,8 @@ readonly -f fn_CheckSetUp
 
 fn_SetPrefs()
 {
-  if [[ ! -f ${file_Prefs} ]] ; then
-    fn_CreateFile ${file_Prefs} blank
+  if [[ ! -f "${file_Prefs}" ]] ; then
+    fn_CreateFile "${file_Prefs}" blank
     echo '
 ## Permissions options
 ## ===================
@@ -152,17 +152,17 @@ export      file_Version="version.txt"
 
 ' >> ${file_Prefs}
   fi
-  source ${file_Prefs}
-  if [ ! -z ${str_Group} ] ; then
+  source "${file_Prefs}"
+  if [ -n "${str_Group}" ] ; then
     if ! grep -q "${str_Group}:" /etc/group ; then
       echo "str_Group set to ${str_Group} but does not exist."
       echo "Reset to black"
       str_Group=
     fi
   fi
-  if [[ ! -z ${str_Group} ]] ; then
+  if [[ -n "${str_Group}" ]] ; then
     # Check str_Group is ont of groups
-    if [[ "$(groups)" =~ "${str_Group}" ]] ; then
+    if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
     else
       printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
@@ -213,12 +213,12 @@ fn_HouseKeeping()
   # Recover jobs jobs that are taking a long time to progress
   #(cd ${dir_Active} && find "${dir_Completed}" "${dir_New}" -type f -exec tar xf ${dir_Active}/active.tar "{}" + )
   arr_Recover=$( cd "${dir_New}" && find -L . -name "${str_JobPrefix}*" -mtime +${int_DaysActive} )
-  [[ ! -z ${arr_Recover} ]] && echo "Some jobs are taking a long time to be processed: ${arr_Recover}"
+  [[ -n ${arr_Recover} ]] && echo "Some jobs are taking a long time to be processed: ${arr_Recover}"
   for file_Recover in ${arr_Recover} ; do
-    ( cd "${dir_Active}" && tar xf "${dir_Archived}/archived.tar" ${file_Recover} )
+    ( cd "${dir_Active}" && tar xf "${dir_Archived}/archived.tar" "${file_Recover}" )
   done
 
-  IFS=£{SAVEIFS}
+  IFS=${SAVEIFS}
   # Clean Up cache files
   find -L "${dir_Tmp}" -name "cache.$$.*"  -exec rm -f {} \; 2>/dev/null
   find -L "${dir_Tmp}" -name "scorch.$$.*" -exec rm -f {} \; 2>/dev/null

@@ -33,11 +33,14 @@ fn_Dispatcher()
 {
 
   #fn_IsDispatchHost && return 0
+  local int_DispatchCount
+  local arr_PendingJobs
+  local arr_QueuedJobs
 
-  typeset local int_DispatchCount=0
+  int_DispatchCount=0
 
   ## Run the dispatcher loop for a predetermined number of times
-  while [ ${int_DispatchCount} -lt ${int_DispatchMax} ] ; do
+  while [ ${int_DispatchCount} -lt "${int_DispatchMax}" ] ; do
     ## Repair any missing lock file for dispatcher
     ## [[ ! -L ${file_DispatchLock} ]] && ln -s ${str_User}_$$ "${file_DispatchLock}"
     ## Make sure all current jobs reporting a running state are actually running
@@ -48,7 +51,7 @@ fn_Dispatcher()
     [[ ! -d "${dir_Pending}" ]] || [[ ! -d "${dir_Running}" ]] || [[ ! -d "${dir_Queued}"  ]] && exit 1
 
     ## Check the pending directory first for any rules that have succeeded
-    typeset local arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
+    arr_PendingJobs=$(ls -rt1 "${dir_Pending}")
     if [[ "${arr_PendingJobs}" ]] ; then
 
       for file_EachJob in ${arr_PendingJobs} ; do
@@ -57,14 +60,14 @@ fn_Dispatcher()
           ## Check for Parent
           arr_Parents=$(grep "PARENT:" "${dir_Active}/$(basename "${file_EachJob}")".rules | cut -d: -f2)
 
-          typeset local b_ParentComplete=0
+          local b_ParentComplete=0
           for file_EachParent in ${arr_Parents} ; do
             if [[ "${file_EachParent}" = "${file_EachJob}" ]] ; then
                fn_Audit "${file_EachJob}" "Cyclic dependency. Failing job" "rules"
                mv "${dir_Pending}"/"${file_EachJob}" "${dir_Failed}"
             fi
 
-            str_ParentState=$(basename $(dirname $(find -L ${dir_Job} -name ${file_EachParent} | grep -v "/active/")))
+            str_ParentState=$(basename "$(dirname "$(find -L "${dir_Job}" -name "${file_EachParent}" | grep -v "/active/")")")
 
             case ${str_ParentState} in
               completed ) fn_Audit "${file_EachJob}" "Parent job ${file_EachParent} completed." "rules" ;;
@@ -88,7 +91,7 @@ fn_Dispatcher()
 
     ## Move queued jobs to start state
     ## Job lock example: JobLock.DEMO-GROUP2_ST1  ->  Job_ID-251_251.DEMO-GROUP2.1_DEMO-GROUP2_ST1_
-    typeset local arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
+    arr_QueuedJobs=$(ls -rt1 "${dir_Queued}")
     if [[ "${arr_QueuedJobs}" ]] ; then
       for file_EachJob in ${arr_QueuedJobs} ; do
         str_QueueLock=$(echo "${file_EachJob}" | ${cmd_AWK} -F"_" '{print $4"_"$5}')
@@ -101,9 +104,10 @@ fn_Dispatcher()
         else
           ## Check that for every env lock file that there is a job in a non finish state
           ## (failed, completed, deleted, new)
-          typeset local arr_JobLocks=$(ls "${file_JobLock}"*)
+          local arr_JobLocks
+          arr_JobLocks=$(ls "${file_JobLock}"*)
           for file_EachLock in ${arr_JobLocks} ; do
-            [[ "$(find -L ${dir_Job}/running ${dir_Job}/starting -name $(ls -l "${file_EachLock}" | ${cmd_AWK} -F" " '{print $NF}'))" ]] || rm "${file_EachLock}"
+            [[ "$(find -L "${dir_Job}/running" "${dir_Job}/starting" -name "$(ls -l "${file_EachLock}" | ${cmd_AWK} -F" " '{print $NF}')")" ]] || rm "${file_EachLock}"
           done
         fi
         sleep 1
@@ -116,7 +120,7 @@ fn_Dispatcher()
     fn_CheckRunning
   done
   rm -f "${file_DispatchLock}"
-  typeset int_DispatcherPID=0
+  int_DispatcherPID=0
   exit 0
 }
 readonly -f fn_Dispatcher
@@ -128,7 +132,8 @@ fn_CheckRunning()
 
   ## Check running jobs are really running
   ## If they are not, move them to a failed state and report they were orphaned
-  typeset local arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
+  local arr_RunningJobs
+  arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
   if [[ "${arr_RunningJobs}" ]] ; then
     for file_EachJob in ${arr_RunningJobs} ; do
       if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
@@ -158,7 +163,8 @@ fn_CheckDispatcher()
  #   # if all ok, then we might be the only dispatcher and happy to continue
  #   sleep 5
  # fi
-
+  local int_LockDate
+  local int_NowDate
 
   ## Check Dispatcher
   ##  typeset local int_DispatcherPID=$(ls -l "${dir_Lock}/${str_ProgramName}.lck" 2>/dev/null | cut -d_ -f2)
@@ -172,9 +178,9 @@ fn_CheckDispatcher()
 
       #echo "This is not the dispatch host but need to check that the file is still healthy"
 
-      local int_LockDate
-      int_LockDate=$(date "+%s" -d "$(  ls -l "${file_DispatchLock}" | ${cmd_AWK} -F" " '{print $6, $7, $8}' )" )
-      local int_NowDate
+
+
+      int_LockDate=$(date "+%s" -d "$( ls -l "${file_DispatchLock}" | ${cmd_AWK} -F" " '{print $6, $7, $8}' )" )
       int_NowDate=$(date "+%s")
       if (( int_NowDate - int_LockDate > 100 )) ; then
         echo "The local file may be stale. There will be a short delay while checking"
@@ -240,23 +246,23 @@ fn_RunJobs()
     ##########################################################
 
     printf "\n$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
-    fn_CreateFile "${dir_Log}"/$(basename "${file_EachJob}").log
+    fn_CreateFile "${dir_Log}"/"$(basename "${file_EachJob}").log"
     if [[ -x "${file_EachJob}" ]] ; then
       if [[ -z ${str_Group} ]] ; then
-        nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+        nohup "${file_EachJob}" </dev/null >> "${dir_Log}/$(basename "${file_EachJob}").log" 2>&1 &
       else
         newgrp "${str_Group}" << EOGROUP
-        nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+        nohup "${file_EachJob}" </dev/null >> "${dir_Log}"/"$(basename "${file_EachJob}").log" 2>&1 &
 EOGROUP
       fi
     else
       ## Fail the job as not executable
       #echo "Job not executable - running with bash"
       if [[ -z "${str_Group}" ]] ; then
-        nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+        nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}/$(basename "${file_EachJob}").log" 2>&1 &
       else
         newgrp "${str_Group}" << EOGROUP
-        nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 &
+        nohup /bin/bash "${file_EachJob}" </dev/null >> "${dir_Log}/$(basename "${file_EachJob}").log" 2>&1 &
 EOGROUP
       fi
     fi

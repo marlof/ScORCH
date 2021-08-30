@@ -334,7 +334,7 @@ fn_GetRequest()
   if [ ! -z "${file_Template}" ] ; then
     [[ $b_NonInteractive ]] || echo "$($fn_LogDate): Processing file:${file_Template}"
     while read -r str_Line ; do
-      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
@@ -343,7 +343,7 @@ fn_GetRequest()
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
-      str_ULine=$(echo ${str_Line} | tr [:lower:] [:upper:])
+      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       if [[  ${str_ULine} =~ HELP ]] ; then
         typeset local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
@@ -393,7 +393,7 @@ fn_ProcessRequest()
         str_Call=${fn_Call#SP_}
         [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
-        fn_CreateFile "${dir_Log}"/$(basename "${file_Job}").log
+        fn_CreateFile "${dir_Log}"/"$(basename "${file_Job}").log"
         
         
         
@@ -442,7 +442,7 @@ fn_ProcessRequest()
         if [[ ${b_Start} ]] ; then
           if [[ ${b_Sync} ]] ; then
             mv "${file_Job}" "${dir_Queued}/." 
-            "${file_EachJob}" </dev/null >> "${dir_Log}"/$(basename "${file_EachJob}").log 2>&1 
+            "${file_EachJob}" </dev/null >> "${dir_Log}"/"$(basename "${file_EachJob}").log" 2>&1 
           else
             mv "${file_Job}" "${dir_Queued}/."
           fi
@@ -678,7 +678,7 @@ Try(){     Task   "Try     \"$*\""   ; }
 Sleep(){   Task   "Sleep   ${1:-10}" ; }
 Manual(){  Task   "Manual  \"$*\""   ; }
 
-PluginError(){ echo ${1} >> "${dir_Log}"/$(basename "${file_Job}").log 2>&1 ; (( b_CreateFailed++ )) ; echo "mv job to failed" ; }
+PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; (( b_CreateFailed++ )) ; echo "mv job to failed" ; }
 
 #tryTask()
 #{

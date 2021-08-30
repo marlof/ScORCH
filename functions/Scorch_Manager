@@ -27,6 +27,8 @@
 ## fn_AdminFunctions()
 ## fn_CatchWord()
 ## fn_Filter()
+# shellcheck source=~/scorch.prefs
+# shellcheck disable=SC2154
 
 fn_SkipFailed()
 {
@@ -62,7 +64,7 @@ fn_Manager()
 {
   local char_Choice=
   ${cmd_TPUT} rmam
-  hex_MD5=$(md5sum ${dir_Base}/${str_ProgramName} | cut -d" " -f1)
+  hex_MD5=$(md5sum "${dir_Base}"/"${str_ProgramName}" | cut -d" " -f1)
   trap ':' SIGWINCH
   while : ; do
     fn_CheckMaint
@@ -159,7 +161,7 @@ fn_ShowPrefs()
     read ${str_Quick} -t ${int_Refresh} char_Choice || :
 
     case ${char_Choice} in
-      e | E ) ${cmd_Editor} ${file_Prefs} ; source ${file_Prefs} ;;
+      e | E ) ${cmd_Editor} ${file_Prefs} ; source "${file_Prefs}" ;;
       d | D ) [[ -w ${file_Prefs} ]] && fn_Confirm "Reset preferences" && rm ${file_Prefs} && fn_SetPrefs ;;
       x | X ) return 0 ;;
       *     ) return 0 ;;
@@ -382,9 +384,11 @@ readonly -f fn_Cancel
 fn_CopyTemplate()
 {
   local    file_Link="$1"
-  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
-  local file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
-
+  local     file_Log
+  local file_TmpCopy
+  
+  file_Log="${dir_Log}/$(basename ${file_Link})".log
+  file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
   printf "\n\n Template\n ==========\n\n"
   sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
   cat "${file_TmpCopy}"
@@ -405,6 +409,12 @@ fn_AdminFunctions()
 {
   local char_Choice=${1}
   local str_TaskChoice=
+  local str_Job=
+  local file_ActiveJob=
+  local str_JobState=
+  local file_Link=
+
+
 
   if ! fn_IsNumber ${char_Choice} ; then
     str_TaskChoice=$(echo ${char_Choice} | tr -d [0-9])
@@ -414,13 +424,13 @@ fn_AdminFunctions()
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
     #local       file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
-    local        str_Job="${arr_Jobs[${char_Choice}]}"
-    local file_ActiveJob="${dir_Active}/${str_Job}"
+    str_Job="${arr_Jobs[${char_Choice}]}"
+    file_ActiveJob="${dir_Active}/${str_Job}"
            file_Log="${dir_Log}/${str_Job}".log
 
     while : ; do
-      local str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name ${str_Job} -print| grep -v ${dir_Active} )))
-      local    file_Link="${dir_Job}/${str_JobState}/${str_Job}"
+      str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name ${str_Job} -print| grep -v ${dir_Active} )))
+      file_Link="${dir_Job}/${str_JobState}/${str_Job}"
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu ${str_JobState}

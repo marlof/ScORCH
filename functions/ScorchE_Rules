@@ -25,9 +25,9 @@ fn_NiceTime()
   local seconds=
   local time=
   time=${1%.*}
-  ((hours=${time}/3600))
-  ((minutes=${time}%3600/60))
-  ((seconds=${time}%60))
+  ((hours=time/3600))
+  ((minutes=time%3600/60))
+  ((seconds=time%60))
   printf "%02dh %02dm %02ds\n" $hours $minutes $seconds
 }
 
@@ -104,7 +104,7 @@ fn_ProcessRequest()
 
   int_JobID=$(fn_GetJobID)
 
-  for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
+  for str_EachFile in "${dir_Tmp}"/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     #echo "${str_EachFile}"

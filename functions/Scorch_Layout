@@ -49,10 +49,10 @@ fn_SetLayout()
   int_Column2Width=8        # System reference number (like JIRA) or use ticket number
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
-  (( int_Column3Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
-  (( int_Column4Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
-  (( int_Column5Width=$(find -L ${dir_Active} ! -name "*.rules" | ${cmd_AWK} -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
-  (( int_Column6Width=$(find -L ${dir_Active}                   | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
+  (( int_Column3Width=$(find -L "${dir_Active}"                   | ${cmd_AWK} -F"_" '{print length($4)}' | sort -un | tail -1) +1 ))
+  (( int_Column4Width=$(find -L "${dir_Active}"                   | ${cmd_AWK} -F"_" '{print length($5)}' | sort -un | tail -1) +1 ))
+  (( int_Column5Width=$(find -L "${dir_Active}" ! -name "*.rules" | ${cmd_AWK} -F"_" '{print length($6)}' | sort -un | tail -1) +1 ))
+  (( int_Column6Width=$(find -L "${dir_Active}"                   | ${cmd_AWK} -F"_" '{print length($7)}' | sort -un | tail -1) +1 ))
   IFS=$SAVEIFS
 #int_Column2Width=16
 #int_Column3Width=12 #${int_Column3Width:-20}       # The Action / Plugin
@@ -149,102 +149,6 @@ fn_ShowJobs()
       fn_ShowJobs2
     fi
 }
-
-fn_ShowJobs2()
-{
-  ## Show job details for each job state past. The value passed is one or more directory names
-  ## =========================================================================================
-  typeset local str_EachJobState= arr_JobList= str_StatusColour=""
-  typeset local str_StatusColour="${dis_Reset}"
-
-  ## Due to the fact that directories may contain "spaces" so "cd" there first
-  ## =========================================================================
-  cd "${dir_Job}"
-  int_Count=1
-
-  file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
-  echo "#$$" > "${file_Cache}"
-  [[ ${cmd_TPUT} != "echo" ]] && int_ScreenWidth=$(${cmd_TPUT} cols) ||  int_ScreenWidth=$(echo ${COLUMNS})
-
-  for str_State in ${@} ; do
-    printf "${dis_Reset}"
-
-    [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
-    [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
-    [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
-#echo "$(pwd)"
-#echo "${file_Cache}"
-    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
-      -v            state=${str_State} \
-      -v             user=${str_User} \
-      -v          linenum=${int_Count} \
-      -v          dir_Log="${dir_Log}" \
-      -v       dir_Active="${dir_Active}" \
-      -v       file_Cache="${file_Cache}" \
-      -v           Colour=${str_StatusColour} \
-      -v  int_ScreenWidth=${int_ScreenWidth} \
-      -v int_Column1Width=${int_Column1Width} \
-      -v int_Column2Width=${int_Column2Width} \
-      -v int_Column3Width=${int_Column3Width} \
-      -v int_Column4Width=${int_Column4Width} \
-      -v int_Column5Width=${int_Column5Width} \
-      -v int_Column6Width=${int_Column6Width} \
-      -v int_MaxShown=${int_MaxShown} 'BEGIN {
-       FS = "_"
-    }
-    linenum <= int_MaxShown {
-      printf Colour
-
-      ## Check Owner of job
-      ##system("echo " user
-      ##system("echo grep ^str_Owner= "dir_Active"/$(basename "$0")")
-      ##system("if [[ \"$(grep ^str_Owner="user" "dir_Active"/$(basename "$0") | cut -d"=" -f2-)\" ]] ; then printf \"*\" ; else printf \" \" ; fi")
-      system("test -r \""dir_Active"/$(basename "$0").rules\" && printf \"R\"  || printf \" \"")
-      printf "%3s", linenum
-      system("test -r \""dir_Active"/$(basename "$0").pause\" && printf \"P|\" || printf \" |\"")
-
-      if ( $2 != "" ) {
-        printf "%7s|", $2
-      }
-      else {
-        printf "%7s|", substr($3,1,7)
-      }
-      int_LogWidth=int_ScreenWidth - 7 - int_Column1Width - int_Column2Width - int_Column3Width \
-                   - int_Column4Width  - int_Column5Width 
-      ##printf "${dis_Reset}${str_StatusColour}%${int_Column1Width}s "   "${int_Count}${str_ID}"
-      printf "%"int_Column3Width"s|%"int_Column4Width"s|%"int_Column5Width"s|",$4,$5,$6
-
-      if ( state == "running" ) {
-#       system("date -d \"1970-01-01 + $seconds seconds\" \"+%Hh%Mm%Ss\"")
-#       printf '%02dh:%02dm:%02ds\n' $(($secs/3600)) $(($secs%3600/60)) $(($secs%60))
-# Looking for the last AUDIT:START point
-        cmd = "grep ^AUDIT:START "dir_Log"/$(basename "$0").log | tail -1 | cut -d: -f3"
-        cmd | getline starttime
-        cmd = "date +%s"
-        cmd | getline currenttime
-        secs = currenttime - starttime
-        close(cmd)
-        printf "%02d:%02d:%02d", secs/3600, secs%3600/60, secs%60
-        printf "|"
-        int_LogWidth = int_LogWidth - 9
-      }
-      system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null | tr -cd \"\\011\\012\\040-\\254\" | cut -c1-"int_LogWidth")")
-#     system("echo $(tail -1 "dir_Log"/$(basename "$0").log 2>/dev/null)")
-      system("echo arr_States["linenum"]="state" >> "file_Cache)
-      system("echo arr_Jobs["linenum"]=$(basename "$0") >> "file_Cache)
-
-      linenum++
-    }
-    END {
-      system("echo int_Count="linenum" >> "file_Cache )
-    }'
-    ##. ${file_Cache}
-#       cat "${file_Cache}"
-    typeset -A arr_States=
-    [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
-  done
-}
-#readonly -f fn_ShowJobs2
 
 fn_DisplayTime()
 {
@@ -438,13 +342,13 @@ fn_ContextMenu()
   ## and
   ##    generic mode (where it caters for all directories)
 
-  typeset local str_State=${1:-}
+  local str_State=${1:-}
 
-  typeset local b_QueuedJobs=
-  typeset local b_FailedJobs=
-  typeset local b_NewJobs=
-  typeset local b_RunningJobs=
-  typeset local b_Plugins=
+  local b_QueuedJobs=
+  local b_FailedJobs=
+  local b_NewJobs=
+  local b_RunningJobs=
+  local b_Plugins=
   ##  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     ## Specific Mode

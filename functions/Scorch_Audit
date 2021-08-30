@@ -17,6 +17,7 @@
 # shellcheck disable=SC2140
 # shellcheck disable=SC2154
 # shellcheck disable=SC2162
+# shellcheck disable=SC2155
 
 
 
