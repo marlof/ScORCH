@@ -73,3 +73,4 @@ RUN chown -R ${str_User}:${str_Group} ${dir_Scorch}
 #RUN echo "# docker image ls"
 #RUN echo "# docker run --rm -i --net=host webmarcit/scorch:latest"
 #RUN echo "# docker exec -it <container-id> /bin/bash"
+CMD /opt/scorch/scorch
