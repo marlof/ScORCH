@@ -116,7 +116,7 @@ fn_Dispatcher()
     (( int_DispatchCount+=1 ))
 
     touch -h "${file_DispatchLock}" 2>/dev/null || fn_CheckDispatcher
-    sleep ${int_DispatchSleep}
+    sleep "${int_DispatchSleep}"
     fn_CheckRunning
   done
   rm -f "${file_DispatchLock}"
@@ -276,11 +276,13 @@ readonly -f fn_RunJobs
 fn_LockManager()
 {
   ## An easier way to check locks
+  local lst_Locks
+  lst_Locks=$(ls "${dir_Lock}")
   while : ; do
     fn_ShowTop
     fn_ShowLine
     int_Count=1
-    for file_Lock in $(ls "${dir_Lock}") ; do
+    for file_Lock in ${lst_Locks} ; do
       printf "%s%s%${int_Column1Width}s | "  "${dis_Reset}" "${str_StatusColour}" "${int_Count}"
       printf "${file_Lock} -> $(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)\n"
       arr_Locks[${int_Count}]="${file_Lock}"

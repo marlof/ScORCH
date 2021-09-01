@@ -969,7 +969,7 @@ fn_CheckOwner()
     read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
       y | Y ) fn_SetJobOwner "${file_Job}" ;;
-          * ) break ;;
+          * ) echo "Cancelled" && sleep 1 && return ;;
     esac
   fi
 }
