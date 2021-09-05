@@ -367,13 +367,11 @@ fn_ContextMenu()
     fi
 
     printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    #if [ ! -z ${arr_States} ] ; then 
-      [[ "$(echo ${arr_States[@]} | egrep -i "queued|pending")"  ]] && b_QueuedJobs=1
-      [[ "$(echo ${arr_States[@]} | egrep -i "running|pending")" ]] && b_RunningJobs=1
-      [[ "$(echo ${arr_States[@]} |  grep -i new)"               ]] && b_NewJobs=1
-      [[ "$(echo ${arr_States[@]} | egrep -i "failed|manual")"   ]] && b_NewJobs=1 && b_FailedJobs=1 
-      [[ "$(echo ${arr_States[@]} |  grep -i fixing)"            ]] && b_NewJobs=1 && b_FailedJobs=1
-    #fi
+    [[ "$(echo ${arr_States[@]} | grep  -E "queued|pending")"  ]] && b_QueuedJobs=1
+    [[ "$(echo ${arr_States[@]} | grep  -E "running|pending")" ]] && b_RunningJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i "new")"              ]] && b_NewJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -E "failed|manual")"    ]] && b_NewJobs=1 && b_FailedJobs=1
+    [[ "$(echo ${arr_States[@]} | grep -i "fixing")"           ]] && b_NewJobs=1 && b_FailedJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
   fi
 
