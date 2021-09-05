@@ -151,7 +151,7 @@ fi
 # DO NOT MODIFY
 }
 Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
-Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 1;}
+Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
 Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
 
@@ -633,10 +633,13 @@ fn_ProcessFunctions()
     int_ReturnCode=${PIPESTATUS[0]}
     str_FunctionName=${str_ProgramName}
 
-    if [ ${int_ReturnCode} != 0 ] ; then
-      Warning "The function <${str_Function}> aborted abnormally."
-      Warning "Consider handling errors better in the function ${str_Function}."
-      Warning "Use Error \"<text>\" "
+    if [ ${int_ReturnCode} != 0] ; then
+
+      if [ ${int_ReturnCode} != 111 ] ; then
+        Warning "The function <${str_Function}> aborted abnormally."
+        Warning "Consider using the  Error \"<text>\" command"
+      fi
+
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
     fi
