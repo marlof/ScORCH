@@ -1,1 +1,2 @@
-HOUSEKEEP | COMMON | O:ENV:e: O:DAYS:d: | fn_HouseKeep
+HOUSEKEEP    | COMMON | O:ENV:e: O:DAYS:d:         | fn_HouseKeep
+VERSIONCHECK |  INFRA | R:ENVIRONMENT:e: O:TYPE:t: | fn_VersionCheck
