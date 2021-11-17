@@ -911,7 +911,7 @@ fn_Transition()
                   chmod 660 ${file_Job}
                   ;;
         resume  ) fn_CheckOwner "${file_Job}"
-                  fn_LogWhy
+                  fn_LogWhy "${file_Job}"
                   fn_UpdateResumePoint "${file_Job}" "$(fn_GetResumePoint "${file_Log}")"
                   mv "${file_Link}" "${str_Target}"/.    ;;
         pause   ) fn_CheckOwner "${file_Job}"
@@ -922,7 +922,7 @@ fn_Transition()
                     touch "${dir_Active}"/"$(basename "${file_Job}").pause"
                     fn_Audit "${file_Job}" "pause set. Current task will not continue"
                   fi
-                  fn_LogWhy ;;
+                  fn_LogWhy "${file_Job}" ;;
 
        ## Cannot skip multiple jobs # s | S ) fn_UpdateResumePoint "${file_Job}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"  ;;
 
