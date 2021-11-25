@@ -259,6 +259,9 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
 	    p  ) fn_PressEnter ;;
 	    x  ) break ;;
     esac
+    if [[ ${str_JobState} == "completed" ]] ; then
+      break
+    fi
 
   done
 }
