@@ -373,7 +373,7 @@ fn_Cancel()
   int_CancelTask=${int_CancelTask:-0}
 
   echo "AUDIT:T:${int_CancelTask}:A" >> "${file_Link}"
-  fn_Audit "${file_Job}" "aborted [Task ${int_CancelTask}]"
+  fn_Audit "${file_Log}" "aborted [Task ${int_CancelTask}]"
 
   mv ${file_Link} ${dir_Completed}
 
@@ -397,7 +397,7 @@ fn_CopyTemplate()
     vi "${file_TmpCopy}"
   fi
 
-  if fn_Confirm "Copying template to new job" ; then
+  if fn_Confirm "Copy template to new job" ; then
     "${dir_Base}"/${str_ProgramName} -f "${file_TmpCopy}" -p "${dir_Plugins}/." -j "${dir_Job}/."
     echo " New job created from template"
     sleep 2

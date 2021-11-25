@@ -247,7 +247,7 @@ fn_Confirm()
   # =======================================
   local chr_YN
 
-  printf "\n $1. Are you sure (y/n) [n]? "
+  printf "\n $1? (y/n) [n]? "
   read -e chr_YN
   
   case $chr_YN in
