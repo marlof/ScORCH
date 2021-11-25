@@ -192,7 +192,7 @@ fn_FormatTasks()
       queued  | pending | new ) int_Task=$(grep "^int_ResumePoint=" ${file_Job} | head -1 | cut -d"=" -f2) ;;
       failed  | fixing        ) int_Task=$(grep "Resume point:" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | ${cmd_AWK} -F":" '{print $NF}') ;;
       running                 ) int_Task=$(grep "[0-9]*-[0-9]* Starting task" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2 | cut -d"/" -f1 ) ;;
-      completed               ) int_Task=$(grep "[0-9]*-[0-9]* Completed task \[" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2- | cut -d"/" -f1); (( int_Task++ )) ;;
+      completed               ) int_Task=$(grep "[0-9]*-[0-9]* Completed task \[" ${dir_Log}/$(basename ${file_Job}).log | tail -1 | cut -d"[" -f2- | cut -d"/" -f1); (( int_Task+=1 )) ;;
     esac
     # [ $DEBUG ] && echo "str_JobState: ${str_JobState} int_Task: ${int_Task:-0}"
 
