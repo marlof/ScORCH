@@ -312,6 +312,10 @@ fn_NewJob()
   fn_ShowTop
   fn_ShowLine "-"
   fn_LoadFunctions "${dir_Plugins}" "SP_"
+
+  local int_Count=$(find -L "${dir_Plugins}" -name "XSP_*" | wc -l)
+  (( int_Count > 0 )) &&   printf "\nDisabled plugins: %s\n" ${int_Count}
+
   fn_GetRequest "${file_Template}"
   fn_GetRequestor
   fn_GetSent
