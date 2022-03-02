@@ -14,7 +14,7 @@ This will install the latest version (released or otherwise) into the current di
 
 Once you have installed ScOrch, try the following:
 
-Press the "n" & Enter to create a new job. ScOrch will refresh all the available plugins, display them to the scren and then drop into an input area.
+Press the "n" & Enter to create a new job. ScOrch will refresh all the available plugins, display them to the screen and then drop into an input area.
 
         INSTALL:        AZURECLI        OK
         INSTALL:            JAVA        OK
