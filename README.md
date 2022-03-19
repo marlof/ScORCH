@@ -66,7 +66,7 @@ A new job will now be created in ScOrch. Enter the number of the job and feel fr
 
      Amend rules | Copy | View | Edit | Log | tail | Queue | Tasks | Delete | Filter | eXit :
 
-Tasks is a good place to start to understand what the job consists o.
+Tasks is a good place to start to understand what the job consists of.
 
 Repeatable
 
