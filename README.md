@@ -10,7 +10,7 @@ Simplicity is a great virtue but it requires hard work to achieve it and educati
 
 This will install the latest version (released or otherwise) into the current directory:
 
-`wget http://www.autoscorch.com/downloads/install && chmod a+x install && ./install`
+`wget https://s3.eu-west-2.amazonaws.com/autoscorchdownload.com/install && chmod a+x install && ./install`
 
 Once you have installed ScOrch, try the following:
 
