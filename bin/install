@@ -1,7 +1,7 @@
 #!/bin/bash
 
-str_Protocol="http"
-dir_Location="autoscorch.com/downloads"
+str_Protocol="https"
+dir_Location="s3.eu-west-2.amazonaws.com/autoscorchdownload.com/"
 file_Version="version.txt"
 
 
