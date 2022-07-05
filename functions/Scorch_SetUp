@@ -204,6 +204,13 @@ fn_HouseKeeping()
   find -L "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Archive old active jobs
+  if [[ -f "${dir_Archived}/archived.tar" ]] ; then
+    # Check tar file for issue
+    if ! tar tvf ${dir_Archived}/archived.tar > /dev/null 2>&1 ; then
+      mv ${dir_Archived}/archived.tar ${dir_Archived}/archived.tar.$$
+    fi
+  fi
+
   ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived.tar" "{}" + 2>/dev/null )
   find -L "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
