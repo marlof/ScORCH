@@ -10,11 +10,11 @@ Simplicity is a great virtue but it requires hard work to achieve it and educati
 
 This will install the latest version (released or otherwise) into the current directory:
 
-`wget http://www.autoscorch.com/downloads/install && chmod a+x install && ./install`
+`wget https://s3.eu-west-2.amazonaws.com/autoscorchdownload.com/install && chmod a+x install && ./install`
 
 Once you have installed ScOrch, try the following:
 
-Press the "n" & Enter to create a new job. ScOrch will refresh all the available plugins, display them to the scren and then drop into an input area.
+Press the "n" & Enter to create a new job. ScOrch will refresh all the available plugins, display them to the screen and then drop into an input area.
 
         INSTALL:        AZURECLI        OK
         INSTALL:            JAVA        OK
@@ -66,7 +66,7 @@ A new job will now be created in ScOrch. Enter the number of the job and feel fr
 
      Amend rules | Copy | View | Edit | Log | tail | Queue | Tasks | Delete | Filter | eXit :
 
-Tasks is a good place to start to understand what the job consists o.
+Tasks is a good place to start to understand what the job consists of.
 
 Repeatable
 
