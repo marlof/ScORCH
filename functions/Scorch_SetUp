@@ -83,9 +83,13 @@ fn_CheckSetUp()
     for str_Command in ${arr_Commands} ; do
       printf "\tChecking for ${str_Command}:\t"
       which ${str_Command} 2>/dev/null
-      if [[ $? != 0 ]] ; then 
-        printf "not found. ${str_Install} ${str_Command}\n"
-        b_SetUp=1 
+      if [[ $? != 0 ]] ; then
+        if [[ "${str_Command}" == "python" ]] && [[ ${str_ShowJobs} != "python" ]] ; then
+          echo "Using slow method"
+        else
+          printf "not found. ${str_Install} ${str_Command}\n"
+          b_SetUp=1
+        fi
       fi
     done
     set -e
