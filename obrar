@@ -601,7 +601,7 @@ fn_ProcessFunctions()
     int_ReturnCode=${PIPESTATUS[0]}
     str_FunctionName=${str_ProgramName}
 
-    if [ ${int_ReturnCode} != 0] ; then
+    if [ ${int_ReturnCode} != 0 ] ; then
 
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
