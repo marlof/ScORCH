@@ -72,7 +72,6 @@ typeset    str_ProgramName="$(basename "$0")"
 typeset   str_FunctionName="${str_ProgramName}"
 typeset            dir_Run="$(dirname "$0")"
 typeset             str_OS="$(uname -o)"
-#typeset           dir_Orig="$(pwd)/${dir_Run}"
 typeset           dir_Orig="$(cd "$dir_Run" && pwd)"
 typeset        cmd_LogDate="date +%y%m%d-%H%M%S"
 typeset           file_Log=/dev/null
@@ -84,12 +83,7 @@ typeset        int_EndTime=0
 
 
 # Protect from undeclared variables
-set -u 
-
-
-# The running directory $dir_Run will become the str_BaseDir and will be dependant on a relative or absolute path
-#typeset dir_Base=$(fn_BaseDir "${dir_Run}")
-#echo $dir_Base
+set -u
 
 # User maintainable
 typeset         str_CommonBase=projects
@@ -114,7 +108,6 @@ typeset        dir_Var="${dir_Base}/${str_Var}"
 typeset  dir_Functions="${dir_Common}/${str_Functions}"
 typeset    dir_LogBase="${dir_Var}/${str_ProgramName}/${str_Log}/"
 typeset  str_LogPrefix="$(date +%y%m%d-%H%M%S)-"
-#typeset      _Log=$(date +%Y%m)
 typeset        dir_Tmp="${dir_Base}/${str_Tmp}"
 typeset    dir_Timings="${dir_Var}/${str_ProgramName}/${str_Timings}"
 typeset      int_JobID=
@@ -136,24 +129,17 @@ typeset      str_Group=
 
 # These function definitions are being stubbed until real one loaded
 fn_LogDate() { printf "$($cmd_LogDate) %s\n" "$*";}
-Message() { printf "$($cmd_LogDate) %15s INFO  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log} ;}
 Message()
 {
-  #echo $str_Logging
-if [ ! -z ${str_Logging} ] ; then
-  printf "$($cmd_LogDate) %15s INFO  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log}
-else 
-  printf "$($cmd_LogDate) %15s FUNC  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"
-fi
-#printf "$($cmd_LogDate) %15s INFO  $@\n" "[${str_FunctionName}:${int_WarningCount}]" >> ${file_Log}
-#echo >> $LOG_FILE "INFORM[${PROG_NAME}] $1 (on `date '+%D %T'`)"
-# LIBRARY FUNCTION 
-# DO NOT MODIFY
+  if [ ! -z ${str_Logging} ] ; then
+    printf "$($cmd_LogDate) %15s INFO  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log}
+  else 
+    printf "$($cmd_LogDate) %15s FUNC  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"
+  fi
 }
 Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
-Error()   { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
-Warning() { (( int_WarningCount ++ )); printf "$($cmd_LogDate) %15s WARN  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
-
+Error()   { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
+Warning() { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s WARN  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
 fn_GetJobID()
 {
@@ -164,7 +150,6 @@ fn_GetJobID()
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
 
   typeset local file_JobIDLock="${file_JobID}".lock
-  #fn_CreateFile "$file_JobIDLock"
   if ( set -o noclobber; true > "${file_JobIDLock}") 2> /dev/null ; then
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
@@ -175,26 +160,11 @@ fn_GetJobID()
     echo ${int_JobID} > "${file_JobID}"
     rm -f "${file_JobIDLock}"
   else
-    Error "Could not get exclusive lock. Try again.\n If the issue persists remove the lock file ${file_JobIDLock}\n"
+    Error "Could not get exclusive lock. Try again.\n If the issue persists remove the lock file '${file_JobIDLock}'\n"
     exit 1
   fi
 }
 readonly -f fn_GetJobID
-
-
-#fn_CreateFile()
-#{
-#  Verbose "Entering ${FUNCNAME}"
-#  typeset local file_Name="${1:-}"
-#  typeset local b_Blank="${2:-}"
-#  Verbose "Creating file <${file_Name}>"
-#  touch "${file_Name}" 
-#  [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
-#  chmod 664 "${file_Name}"
-#  [[ "${b_Blank}" ]] && > "${file_Name}"
-#}
-#readonly -f fn_CreateFile
-
 
 fn_CreateFile()
 {
@@ -203,13 +173,13 @@ fn_CreateFile()
   if touch "${file_Name}" ; then
     :
   else
-    echo "Error: Cannot create file ${file_Name}"
+    echo "Error: Cannot create file '${file_Name}'"
     exit 1
   fi
   chmod 664 "${file_Name}" 2>/dev/null
   [[ "${b_Blank}" ]] && true > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
-    Verbose "chgrp file ${file_Name} with chgrp ${str_Group} " && sleep 2
+    Verbose "chgrp file '${file_Name}' with chgrp ${str_Group} " && sleep 2
     chgrp ${str_Group} "${file_Name}" || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
   else
     :
@@ -223,7 +193,7 @@ fn_Mkdir()
   typeset local dir_Name="${1}"
   mkdir -p -m 770 "${dir_Name}"
   if [[ ! -z ${str_Group} ]] ; then
-    Verbose "chgrp dir ${dir_Name} with chgrp ${str_Group} " && sleep 2
+    Verbose "chgrp dir '${dir_Name}' with chgrp ${str_Group} " && sleep 2
     chgrp ${str_Group} "${dir_Name}" || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
   else
     :
@@ -261,18 +231,18 @@ OPTIONS
 
 EXAMPLES
 \t${str_ProgramName} -v DEMO\n
-\tWill show verbose output from ${str_ProgramName} and run functions/
+\tWill show verbose output from '${str_ProgramName}' and run functions/
 \tdefined in the ${file_TagDefinition} file by the DEMO tag
 
 \t${str_ProgramName} DEMO -v\n
-\tWill run functions defined in the ${file_TagDefinition} file and
+\tWill run functions defined in the '${file_TagDefinition}' file and
 \tpass the -v flag as an argument to the DEMO tag
 
 \t${str_ProgramName} -l\n
-\tList all TAG definitions from all ${file_TagDefinition} files
+\tList all TAG definitions from all '${file_TagDefinition}' files
 
 \t${str_ProgramName} -l DEM\n
-\tList all TAG definitions from all ${file_TagDefinition} files that
+\tList all TAG definitions from all '${file_TagDefinition}' files that
 \tcontain the matching string 'DEM' either in tag name, variables or
 \tfunction list
 
@@ -287,7 +257,6 @@ Message
 Verbose
 Error
 Warning
-
 
 "
 
@@ -318,11 +287,11 @@ fn_Timings()
           printf "Runs\tMin\tMax\tAverage\n"
           sed 's/,/\t/g' "${file_Timing}"
         else
-          Warning "No functions timing file found ${file_Timing}"
+          Warning "No functions timing file found '${file_Timing}'"
         fi
       done
     else
-      Message "No timings or not readable ${file_Timing}"
+      Message "No timings or not readable '${file_Timing}'"
     fi
    fi
 }
@@ -385,7 +354,6 @@ fn_CheckSetUp()
     exit 0
   fi
 
-
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\nThere are missing files and directories.\n"
     printf "To install run the following command as the framework owner:\n"
@@ -399,7 +367,7 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  Verbose "Making log directory mkdir -p -m 775 ${dir_LogBase}"
+  Verbose "Making log directory mkdir -p -m 775 '${dir_LogBase}'"
   fn_Mkdir "${dir_LogBase}"
 
   [[ -z ${file_TagDefinition} ]] && Error "No file_TagDefinition defined"
@@ -609,18 +577,18 @@ fn_ProcessFunctions()
     else
       # Check for function in SPACE directory
       Verbose "Checking ${str_Project} space"
-      if [ -r ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function} ] ; then
-        source ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}
-        typeset -f ${str_Function} >/dev/null 2>&1 || Error "There was no function called ${str_Function} in ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}"
-      elif [ -r ${dir_Common}/${str_Functions}/${str_Function} ] ; then
+      if [ -r "${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}" ] ; then
+        source "${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}"
+        typeset -f ${str_Function} >/dev/null 2>&1 || Error "There was no function called ${str_Function} in '${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}'"
+      elif [ -r "${dir_Common}/${str_Functions}/${str_Function}" ] ; then
         Verbose "Found ${str_Function} in ${dir_Common}/${str_Function} area."
-        source ${dir_Common}/${str_Functions}/${str_Function}
-        typeset -f ${str_Function} >/dev/null 2>&1 || Error "There was no function called ${str_Function} in ${dir_Common}/${str_Functions}/${str_Function}"
+        source "${dir_Common}/${str_Functions}/${str_Function}"
+        typeset -f ${str_Function} >/dev/null 2>&1 || Error "There was no function called ${str_Function} in '${dir_Common}/${str_Functions}/${str_Function}'"
       else
-        if [ -f ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function} ] ; then
-          Error "Found a function file but its not readable: ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}"
+        if [ -f "${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}" ] ; then
+          Error "Found a function file but its not readable: '${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}'"
         else
-          Error "Cannot find the function file: ${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}"
+          Error "Cannot find the function file: '${dir_Project}/${str_LProject}/${str_Functions}/${str_Function}'"
         fi
       fi
     fi
@@ -634,11 +602,6 @@ fn_ProcessFunctions()
     str_FunctionName=${str_ProgramName}
 
     if [ ${int_ReturnCode} != 0] ; then
-
-      if [ ${int_ReturnCode} != 111 ] ; then
-        Warning "The function <${str_Function}> aborted abnormally."
-        Warning "Consider using the  Error \"<text>\" command"
-      fi
 
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
@@ -705,6 +668,19 @@ fn_Footer()
   Message ${SEPERATOR}  
 }
 readonly -f fn_Footer
+
+fn_LoadFunctions()
+{
+  local str_Project=${1:-common}
+  Verbose "load ${str_Project}/functions"
+  local lst_Functions=$(find ${dir_Common}/${str_Functions} -name "fn_*" -type f)
+  for file_Function in ${lst_Functions} ; do
+    if [ -r ${file_Function} ] ; then
+      Verbose "Sourcing ${file_Function}"
+      source ${file_Function} || Error "There in common function <${file_Function}>"
+    fi
+  done
+}
 
 fn_LogTrap()
 {
@@ -774,21 +750,9 @@ fn_GetJobID
 
 # Set Common envs
 fn_SourceSpaceEnvFile ${str_CommonName}
-# Load common functions
-fn_LoadFunctions()
-{
-  local str_Project=${1:-common}
-  Verbose "load ${str_Project}/functions"
-  local lst_Functions=$(find ${dir_Common}/${str_Functions} -name "fn_*" -type f)
-  for file_Function in ${lst_Functions} ; do
-    if [ -r ${file_Function} ] ; then
-      Verbose "Sourcing ${file_Function}"
-      source ${file_Function} || Error "There in common function <${file_Function}>"
-    fi
-  done
-}
-fn_LoadFunctions common
 
+# Load common functions
+fn_LoadFunctions common
 
 # Now that we know what we are dealing with, create the log file directory and set the log file
 dir_LogSpace=${dir_LogBase}/$(date +%Y%m)
