@@ -63,65 +63,66 @@
 #                           #98 Improved standard error output
 # 1.8 191111    marc        #130 Restricted search to project dir and silence grep signal 13
 # 1.9 200529    marc        shellcheck start
-# 1.10 200613   marc        #146 Directory fixes for install 
+# 1.10 200613   marc        #146 Directory fixes for install
+# 1.11 221007   marc        shellcheck improvements and colour warn/error
 # shellcheck disable=SC2174
 
 # Program settings
-typeset str_ProgramVersion="1.10"
-typeset    str_ProgramName="$(basename "$0")"
-typeset   str_FunctionName="${str_ProgramName}"
-typeset            dir_Run="$(dirname "$0")"
-typeset             str_OS="$(uname -o)"
-typeset           dir_Orig="$(cd "$dir_Run" && pwd)"
-typeset        cmd_LogDate="date +%y%m%d-%H%M%S"
-typeset           file_Log=/dev/null
-typeset   int_WarningCount=0
+str_ProgramVersion="1.10"
+str_ProgramName="$(basename "$0")"
+str_FunctionName="${str_ProgramName}"
+dir_Run="$(dirname "$0")"
+str_OS="$(uname -o)"
+dir_Orig="$(cd "$dir_Run" && pwd)"
+cmd_LogDate="date +%y%m%d-%H%M%S"
+file_Log=/dev/null
+int_WarningCount=0
 
 # Statistics
-typeset      int_StartTime=$(date +%s)
-typeset        int_EndTime=0
-
+int_StartTime=$(date +%s)
+int_EndTime=0
 
 # Protect from undeclared variables
 set -u
+set -eio pipefail
 
 # User maintainable
-typeset         str_CommonBase=projects
-typeset         str_CommonName=common
-typeset                str_Etc=etc
-typeset                str_Var=var
-typeset                str_Tmp=tmp
-typeset                str_Log=log
-typeset            str_Timings=stats
-typeset          str_Functions=functions
-typeset     file_TagDefinition=${str_ProgramName}.def
-typeset            file_Config=${str_ProgramName}.env
-typeset str_FunctionIdentifier="fn_"
-typeset SEPERATOR="====================================================================="
+str_CommonBase=projects
+str_CommonName=common
+str_Etc=etc
+str_Var=var
+str_Tmp=tmp
+str_Log=log
+str_Timings=stats
+str_Functions=functions
+file_TagDefinition=${str_ProgramName}.def
+file_Config=${str_ProgramName}.env
+str_FunctionIdentifier="fn_"
+SEPERATOR="====================================================================="
 
 # System maintainable
-typeset       dir_Base="$(cd "${dir_Run}" && pwd || /tmp )"
-typeset    dir_Project="${dir_Base}/${str_CommonBase}"
-typeset     dir_Common="${dir_Base}/${str_CommonBase}/${str_CommonName}"
-typeset        dir_Etc="${dir_Common}/${str_Etc}"
-typeset        dir_Var="${dir_Base}/${str_Var}"
-typeset  dir_Functions="${dir_Common}/${str_Functions}"
-typeset    dir_LogBase="${dir_Var}/${str_ProgramName}/${str_Log}/"
-typeset  str_LogPrefix="$(date +%y%m%d-%H%M%S)-"
-typeset        dir_Tmp="${dir_Base}/${str_Tmp}"
-typeset    dir_Timings="${dir_Var}/${str_ProgramName}/${str_Timings}"
-typeset      int_JobID=
-typeset int_ReturnCode=
-typeset      b_Install=
-typeset  b_Interactive=1
-typeset        str_Tag=
-typeset  b_FoundConfig=0
-typeset      b_Verbose=
-typeset    str_Project=
-typeset   str_LProject=
-typeset  str_TimingExt=".tim"
-typeset    str_Logging=file
-typeset      str_Group=
+dir_Base="$(cd "${dir_Run}" && pwd || /tmp )"
+dir_Project="${dir_Base}/${str_CommonBase}"
+dir_Common="${dir_Base}/${str_CommonBase}/${str_CommonName}"
+dir_Etc="${dir_Common}/${str_Etc}"
+dir_Var="${dir_Base}/${str_Var}"
+dir_Functions="${dir_Common}/${str_Functions}"
+dir_LogBase="${dir_Var}/${str_ProgramName}/${str_Log}/"
+str_LogPrefix="$(date +%y%m%d-%H%M%S)-"
+dir_Tmp="${dir_Base}/${str_Tmp}"
+dir_Timings="${dir_Var}/${str_ProgramName}/${str_Timings}"
+int_JobID=
+int_ReturnCode=
+b_Install=
+b_Interactive=1
+str_Tag=
+b_FoundConfig=0
+b_Verbose=
+str_Project=
+str_LProject=
+str_TimingExt=".tim"
+str_Logging="file"
+str_Group=
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch
 # [ ! -z ${str_Group} ] && umask 0007
@@ -137,9 +138,12 @@ Message()
     printf "$($cmd_LogDate) %15s FUNC  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"
   fi
 }
-Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s DEBUG %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
-Error()   { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s ERROR ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]" ; printf "$($cmd_LogDate) %15s ERROR %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s ERROR After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
-Warning() { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s WARN  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
+Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s \e[90mDEBUG\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
+Error()   {
+  (( int_WarningCount=int_WarningCount + 1 ))
+  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]"
+  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
+Warning() { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s \e[33mWARN\e[0m  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
 fn_GetJobID()
 {
@@ -149,7 +153,7 @@ fn_GetJobID()
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
 
-  typeset local file_JobIDLock="${file_JobID}".lock
+  declare file_JobIDLock="${file_JobID}".lock
   if ( set -o noclobber; true > "${file_JobIDLock}") 2> /dev/null ; then
     if [ -r "${file_JobID}" ] ; then
       int_JobID=$(cat "${file_JobID}")
@@ -157,7 +161,7 @@ fn_GetJobID()
       int_JobID=0
     fi
     (( int_JobID++ ))
-    echo ${int_JobID} > "${file_JobID}"
+    echo "${int_JobID}" > "${file_JobID}"
     rm -f "${file_JobIDLock}"
   else
     Error "Could not get exclusive lock. Try again.\n If the issue persists remove the lock file '${file_JobIDLock}'\n"
@@ -168,8 +172,8 @@ readonly -f fn_GetJobID
 
 fn_CreateFile()
 {
-  typeset local file_Name="${1:-}"
-  typeset local b_Blank="${2:-}"
+  declare file_Name="${1:-}"
+  declare b_Blank="${2:-}"
   if touch "${file_Name}" ; then
     :
   else
@@ -180,7 +184,7 @@ fn_CreateFile()
   [[ "${b_Blank}" ]] && true > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp file '${file_Name}' with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} "${file_Name}" || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
+    chgrp "${str_Group}" "${file_Name}" || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
   else
     :
     Verbose "Creating default file $file_Name <${str_Group}>"
@@ -190,11 +194,11 @@ readonly -f fn_CreateFile
 
 fn_Mkdir()
 {
-  typeset local dir_Name="${1}"
+  declare dir_Name="${1}"
   mkdir -p -m 770 "${dir_Name}"
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp dir '${dir_Name}' with chgrp ${str_Group} " && sleep 2
-    chgrp ${str_Group} "${dir_Name}" || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
+    chgrp "${str_Group}" "${dir_Name}" || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
   else
     :
     Verbose "Creating dir $dir_Name <${str_Group}>"
@@ -266,17 +270,19 @@ readonly -f fn_Help
 
 fn_Timings()
 {
-  typeset local str_FunctionName=${1:-}
-  typeset local file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
+  declare str_FunctionName=${1:-}
+  declare file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
+  declare str_Functions
+  declare int_Diff str_Diff
   fn_CreateFile "$file_Timing"
-  typeset local int_Diff= str_Diff=
+
   if [ -r "${file_Timing}" ] ; then
     Message "Timings function:${str_FunctionName}"
     printf "Runs\tMin\tMax\tAverage\n"
     sed 's/,/\t/g' "${file_Timing}"
   else
     Message "Checking TAGs"
-    typeset local str_Functions="$(fn_ListTags "${str_FunctionName}" timings | cut -d"|" -f4)"
+    str_Functions="$(fn_ListTags "${str_FunctionName}" timings | cut -d"|" -f4)"
     Verbose "Functions: <${str_Functions}>"
     if [ ! -z "${str_Functions}" ] ; then
       for str_EachFunction in ${str_Functions} ; do
@@ -300,9 +306,9 @@ readonly -f fn_Timings
 fn_CheckSetUp()
 {
   Verbose "Entering ${FUNCNAME[0]}"
-  typeset b_SetUp=         # Is this the first run
+  declare b_SetUp=         # Is this the first run
 
-  if [[ ! -z ${str_Group} ]] ; then
+  if [[ -n ${str_Group} ]] ; then
     # Check str_Group is ont of groups
     if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
@@ -316,15 +322,15 @@ fn_CheckSetUp()
   fi
 
   # This function will check that all Scorch components are set to allow a smooth run.
-  typeset local lst_Directories="dir_Common dir_Var dir_Etc dir_LogBase dir_Tmp dir_Timings"
+  declare lst_Directories="dir_Common dir_Var dir_Etc dir_LogBase dir_Tmp dir_Timings"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
   for p_Variable in ${lst_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
-      printf "\n# ${p_Variable}\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
+      printf "\n# %s\n\tmkdir -p -m 770 \"%s\"" "${p_Variable}" "${!p_Variable}" && b_SetUp=1
       [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
       if [[ ! -z ${str_Group} ]] ; then
         Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2
-        printf "\n\tchgrp ${str_Group} ${!p_Variable}"
+        printf "\n\tchgrp %s %s" "${str_Group}" "${!p_Variable}"
       fi
     fi
   done
@@ -344,7 +350,7 @@ fn_CheckSetUp()
 
     # Create DEMO tag
     if [[ ! -f "${dir_Project}/demo/${str_Etc}/${file_TagDefinition}" ]] ; then 
-      printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | ${str_FunctionIdentifier}Demo1" >> "${dir_Project}/demo/${str_Etc}/${file_TagDefinition}"
+      printf "#  TAG  | reserved | Args      | functions\nDEMO1     |  DEMO      | R:TIME:t: | %sDemo1" "${str_FunctionIdentifier}" >> "${dir_Project}/demo/${str_Etc}/${file_TagDefinition}"
     fi
     # Create DEMO function
     printf "${str_FunctionIdentifier}Demo1()\n{\n  Message \"Sleeping for \$TIME seconds\"\n  sleep \$TIME\n}\n" > "${dir_Project}/demo/${str_Functions}/${str_FunctionIdentifier}Demo1"
@@ -361,9 +367,10 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  typeset local lst_ConfigFiles=$(find -L "${dir_Project}" -name "${file_TagDefinition}")
+  declare lst_ConfigFiles=
+  lst_ConfigFiles=$(find -L "${dir_Project}" -name "${file_TagDefinition}")
   if [[ ${#lst_ConfigFiles} = 0 ]] ; then
-    printf "Could not find any config files (${file_TagDefinition}) from directory (${dir_Base})\n"
+    printf "Could not find any config files (%x) from directory (%s)\n" "${file_TagDefinition}" "${dir_Base}"
     exit 1
   fi
 
@@ -402,13 +409,13 @@ fn_ListTags()
   # file_TagDefinition=
   Verbose "Entering ${FUNCNAME[0]}"
   Verbose "Checking for file_TagDefinition files <${file_TagDefinition}> from ${dir_Project}"
-  typeset local  str_Grep="${1:-}"
-  typeset local b_Timings="${2:-}"
-  [ ! -z "${b_Timings}" ] && b_Timings="-w"
+  declare  str_Grep="${1:-}"
+  declare b_Timings="${2:-}"
+  [ -n "${b_Timings}" ] && b_Timings="-w"
   if [[ -z "${str_Grep}" ]] ; then
-    find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -v ^# {} \; 2>/dev/null
+    find -L "${dir_Project}" -name "${file_TagDefinition}" -"${FIND_EXEC}" grep -v ^# {} \; 2>/dev/null
   else
-    find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -v ^# {} \; | grep -i ${b_Timings} ${str_Grep} 2>/dev/null
+    find -L "${dir_Project}" -name "${file_TagDefinition}" -"${FIND_EXEC}" grep -v ^# {} \; | grep -i ${b_Timings} "${str_Grep}" 2>/dev/null
   fi
   set +x
 }
@@ -422,7 +429,8 @@ fn_ProcessTag()
   Verbose " Tag Args : \"${lst_TagArgs}\""
   Verbose ${SEPERATOR}
   str_TagLine=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -${FIND_EXEC} grep -w ^${str_Tag} {} \;)
-  typeset local int_TagCount=$(echo "${str_TagLine}" | wc -l )
+  declare int_TagCount
+  int_TagCount=$(echo "${str_TagLine}" | wc -l )
 
   if [ ${int_TagCount} -ge 2 ] ; then
     Warning "Multiple tags found. Modify or remove tags in the following files:"
@@ -448,7 +456,8 @@ fn_ProcessTag()
   
   # Get project space details from config
   # =====================================
-  typeset local str_Tmp=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -exec grep -l -w ^${str_Tag} {} \; )
+  declare str_Tmp
+  str_Tmp=$(find -L "${dir_Project}" -name "${file_TagDefinition}" -exec grep -l -w ^${str_Tag} {} \; )
   str_Project=$(echo "${str_Tmp#${dir_Project}/}" | cut -d/ -f1)
 
   # Process again to remove leading and trailing spaces
@@ -460,7 +469,8 @@ fn_ProcessTag()
   
   # Get tag arguments list from config
   # ==================================
-  typeset local str_ConfigArgs=$(echo "${str_TagLine}" | awk -F"|" '{print $3}')
+  declare str_ConfigArgs
+  str_ConfigArgs=$(echo "${str_TagLine}" | awk -F"|" '{print $3}')
   Verbose "  Tag arg check : <${str_ConfigArgs}>"
 
   # Process required and optional arguments against passed arugments
@@ -478,14 +488,14 @@ fn_ProcessTag()
     fi
     # If there are 4 colons, then its not a flag and requires a value
     # If there are only 3 colons its a flag
-    if [ $(echo ${str_EachConfigArg} | awk -F":" '{print NF}' ) -eq 4 ] ; then
+    if [ "$(echo ${str_EachConfigArg} | awk -F":" '{print NF}' )" -eq 4 ] ; then
       b_Flag=0
     else
       b_Flag=1
     fi
 
     # Check if the argument is required or optional
-    typeset local b_Found=0                 # Used to check required variables are passed
+    declare b_Found=0                 # Used to check required variables are passed
     case ${str_Required} in
       R ) b_Required=1 ;;
       O ) b_Required=0 ;;
@@ -493,7 +503,7 @@ fn_ProcessTag()
     esac
     Verbose "  Checks Required:${b_Required} Variable:${str_VariableName} Label:-${str_ArgumentLabel} Flag:${b_Flag}"
 
-    typeset local str_SetNextArg=           # Used to hold the next argument
+    declare str_SetNextArg=           # Used to hold the next argument
 
     # Process the TAG configuration items, looking for valid arguments in the command line
     for str_EachArg in "${arr_TagArgs[@]}" ; do
@@ -535,8 +545,8 @@ readonly -f fn_ProcessTag
 
 fn_SourceSpaceEnvFile()
 {
-  typeset local str_LProject=${1:-}
-  Verbose "Entering ${FUNCNAME}"
+  declare str_LProject=${1:-}
+  Verbose "Entering ${FUNCNAME[0]}"
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
   Verbose "  Looking for a environment ${file_Config} config file in ${dir_Project}/${str_LProject}/${str_Etc}"
   if [ -r "${dir_Project}/${str_LProject}/${str_Etc}/${file_Config}" ] ; then
@@ -560,20 +570,21 @@ readonly -f fn_SourceSpaceEnvFile
 fn_ProcessFunctions()
 {
   Verbose "Entering ${FUNCNAME[0]}"
-  typeset local lst_Functions=$(echo ${str_TagLine} | cut -d'|' -f4)
+  lst_Functions=$(echo ${str_TagLine} | cut -d'|' -f4)
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
 
-  Message "  Function list : ${lst_Functions}"
+  Message "  Function list : <${lst_Functions}>"
 
   for str_Function in ${lst_Functions} ; do
     Message ${SEPERATOR}
     # Setting audit line 
-    str_FunctionName=${str_Function}
+    str_FunctionName="${str_Function}"
+
     typeset -f "${str_Function}" >/dev/null 2>&1
     if [ $? = 0 ] ; then
       # COMMON Function being used
       Verbose "Common function found"
-      Message ${str_Function}
+      Message "${str_Function}"
     else
       # Check for function in SPACE directory
       Verbose "Checking ${str_Project} space"
@@ -592,8 +603,9 @@ fn_ProcessFunctions()
         fi
       fi
     fi
-    typeset local int_StartTime=$(date +%s)
-    typeset local   int_EndTime=
+    declare int_StartTime
+    int_StartTime=$(date +%s)
+    declare   int_EndTime=
 
     # Process Function
     str_Logging=
@@ -601,14 +613,14 @@ fn_ProcessFunctions()
     int_ReturnCode=${PIPESTATUS[0]}
     str_FunctionName=${str_ProgramName}
 
-    if [ ${int_ReturnCode} != 0 ] ; then
+    if [ "${int_ReturnCode}" != 0 ] ; then
 
       Error "${str_Function} errored with status code ${int_ReturnCode}."
       exit 1 # Shouldnt actually get here but just in case
     fi
     int_EndTime=$(date +%s)
     (( int_EndTime = int_EndTime - int_StartTime ))
-    str_Logging=file
+    str_Logging="file"
 
 
     [[ ${b_Test} ]] || fn_UpdateTimings "${str_Function}" "${int_EndTime}"
@@ -622,18 +634,21 @@ fn_UpdateTimings()
 {
   # Statistics file in a csv format
   # Run counter, LOW, HIGH, Average
-  typeset local str_FunctionName=${1:-}
-  typeset local int_Timing=${2:-}
-  typeset local file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
+  declare str_FunctionName=${1:-}
+  declare int_Timing=${2:-}
+  declare file_Timing="${dir_Timings}/${str_FunctionName}${str_TimingExt}"
   fn_CreateFile "$file_Timing"
-  typeset local int_Diff= str_Diff=
+  declare int_Diff str_Diff
   if [ -r "${file_Timing}" ] ; then
-    typeset local str_Stats=$(cat ${file_Timing})
-    typeset local int_Runs=${str_Stats%%,*}
-    typeset local int_Min=$(echo ${str_Stats} | cut -d"," -f2)
-    typeset local int_Max=$(echo ${str_Stats} | cut -d"," -f3)
+    declare str_Stats
+    str_Stats=$(cat ${file_Timing})
+    declare int_Runs=${str_Stats%%,*}
+    declare int_Min
+    int_Min=$(echo ${str_Stats} | cut -d"," -f2)
+    declare int_Max
+    int_Max=$(echo ${str_Stats} | cut -d"," -f3)
     int_Min=${int_Min:-${int_Max}}
-    typeset local int_CurrentAverage=${str_Stats##*,}
+    declare int_CurrentAverage=${str_Stats##*,}
     if (( int_CurrentAverage < int_Timing )) ; then
       (( int_Diff = int_Timing - int_CurrentAverage ))
       str_Diff="slower"
@@ -659,7 +674,7 @@ fn_UpdateTimings()
 
 fn_Footer()
 {
-  Verbose "Entering ${FUNCNAME}"
+  Verbose "Entering ${FUNCNAME[0]}"
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
   int_EndTime=$(date +%s)
   (( int_EndTime = int_EndTime - int_StartTime ))
@@ -671,13 +686,14 @@ readonly -f fn_Footer
 
 fn_LoadFunctions()
 {
-  local str_Project=${1:-common}
+  declare str_Project=${1:-common}
   Verbose "load ${str_Project}/functions"
-  local lst_Functions=$(find ${dir_Common}/${str_Functions} -name "fn_*" -type f)
+  declare lst_Functions
+  lst_Functions=$(find "${dir_Common}"/"${str_Functions}" -name "fn_*" -type f)
   for file_Function in ${lst_Functions} ; do
-    if [ -r ${file_Function} ] ; then
+    if [ -r "${file_Function}" ] ; then
       Verbose "Sourcing ${file_Function}"
-      source ${file_Function} || Error "There in common function <${file_Function}>"
+      source "${file_Function}" || Error "There in common function <${file_Function}>"
     fi
   done
 }
@@ -694,9 +710,9 @@ trap "fn_LogTrap \"killed\"" 2 5 15
 # ===================================================================
 Verbose "Sourcing common project etc files and functions"
 if [[ -r "${dir_Functions}" ]] ; then
-  for file_CommonFunction in $(ls "${dir_Functions}/${str_FunctionIdentifier}"* 2>/dev/null) ; do
+  for file_CommonFunction in "${dir_Functions}/${str_FunctionIdentifier}"* ; do
     Verbose "  ${file_CommonFunction}"
-    ( bash ${dir_Functions}/${file_CommonFunction} >/dev/null 2>&1 ) && source ${dir_Functions}/${file_CommonFunction}
+    ( bash "${dir_Functions}"/"${file_CommonFunction}" >/dev/null 2>&1 ) && source "${dir_Functions}"/"${file_CommonFunction}"
   done
 else
   Warning "Cannot access common functions directory: ${dir_Functions}"
@@ -710,7 +726,7 @@ typeset     lst_TagArgs=""    # Easier for VERBOSE display
 typeset      b_ListTags=""
 typeset          b_Test=""
 
-[[ ${BASH_VERSION%%.*} -ge 4 ]] && FIND_EXEC=execdir || FIND_EXEC=exec
+[[ ${BASH_VERSION%%.*} -ge 4 ]] && FIND_EXEC=execdir || FIND_EXEC="exec"
 
 Verbose "Processing ${str_ProgramName} Arguments list"
 while [ $# -gt 0 ] ; do
@@ -719,10 +735,10 @@ while [ $# -gt 0 ] ; do
     -v | --verbose  ) b_Verbose=1 ;;
     -h | --help     ) fn_Help     ;;
     -test | --test  ) b_Test=1    ;;
-    -n              ) b_Interactive=0   ;;	
+    -n              ) b_Interactive="0"   ;;	
     -l | --list     ) b_ListTags="TRUE" ;; 
     -install        ) b_Install=1 ;;
-    -t | --timings  ) fn_Timings ${2:-DEMO}  ; exit 0 ;;
+    -t | --timings  ) fn_Timings "${2:-DEMO}"  ; exit 0 ;;
     # To allow the same arguments to be passed to TAGS break here 
     *           ) str_Tag=${str_Arg} ; shift ; break ;;
   esac
@@ -732,7 +748,7 @@ done
 
 # Now process the arguments to the TAG 
 Verbose "Processing TAG <${str_Tag}> arguments"
-typeset local int_TagArrayCount=0
+declare int_TagArrayCount=0
 while [ $# -gt 0 ] ; do
   lst_TagArgs="${lst_TagArgs} ${1}"
   arr_TagArgs[${int_TagArrayCount}]="${1}"
@@ -742,7 +758,7 @@ done
 Verbose "lst_TagArgs:${lst_TagArgs}"
 
 # If only asked to list the TAGs - only list the TAGs
-[ "${b_ListTags}" ] && fn_ListTags $str_Tag && exit 0
+[ "${b_ListTags}" ] && fn_ListTags "${str_Tag}" && exit 0
 
 # If its not the TAGs, check everything it set up and process the request
 fn_CheckSetUp
@@ -756,7 +772,7 @@ fn_LoadFunctions common
 
 # Now that we know what we are dealing with, create the log file directory and set the log file
 dir_LogSpace=${dir_LogBase}/$(date +%Y%m)
-fn_Mkdir ${dir_LogSpace}
+fn_Mkdir "${dir_LogSpace}"
 file_Log="${dir_LogSpace}/${str_LogPrefix}${str_Tag}-${int_JobID}.log"
 fn_CreateFile "$file_Log"
 
@@ -764,7 +780,7 @@ fn_CreateFile "$file_Log"
 # Start logging and processing
 fn_Header
 fn_ProcessTag #Update the timings of each function as we go. Base it on env just in case
-fn_SourceSpaceEnvFile ${str_LProject}
+fn_SourceSpaceEnvFile "${str_LProject}"
 #str_Logging=
 fn_ProcessFunctions #2>&1 | tee -a ${file_Log}
 #str_Logging=file
