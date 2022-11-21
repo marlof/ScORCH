@@ -84,7 +84,7 @@ fn_CheckSetUp()
       printf "\tChecking for ${str_Command}:\t"
       which ${str_Command} 2>/dev/null
       if [[ $? != 0 ]] ; then
-        if [[ "${str_Command}" == "python" ]] && [[ ${str_ShowJobs} != "python" ]] ; then
+        if [[ "${str_Command}" == "python3" ]] && [[ ${str_ShowJobs} != "python" ]] ; then
           echo "Using slow method"
         else
           printf "not found. ${str_Install} ${str_Command}\n"
