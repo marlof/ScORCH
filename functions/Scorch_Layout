@@ -146,7 +146,7 @@ fn_ShowJobs()
       [[ -r ${file_Cache} ]] && . ${file_Cache} || :
       #cat ${file_Cache}
     else
-      fn_ShowJobs2
+      fn_ShowJobs2 "${@}"
     fi
 }
 
@@ -164,6 +164,7 @@ fn_ShowJobs2()
 
   file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
   echo "#$$" > "${file_Cache}"
+  [[ ${cmd_TPUT} != echo ]] && int_ScreenWidth=$(${cmd_TPUT} cols) || int_ScreenWidth=$(echo ${COLUMS})
   int_ScreenWidth=$(echo ${COLUMNS})
   int_ScreenWidth=$(tput cols)
   for str_State in ${@} ; do
@@ -237,7 +238,7 @@ fn_ShowJobs2()
     }
     END {
       system("echo int_Count="linenum" >> "file_Cache )
-    }'
+    }' || :
     ##. ${file_Cache}
 #       cat "${file_Cache}"
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
