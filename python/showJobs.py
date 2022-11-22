@@ -34,8 +34,9 @@
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
 # 1.17      Marc Loftus     20/02/2020      Python 3
+# 1.18      Marc Loftus     01/11/2022      Wrap os.popen in try block
 ############################################################################################################
-str_ProgramVersion = '1.17'
+str_ProgramVersion = '1.18'
 
 import os, getpass, getopt, sys
 import time        # Used for ls sorting in time order
@@ -61,7 +62,11 @@ str_Time = ""
 int_Count             = 1
 str_ProgramName       = __file__
 int_PID               = os.getpid()
-int_Rows, int_Columns = os.popen('stty size', 'r').read().split()
+try:
+    int_Rows, int_Columns = os.popen('stty size', 'r').read().split()
+except:
+    int_Rows      = 25
+    int_Columns   = 120
 list_Dir              = []
 
 dir_Run=os.getcwd()
