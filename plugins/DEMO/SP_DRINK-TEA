@@ -1,18 +1,22 @@
-# The following instructions have been turned into a plugin
-#
-# 1 Before filling the kettle, run the water for a few seconds so it it nicely aeratedRun
-# 2 Boil the kettle
-# 3 Select a mug or a cup
-# 4 Pour the water directly onto the tea bag in the cup/mug 
-# 5 Leave to brew for a few minutes depending on taste [3/weak, 4/medium, 5/strong]
-# 6 Remove tea bag with a spoon giving just one gentle squeeze
-# 7 Add [whole/semi skimmed] milk to taste
-# 8 Add sugar to taste
-#
-# As steps become automated they can evolve from Manual "<steps>" to Task "<command>s"
-
 SP_DRINK-TEA()
 {
+: << DOCUMENTATION
+
+ The following instructions have been turned into a plugin
+
+ 1 Before filling the kettle, run the water for a few seconds so it it nicely aeratedRun
+ 2 Boil the kettle
+ 3 Select a mug or a cup
+ 4 Pour the water directly onto the tea bag in the cup/mug 
+ 5 Leave to brew for a few minutes depending on taste [3/weak, 4/medium, 5/strong]
+ 6 Remove tea bag with a spoon giving just one gentle squeeze
+ 7 Add [whole/semi skimmed] milk to taste
+ 8 Add sugar to taste
+
+ As steps become automated they can evolve from Manual "<steps>" to Task "<command>s"
+
+DOCUMENTATION
+
   # Use 'GetVar' to pass your own key pair values to the plugin
   # ===========================================================
   GetVar -pattern "Sugar" -name "SUGAR" -default 0

@@ -1,5 +1,10 @@
 SP_TEST()
 {
+: << DOCUMENTATION
+
+This plugin is for tests
+
+DOCUMENTATION
   GetVar -pattern "Test" -name TEST -default "" 
 #  MYTEST="echo"
 #  REGION="eu-west2b"
@@ -8,4 +13,5 @@ SP_TEST()
 #  DOCKER="docker run --rm --name aws2terra -e AWS_REGION=${REGION} "
 #  Task "$DOCKER aws2terra s3"
 #  Task "echo $SCHEDULE"
+sleep 4
 }

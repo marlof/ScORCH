@@ -1,5 +1,11 @@
 SP_DEMO-GROUP()
 {
+: << DOCUMENTATION
+
+This plugin demonstrates a group of tasks can be run in parallel
+
+DOCUMENTATION
+
   GetVar -pattern "Fail" -name FAIL -default ""
   Task "echo first task"
   StartGroup

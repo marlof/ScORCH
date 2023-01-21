@@ -1,5 +1,11 @@
 SP_FAIL()
 {
+: << DOCUMENTATION
+
+This plugin demonstrates the Try command where an error is ignored, but will finally fail
+
+DOCUMENTATION
+ 
   Message "I am the message"
   Sleep 10
   Try false

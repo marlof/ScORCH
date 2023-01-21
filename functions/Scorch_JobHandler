@@ -357,6 +357,8 @@ fn_GetRequest()
           echo "==CUSTOM============="
           declare -f "SP_${str_Help}" | grep -w "GetVar"
           echo "==============="
+          declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
+          echo "==============="
         fi
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break

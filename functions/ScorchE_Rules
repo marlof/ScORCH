@@ -64,6 +64,8 @@ fn_GetRequest()
           echo "==CUSTOM============="
           declare -f "SP_${str_Help}" | grep -w "GetVar"
           echo "==============="
+          declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
+          echo "==============="          
         fi
       elif [[ ${str_ULine} =~ INFO ]]; then
         local str_Info=${str_Line#info }
