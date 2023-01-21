@@ -1,5 +1,11 @@
 SP_DEMO-FLIPFLOP()
 {
+: << DOCUMENTATION
+
+This plugin shows how parallel tasks can be started and resumed after failure.
+
+DOCUMENTATION
+
   GetVar -pattern "Fail" -name FAIL -default ""
   Task "echo The first group will fail until the second group has run"
   Task "sleep 10"

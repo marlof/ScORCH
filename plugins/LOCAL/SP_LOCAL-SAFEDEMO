@@ -1,5 +1,11 @@
 SP_LOCAL-SAFEDEMO()
 {
+: << DOCUMENTATION
+
+This plugin demonstrates defining custom paramaters (with defaults)
+
+DOCUMENTATION
+
   GetVar -pattern "Pause" -name "PAUSE" -default "60"
   GetVar -pattern "Fail"  -name "FAIL"  -default "0"
   Task "hostname"

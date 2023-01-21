@@ -1,5 +1,14 @@
 SP_DEMO-GROUP2()
 {
+: << DOCUMENTATION
+
+The Production System example
+
+This plugin demonstrates a group of tasks can be run in parallel and includes
+manual steps that may simulate a production deployment.
+
+DOCUMENTATION
+
   GetVar -pattern "Fail" -name FAIL -default ""
   Task "ls"
   StartGroup
