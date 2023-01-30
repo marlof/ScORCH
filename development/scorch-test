@@ -1,8 +1,0 @@
-#!/bin/bash
-
-for x in {1..30} ; do
-  printf "$x"
-  sleep 1
-  printf "\r                                                                         \r "
-  sleep 5
-done
