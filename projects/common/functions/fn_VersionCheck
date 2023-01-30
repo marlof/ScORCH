@@ -1,0 +1,103 @@
+fn_VersionCheckDB()
+{
+  local TNS
+  TNSNAME=eppdev1
+
+  sqlplus $(keepsafe -r EPPADMIN_${ENVIRONMENT}_USER)/\'$(keepsafe -r EPPADMIN_${ENVIRONMENT}_PASSWORD)\'@${TNSNAME} <<EOF
+  select comp_id,version, version_full,comp_name from dba_registry;
+  quit
+EOF
+}
+
+fn_VersionCheckJava()
+{
+  local l_OS
+  l_OS=$(fservers -os $1)
+  if [[ ${l_OS^^} == "LINUX" ]] ; then
+    Message  "Checking java:$1"
+    ssh -o StrictHostKeyChecking=no $1 java -version
+  else
+    Message "Cant ssh to OS ${l_OS}"
+  fi
+}
+
+fn_VersionCheckWeblogic()
+{
+  local l_OS
+  l_OS=$(fservers -os $1)
+  if [[ ${l_OS^^} == "LINUX" ]] ; then
+    Message  "Checking weblogic:$1"
+    ssh -o StrictHostKeyChecking=no $1 java -cp /u01/app/wls/install/oracle/middleware/oracle_home/wlserver/server/lib/weblogic.jar weblogic.version
+  else
+    Message "Cant ssh to OS ${l_OS}"
+  fi
+}
+
+fn_VersionCheck2()
+{
+  Message "TYPE=$TYPE"
+  [[ ${TYPE^^} == "ALL" ]] && TYPE=""
+  [[ ${TYPE}   ]] && lst_TYPES="$(fcomp -type  ${TYPE})" || lst_TYPES="$(fcomp -type)"
+  Message "lst_TYPES="${lst_TYPES}
+  lst_Servers=$(  fservers -hostname -type  +env ${ENVIRONMENT})
+  Message "lst_Servers=${lst_Servers}"
+
+  for each_TYPE in ${lst_TYPES} ; do
+    echo $x
+    Message "Checking servers $lst_Servers for type ${each_TYPE}"
+  done
+  exit
+
+}
+
+fn_VersionCheck()
+{
+
+  fn_VersionCheck2
+  local l_SERVERS
+  local lst_TYPES=""
+  [[ ${TYPE^^} == "ALL" ]] && TYPE=""
+  [[ ${TYPE}   ]] && lst_TYPES="$(fcomp -type  ${TYPE})" || lst_TYPES="$(fcomp -type)"
+
+#  Message "lst_TYPES="${lst_TYPES}
+
+  l_SERVERS=$(fservers -hostname  +env ${ENVIRONMENT})
+#  Verbose "fservers -hostname  +env ${ENVIRONMENT}"
+  for each_SERVER in ${l_SERVERS} ; do
+    s_TYPE=$(fservers -type +hostname  ${each_SERVER})
+#    Message "Checking \""${lst_TYPES^^}\"" =~ ${s_TYPE^^}"
+    if [[ "${TYPE}" == "" ]] || [[ "${lst_TYPES^^}" =~ ${s_TYPE^^} ]] ; then
+      for each_TYPE in ${lst_TYPES} ; do
+#        Message "Server: ${each_SERVER} as  ${each_TYPE^^}"
+        case ${each_TYPE^^} in
+
+           AS  ) Verbose "Checking Java / ant / weblogic version"
+                 fn_VersionCheckJava ${each_SERVER}
+                 fn_VersionCheckWeblogic ${each_SERVER};;
+           DB  ) Verbose "Checking DB version"
+                 fn_VersionCheckDB ${each_SERVER} ;;
+           DI  ) Verbose "Checking indexer" ;;
+           MB  ) Verbose "Checking the Message broker version" ;;
+           MQ  ) Verbose "Message Queue - needs adding" ;;
+           JS  ) Verbose "Jump box - versions skipped" ;;
+           *   ) Message "Type $each_TYPE not defined in $FUNCNAME" ;;
+
+        esac
+      done
+    else
+      :
+      Verbose "${each_SERVER}" ${TYPE^^}  ${lst_TYPES^^}
+    fi
+    #ssh -o StrictHostKeyChecking=no ${each_SERVER} hostname
+  done
+
+  Message "Done"
+
+
+
+
+
+  (( int_WarningCount > 0 )) && Error "Too many warnings"
+  :
+}
+

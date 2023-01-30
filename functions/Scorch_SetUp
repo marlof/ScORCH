@@ -440,7 +440,7 @@ fn_CheckLatest()
     fi
     file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"
   else
-    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" scorch.tar | cut -d"=" -f2 | head -1 )
+    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" ${dir_Base}/scorch.tar | cut -d"=" -f2 | head -1 )
   fi
   set -e
 }
@@ -574,6 +574,7 @@ fn_InstallLatest()
   printf "\n\n"
   printf " Extracting files\n"
   printf " ================\n"
+  cd ${dir_Base}
   tar oxvf ${file_Tar}
 
   if [[ $? == 0 ]] ; then

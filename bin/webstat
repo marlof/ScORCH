@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+dir_Cherry = '/opt/scorch/CherryPy'
+dir_Job = '/opt/scorch/jobs'
+
+
+import string
+import sys
+sys.path.append(dir_Cherry)
+import os
+from os import listdir, access
+from os.path import isfile, join, getmtime
+from datetime import datetime, date, time
+
+
+import cherrypy
+
+class ScorchStatus(object):
+  array_JobStates = ["failed","running","starting","pending","queued","new","completed"]
+  print ( array_JobStates )
+  print ( os.path.dirname(__file__) )
+
+  #@cherrypy.expose
+
+  for string_JobState in array_JobStates:
+   #print ( string_JobState )
+   #print ( listdir ( join ( dir_Job, string_JobState )))
+   dir_StateDir = join (dir_Job, string_JobState)
+   array_JobFiles = [ file_Found for file_Found in listdir (dir_StateDir) if isfile (join (dir_StateDir,file_Found)) ]
+   #print ( array_JobFiles )
+   if array_JobFiles:
+    print (string_JobState, array_JobFiles)
+	
+def buildConnectionString(params):
+    """Build a connection string from a dictionary of parameters.
+
+    Returns string."""
+    return ";".join(["%s=%s" % (k, v) for k, v in params.items()])
+
+if __name__ == "__main__":
+    myParams = {"server":"mpilgrim", \
+                "database":"master", \
+                "uid":"sa", \
+                "pwd":"secret" \
+                }
+    print(buildConnectionString(myParams))
+

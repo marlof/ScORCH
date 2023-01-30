@@ -1,0 +1,10 @@
+#!/bin/bash
+
+read -p "Enter company name: " str_Company
+
+read -p "Is this a trail license? (Y/N): "  str_Trail
+
+read -p "How many years is the license for (int): " int_Years
+
+date +${str_Trail^^}"${int_Years}"%s%d%m%y"$(echo ${str_Company^^} | cksum) ${str_Company}"
+

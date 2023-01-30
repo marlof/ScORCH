@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#set -A _servers $(scorchdb <xx>) $(scorchdb <yy>) 
+#set -A _servers $@
+
+CHECK_LIST="_ping _depagent _sudo"
+
+if [ $# -ne 0 ] ; then
+ case $1 in
+  -h ) echo "Usage: checkit [<servername> <servername> | all ]" ; exit 0 ;;
+  all ) HOSTS=$(scorchdb -server) ;;
+  * )   HOSTS=$@ ;;
+ esac
+fi
+
+typeset -a _servers $HOSTS
+
+_count=0
+for _single_server in ${_servers[*]} ; do
+  ping -c 1 $_single_server > /dev/null 2>&1 && echo "_ping[${_count}]=0" >> /tmp/ping.mxl || echo "_ping[${_count}]=1" >> /tmp/ping.mxl  &
+  (( _count+=1 ))
+done
+wait
+. /tmp/ping.mxl
+#echo "PING Status"
+#echo ${_ping[*]}
+
+check_command()
+{
+  # i.e      check_command "ls -ld /deployment" _servers _deploydir
+  typeset l_commandname=$1
+  typeset l_arrayname=$2
+  typeset l_newarrayname=$3
+  eval set -A ${l_newarrayname}
+  typeset l_count=0
+  typeset l_tmpfile=/tmp/${l_newarrayname}.$$
+  
+  for _eachvalue in `eval echo \$\{${l_arrayname}[\*]\}` ; do
+     ssh -q ${_eachvalue} ${l_commandname} </dev/null && echo "${l_newarrayname}[${l_count}]=0" >> ${l_tmpfile} || echo "${l_newarrayname}[${l_count}]=1" >> ${l_tmpfile}  &
+	(( l_count+=1 ))
+  done
+  wait
+  
+  #cat ${l_tmpfile}
+  . ${l_tmpfile}
+  [[ -w ${l_tmpfile} ]] && rm ${l_tmpfile}
+  echo ".\c"
+}
+
+# Deployment ready states
+check_command "[[ ! -w /deployment ]]" _servers _writabledeploy
+check_command "[[ -w /deployment/release ]]" _servers _writeablerelease
+
+_USER=depagent
+check_command " [[ -n \"\$(grep $USER /etc/passwd)\" ]] " _servers _depagent
+wait
+
+
+#check_command " [[ -n \"\`ps -fu ctreedba | grep -v CMD\`\" ]] " _servers _ctree
+#check_command " [[ -z \"\`df -k | grep 100%\`\" ]] " _servers _diskspace
+
+
+
+
+typeset -L4 _count=0
+typeset -L20 _single_server 
+
+echo " "
+echo " Num,SERVER,\t\c"
+for  _EACH_CHECK in ${CHECK_LIST} ; do
+  print -n "\t$_EACH_CHECK,"
+done
+echo " "
+
+for _single_server in ${_servers[*]} ; do
+  print -n "$_count,${_single_server},"
+  for _each_check in ${CHECK_LIST} ; do
+     eval print -n  "\\\t\${${_each_check}[$_count]}," 
+  done
+  (( _count+=1 ))
+  print ""
+done
+
+exit
