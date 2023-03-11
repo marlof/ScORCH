@@ -23,7 +23,8 @@
 ## fn_ShowTasks()
 ## fn_JobInfo()
 ## fn_ContextMenu()
-
+# shellcheck disable=SC2154
+# shellcheck disable=SC2034
 
 fn_SetLayout()
 {
@@ -71,10 +72,10 @@ fn_ShowTop()
   [[ ! -z $b_NonInteractive ]] && return
   ## Display the name of the program and any interesting facts about the environment
   ## ===============================================================================
-  typeset local int_TitleWidth
+  local int_TitleWidth
   [[ -z ${int_Column1Width} ]] && int_Column1Width=10
   [[ -z ${int_Column2Width} ]] && int_Column2Width=10
-  (( int_TitleWidth=${int_Column1Width} + ${int_Column2Width} ))
+  (( int_TitleWidth= int_Column1Width  + int_Column2Width ))
   ${cmd_CLEAR}
 
   ## Check the current width of the screen
@@ -82,7 +83,7 @@ fn_ShowTop()
   int_ScreenWidth=$(${cmd_TPUT} cols)
   #int_ScreenWidth=${COLUMNS}
   ##(( int_DateLocation=${int_ScreenWidth} - ${int_TitleWidth} - ${int_Column2Width} - ${int_Column3Width} - 20 ))
-  (( int_DatePut = ${int_ScreenWidth} - 21 ))
+  (( int_DatePut = int_ScreenWidth - 21 ))
 
   int_DiskUsage_tmp=$(df "${dir_Base}" | tail -1)
   int_DiskUsage="$(echo ${int_DiskUsage_tmp%\%*} | ${cmd_AWK} -F" " '{print $NF}')"
@@ -90,24 +91,15 @@ fn_ShowTop()
   (( int_DiskUsage >= 80 )) && str_DiskUsage="${dis_FYellow}${int_DiskUsage}${dis_Reset}" 
   (( int_DiskUsage >= 90 )) && str_DiskUsage="${dis_FRed}${int_DiskUsage}${dis_Reset}"
   
-  #echo "${int_DiskUsage}%"
-  ## Collect disk usage to display
-  ##int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 44 ) print ""$5"" else print $5}')
-  #int_DiskUsage=$(df "${dir_Base}" |  ${cmd_AWK} 'NR==2 {sub(/%/,""); if ($5 > 80 ) {
-  #                                      print "${dis_FRed}"$5"%${dis_Reset}" }
-  #                                        else {
-  #                                          print $5"%"
-  #                                                                        }
-  #                                    printf "" }')
-  ## Output the program name, the dispatcher PID and the date
-  typeset int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')
-  int_DispatcherPID=${int_DispatcherPID:-0}
+  typeset int_DispatcherPID
+  int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')  int_DispatcherPID=${int_DispatcherPID:-0}
   printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s| Group:%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \
          "df:${str_DiskUsage}%" "${str_License}" "${str_Authority}" "${str_Group}"
-  [[ ${cmd_TPUT} != "echo" ]] && ${cmd_TPUT} cup 0 ${int_DatePut} ; echo "$(date +'%D %T')"
-
+  [[ ${cmd_TPUT} != "echo" ]] && ${cmd_TPUT} cup 0 ${int_DatePut}
+  
+  date +'%D %T'
 
   ## Reset the Array for Jobs and States
   ## ===================================
@@ -123,16 +115,16 @@ fn_ShowLine()
 
   ## Check if parameters have been past
   ## ==================================
-  typeset local cha_LineChar=${1:-"-"}
-  typeset local str_LineTitle=${2:-$cha_LineChar}
+  local cha_LineChar=${1:-"-"}
+  local str_LineTitle=${2:-$cha_LineChar}
 
   ## Find the width of the title
   ## ===========================
-  typeset local int_LineTitleWidth=$(echo ${str_LineTitle} | wc -c)
+  local int_LineTitleWidth="${#str_LineTitle}"
 
   ## Set the number of characters required to the correct width
   ## ==========================================================
-  (( int_DisplayWidth = ${int_ScreenWidth}-${int_LineTitleWidth} - 4 ))
+  (( int_DisplayWidth = int_ScreenWidth - int_LineTitleWidth - 4 ))
   printf "${dis_Reset}   ${str_LineTitle} %${int_DisplayWidth}s\n" | sed "s/ /${cha_LineChar}/g"
 
 }
@@ -143,8 +135,8 @@ fn_ShowJobs()
     set -o noglob
     if [[ "${str_ShowJobs}" == "python" ]] ; then
       [[ ! -z ${str_Filter} ]] && fn_ShowLine "=" "Filter ${str_Filter}"
-      ${dir_Python}/showJobs.py -n $int_MaxShown -o ${file_Cache} -f "${str_Filter}" $* 
-      [[ -r ${file_Cache} ]] && . ${file_Cache} || :
+      "${dir_Python}/showJobs.py" -n "$int_MaxShown" -o "${file_Cache}" -f "${str_Filter}" $* 
+      [[ -r "${file_Cache}" ]] && . "${file_Cache}" || :
       #cat ${file_Cache}
     else
       fn_ShowJobs2 "${@}"
@@ -156,28 +148,28 @@ fn_ShowJobs2()
 {
   ## Show job details for each job state past. The value passed is one or more directory names
   ## =========================================================================================
-  typeset local str_EachJobState= arr_JobList= str_StatusColour=""
-  typeset local str_StatusColour="${dis_Reset}"
+  local str_EachJobState= arr_JobList= str_StatusColour=""
+  local str_StatusColour="${dis_Reset}"
 
   ## Due to the fact that directories may contain "spaces" so "cd" there first
   ## =========================================================================
-  cd "${dir_Job}"
+  cd "${dir_Job}" || return 1
   int_Count=1
 
   file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
   echo "#$$" > "${file_Cache}"
-  [[ ${cmd_TPUT} != echo ]] && int_ScreenWidth=$(${cmd_TPUT} cols) || int_ScreenWidth=$(echo ${COLUMS})
-  int_ScreenWidth=$(echo ${COLUMNS})
+  [[ ${cmd_TPUT} != echo ]] && int_ScreenWidth=$(${cmd_TPUT} cols) || int_ScreenWidth="${COLUMS}"
+  #int_ScreenWidth=${COLUMNS}
   int_ScreenWidth=$(tput cols)
-  for str_State in ${@} ; do
-    printf "${dis_Reset}"
+  for str_State in "${@}" ; do
+    printf "%s" "${dis_Reset}"
 
     [[ "${str_State}" = "failed"  ]] && str_StatusColour="${dis_BRed}" || str_StatusColour="${dis_Reset}"
-    [[ "$(ls ${str_State}/${str_JobPrefix}* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
+    [[ "$(ls "${str_State}/${str_JobPrefix}"* 2>/dev/null)" ]] && fn_ShowLine "-" "$(echo ${str_State} | tr [:lower:] [:upper:])"
     [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 #echo "$(pwd)"
 #echo "${file_Cache}"
-    ls -${str_Reverse}t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
+    ls -"${str_Reverse}"t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
       -v            state=${str_State} \
       -v             user=${str_User} \
       -v          linenum=${int_Count} \
@@ -271,11 +263,13 @@ fn_FormatTasks()
 {
   ## This function is only called by fn_ShowTasks and will format the layout
   ## regardless of whether the tasks were requested from a group call
-  typeset local file_Job="${1}"
-  typeset local file_Log="${dir_Log}/$(basename ${file_Job}).log"
-  typeset local int_RefreshRate=${int_Refresh}
+  local file_Job="${1}"
+  local file_Log
+  file_Log="${dir_Log}/$(basename "${file_Job}").log"
+  local int_RefreshRate=${int_Refresh}
   # Fake the running state to start with a loop
-  typeset local str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+  local str_TmpJobState
+  str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
   str_JobState=${str_TmpJobState}
   echo "${str_JobState} = ${str_TmpJobState}" 
   while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
@@ -337,16 +331,16 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
 
     #fn_PressEnter
     fn_ShowLine
-    tail -${int_Tail} ${dir_Log}/$(basename ${file_Job}).log
+    tail -"${int_Tail}" "${dir_Log}/$(basename ${file_Job}).log"
 	  printf " "
     fn_ShowLine "="
 
     printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | ${dis_ULOn}L${dis_ULOff}og | e${dis_ULOn}X${dis_ULOff}it : "
-    read ${str_Quick} -t ${int_RefreshRate} char_Choice || :
+    read ${str_Quick} -t "${int_RefreshRate}" char_Choice || :
 
     case ${char_Choice,,} in
       r  ) printf "\n\n Enter new refresh rate in seconds: " ; read -e int_NewRefreshRate
-              if fn_IsNumber $int_NewRefreshRate ; then
+              if fn_IsNumber "$int_NewRefreshRate" ; then
                 int_RefreshRate=${int_NewRefreshRate}
               else
                 printf "\n An integar is expected for the refresh rate. Defaulting to 10 seconds."
@@ -354,7 +348,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
                 sleep 2
               fi
               ;;
-      l  ) fn_ViewJob ${dir_Log}/$(basename ${file_Job}).log ;;
+      l  ) fn_ViewJob "${dir_Log}/$(basename "${file_Job}").log" ;;
 	    p  ) fn_PressEnter ;;
 	    x  ) break ;;
     esac
@@ -410,12 +404,13 @@ fn_JobInfo()
   ${cmd_CLEAR}
   fn_ShowTop
   fn_ShowLine "-" "Job Details"
-  typeset local str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+  local str_JobOwner
+  str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
   echo " ${str_JobOwner}"
   echo " State at selection : ${str_JobState}"
-  basename ${file_ActiveJob}
+  basename "${file_ActiveJob}"
   ##pgrep -a ${$(basename ${file_ActiveJob})::15}
-  [[ "${str_JobState}" = "running" ]] && pgrep -l $(basename ${file_ActiveJob}) || :
+  [[ "${str_JobState}" = "running" ]] && pgrep -l "$(basename "${file_ActiveJob}")" || :
   echo ""
   ls -lL "${file_ActiveJob}"
   ls -lL "${file_Log}"
@@ -433,7 +428,7 @@ fn_JobInfo()
   fi
   fn_ShowLine "-" 
 
-  printf "\n${dis_Reset}"
+  printf "\n%s" "${dis_Reset}"
 }
 
 fn_ContextMenu()
@@ -454,7 +449,7 @@ fn_ContextMenu()
   ##  printf "\n\n${dis_Reset}"
   if [[ "${str_State}" ]] ; then
     ## Specific Mode
-    printf " ${dis_ULOn}C${dis_ULOff}opy | ${dis_ULOn}V${dis_ULOff}iew | ${dis_ULOn}E${dis_ULOff}dit | ${dis_ULOn}L${dis_ULOff}og | ${dis_ULOn}tail${dis_ULOff} | "
+    printf " %sC%sopy | %sV%siew | %sE%sdit | %sL%sog | %stail%s | " "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}"
     case ${str_State} in
       queued  | pending ) b_QueuedJobs=1 ;;
       failed  | manual  ) b_FailedJobs=1 ;;
@@ -464,32 +459,30 @@ fn_ContextMenu()
     esac
   else
     ## Generic Mode
-    if [[ "$hex_MD5" != "$(md5sum ${dir_Base}/${str_ProgramName}| cut -d" " -f1)" ]] ; then
+    if [[ "$hex_MD5" != "$(md5sum "${dir_Base}/${str_ProgramName}"| cut -d" " -f1)" ]] ; then
       printf " Update available - please restart\n\n"
     fi
 
-    printf " ${dis_ULOn}N${dis_ULOff}ew | "
-    [[ "$(echo ${arr_States[@]} | grep  -E "queued|pending")"  ]] && b_QueuedJobs=1
-    [[ "$(echo ${arr_States[@]} | grep  -E "running|pending")" ]] && b_RunningJobs=1
-    [[ "$(echo ${arr_States[@]} | grep -i "new")"              ]] && b_NewJobs=1
-    [[ "$(echo ${arr_States[@]} | grep -E "failed|manual")"    ]] && b_NewJobs=1 && b_FailedJobs=1
-    [[ "$(echo ${arr_States[@]} | grep -i "fixing")"           ]] && b_NewJobs=1 && b_FailedJobs=1
+    printf " %sN%sew | " "${dis_ULOn}" "${dis_ULOff}"
+    [[ "$(echo "${arr_States[@]}" | grep  -E "queued|pending")"  ]] && b_QueuedJobs=1
+    [[ "$(echo "${arr_States[@]}" | grep  -E "running|pending")" ]] && b_RunningJobs=1
+    [[ "$(echo "${arr_States[@]}" | grep -i "new")"              ]] && b_NewJobs=1
+    [[ "$(echo "${arr_States[@]}" | grep -E "failed|manual")"    ]] && b_NewJobs=1 && b_FailedJobs=1
+    [[ "$(echo "${arr_States[@]}" | grep -i "fixing")"           ]] && b_NewJobs=1 && b_FailedJobs=1
     [[ "${ENTERPRISE}" ]] && b_Plugins=1
   fi
 
-  [[ "${b_QueuedJobs}"  ]]                                && printf "${dis_ULOn}U${dis_ULOff}nqueue | "
-  [[ "${b_RunningJobs}" ]]  || [[ "${b_QueuedJobs}" ]]    && printf "${dis_ULOn}P${dis_ULOff}ause | "
-  [[ "${b_FailedJobs}"  ]]                                && printf "${dis_ULOn}R${dis_ULOff}esume | "
-  [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "${dis_ULOn}F${dis_ULOff}IP | ${dis_ULOn}S${dis_ULOff}kip | "
-  [[ "${b_NewJobs}"     ]]  || [[ "${b_FailedJobs}"  ]]   && printf "${dis_ULOn}Q${dis_ULOff}ueue | "
-#  [[ "${arr_Jobs[1]}"   ]]  || [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
-  [[ "${str_State}" ]]       && printf "${dis_ULOn}T${dis_ULOff}asks | "
-  [[ "${b_RunningJobs}" ]]                                && printf "${dis_ULOn}K${dis_ULOff}ill | "
-  [[ "${b_FailedJobs}"  ]]                                && [[ "${str_State}" ]]  && printf "${dis_ULOn}Cancel${dis_ULOff} | "
-  [[ "${b_NewJobs}"     ]]                                && printf "${dis_ULOn}D${dis_ULOff}elete | "
-
-  [[ ! "${str_State}" ]]  && printf "${dis_ULOn}A${dis_ULOff}dmin | "
-  printf "${dis_ULOn}F${dis_ULOff}ilter | e${dis_ULOn}X${dis_ULOff}it : "
+  [[ "${b_QueuedJobs}"  ]]                                && printf "%sU%snqueue | "           "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_RunningJobs}" ]]  || [[ "${b_QueuedJobs}" ]]    && printf "%sP%sause | "             "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_FailedJobs}"  ]]                                && printf "%sR%sesume | "            "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_FailedJobs}"  ]]  && [ "${str_State}" ]         && printf "%sF%sIP | %sS%skip | "    "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_NewJobs}"     ]]  || [[ "${b_FailedJobs}" ]]    && printf "%sQ%sueue | "             "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${str_State}"     ]]                                && printf "%sT%sasks | "             "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_RunningJobs}" ]]                                && printf "%sK%sill | "              "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_FailedJobs}"  ]]  && [[ "${str_State}" ]]       && printf "%sCancel%s | "            "${dis_ULOn}" "${dis_ULOff}"
+  [[ "${b_NewJobs}"     ]]                                && printf "%sD%selete | "            "${dis_ULOn}" "${dis_ULOff}"
+  [[ ! "${str_State}"   ]]                                && printf "%sA%sdmin | "             "${dis_ULOn}" "${dis_ULOff}"
+                                                             printf "%sF%silter | e%sX%sit : " "${dis_ULOn}" "${dis_ULOff}" "${dis_ULOn}" "${dis_ULOff}"
 
 }
 readonly -f fn_ContextMenu
