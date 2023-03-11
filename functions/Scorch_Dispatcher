@@ -133,7 +133,7 @@ fn_CheckRunning()
   ## Check running jobs are really running
   ## If they are not, move them to a failed state and report they were orphaned
   local arr_RunningJobs
-  arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null)
+  arr_RunningJobs=$(ls -t1 "${dir_Running}" | grep -v "pause$" 2>/dev/null) || :
   if [[ "${arr_RunningJobs}" ]] ; then
     for file_EachJob in ${arr_RunningJobs} ; do
       if [ ! "$(ps -ef | grep ${file_EachJob} | grep -v grep)" ] ; then
@@ -237,8 +237,7 @@ fn_RunJobs()
   ##ls "${dir_Starting}"
   ##shopt -s nullglob
   ##for file_EachJob in $(ls -tr "${dir_Starting}"/* 2>/dev/null)  ; do
-  for file_EachJob in $(grep -l "str_Owner=${str_User}" "${dir_Starting}"/* 2>/dev/null)  ; do
-
+  for file_EachJob in $(grep -l "str_Owner=${str_User}" ${dir_Starting}/* 2>/dev/null) ; do
     ##########################################################
     # Section added for slow NFS shares with clustered servers
     sleep 2

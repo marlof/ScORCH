@@ -149,6 +149,7 @@ fn_ShowJobs()
     else
       fn_ShowJobs2 "${@}"
     fi
+    set +o noglob
 }
 
 fn_ShowJobs2()
