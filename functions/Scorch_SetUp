@@ -38,6 +38,9 @@
 ## fn_CheckMaint()
 ## fn_FileOwner()
 # shellcheck source=~/scorch.pref
+# shellcheck disable=SC2154
+# shellcheck disable=SC2034
+# shellcheck disable=SC2009
 
 
 # Some global variables for setup functions
@@ -48,15 +51,15 @@ fn_CheckSetUp()
   typeset b_SetUp=         # Is this the first run
 
   # This function will check that all Scorch components are set to allow a smooth run.
-  typeset local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Fixing dir_Deleted \
+  local arr_Directories="dir_Pending dir_New dir_Starting dir_Failed dir_Fixing dir_Deleted \
                                  dir_Running dir_Superseded dir_Manual dir_Completed dir_Tmp dir_Plugins \
                                  dir_Queued dir_Active dir_Archived dir_Var dir_Log dir_Lock dir_Etc"
   [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
-  [[ ${b_Install} ]] && fn_Mkdir "$(dirname ${file_MOTD})" && fn_CreateFile $file_MOTD
+  [[ ${b_Install} ]] && fn_Mkdir "$(dirname "${file_MOTD}")" && fn_CreateFile "$file_MOTD"
 
   for p_Variable in ${arr_Directories} ; do
     if [[ ! -d "${!p_Variable}" ]] ; then
-      printf "\n\tmkdir -p -m 770 \"${!p_Variable}\"" && b_SetUp=1
+      printf "\n\tmkdir -p -m 770 \"%s\"" "${!p_Variable}" && b_SetUp=1
       [[ ${b_Install} ]] && fn_Mkdir "${!p_Variable}" && b_SetUp=
     fi
     [[ ${b_InstallForce} ]] && fn_Mkdir "${!p_Variable}" && b_SetUp=
@@ -66,14 +69,14 @@ fn_CheckSetUp()
     if [[ ! -w "${!p_Variable}" ]] ; then
       # check if perms or group
       if [[ ! -r "${!p_Variable}" ]] ; then
-        printf "\n\tNo write permissions to \"${!p_Variable}\"" && b_SetUp=1
+        printf "\n\tNo write permissions to \"%s\"" "${!p_Variable}" && b_SetUp=1
       else
-        printf "\n\tNo group access to \"${!p_Variable}\"" && b_SetUp=1
+        printf "\n\tNo group access to \"%s\"" "${!p_Variable}" && b_SetUp=1
       fi
     fi
   done
 
-  typeset local arr_Files="${file_DispatchLog}"
+  local arr_Files="${file_DispatchLog}"
 
   if [[ ! ${b_NonInteractive} ]] ; then
     printf "\n\n"
@@ -81,13 +84,13 @@ fn_CheckSetUp()
     str_Install="sudo apt-get install"
     set +e
     for str_Command in ${arr_Commands} ; do
-      printf "\tChecking for ${str_Command}:\t"
-      which ${str_Command} 2>/dev/null
+      printf "\tChecking for %s:\t" "${str_Command}"
+      which "${str_Command}" 2>/dev/null
       if [[ $? != 0 ]] ; then
         if [[ "${str_Command}" == "python3" ]] && [[ ${str_ShowJobs} != "python" ]] ; then
           echo "Using slow method"
         else
-          printf "not found. ${str_Install} ${str_Command}\n"
+          printf "not found. %s %s\n" "${str_Install}" "${str_Command}"
           b_SetUp=1
         fi
       fi
@@ -96,7 +99,7 @@ fn_CheckSetUp()
   fi
 
   cmd_AWK=$(which awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
-  [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: ${cmd_AWK}\n"
+  [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: %s\n" "${cmd_AWK}"
   cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo \"\""
 
@@ -108,7 +111,7 @@ fn_CheckSetUp()
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories, commands or permissions.\n"
-    printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t${dir_Orig}/${str_ProgramName} -install\n"
+    printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t%s/%s -install\n" "${dir_Orig}" "${str_ProgramName}"
     sleep 2
     exit 1
   fi
@@ -154,7 +157,7 @@ export      str_Protocol="https"
 export      dir_Location="s3.eu-west-2.amazonaws.com/autoscorchdownload.com"
 export      file_Version="version.txt"
 
-' >> ${file_Prefs}
+' >> "${file_Prefs}"
   fi
   source "${file_Prefs}"
   if [ -n "${str_Group}" ] ; then
@@ -169,10 +172,10 @@ export      file_Version="version.txt"
     if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
     else
-      printf "\n\n Error: ${str_ProgramName} is using a group account of ${str_Group} but you are not a member.\n"
+      printf "\n\n Error: %s is using a group account of %s but you are not a member.\n" "${str_ProgramName}" "${str_Group}"
       printf "\n Your available groups are:\n "
       groups
-      printf "\n\n Check with ${str_ProgramName} administrator, or a system administrator. Or change your scorch.prefs file\n"
+      printf "\n\n Check with %s administrator, or a system administrator. Or change your scorch.prefs file\n" "${str_ProgramName}"
       exit 1
     fi
   fi
@@ -188,9 +191,9 @@ fn_HouseKeeping()
   echo "Housekeeping...."
   set +e
 
-  typeset local     int_MaxJobs=${int_MaxShown}
-  typeset local int_DaysDeleted=10
-  typeset local  int_DaysActive=30
+  local     int_MaxJobs=${int_MaxShown}
+  local int_DaysDeleted=10
+  local  int_DaysActive=30
 
   # Need to add one for the head/tail to be valid
   (( int_MaxJobs +=1 ))
@@ -199,19 +202,19 @@ fn_HouseKeeping()
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
 
-  [ $(ls "${dir_Completed}/*" 2> /dev/null | wc -l ) -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
+  [ "$(ls "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
-  find -L -H "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
-  find -L "${dir_Completed}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
+  find -L -H "${dir_Completed}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
+  find -L "${dir_Completed}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
   # Remove old deleted links
-  find -L "${dir_Deleted}"/${str_JobPrefix}* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
+  find -L "${dir_Deleted}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec rm -f {} \; 2>/dev/null
 
   # Archive old active jobs
   if [[ -f "${dir_Archived}/archived.tar" ]] ; then
     # Check tar file for issue
-    if ! tar tvf ${dir_Archived}/archived.tar > /dev/null 2>&1 ; then
-      mv ${dir_Archived}/archived.tar ${dir_Archived}/archived.tar.$$
+    if ! tar tvf "${dir_Archived}/archived.tar" > /dev/null 2>&1 ; then
+      mv "${dir_Archived}/archived.tar" "${dir_Archived}/archived.tar.$$"
     fi
   fi
 
@@ -241,9 +244,9 @@ fn_GetAnswer()
 {
   # Library function to get an answer or range of answers
   # =====================================================
-  typeset local b_Range=${1:-""}
+  local b_Range=${1:-""}
 
-  printf "\n e${dis_ULOn}X${dis_ULOff}it.\n\n"
+  printf "\n e%sX%sit.\n\n" "${dis_ULOn}" "${dis_ULOff}"
   printf " Enter choice "
   [[ "${b_Range}" ]] && printf "(range enabled : i.e 1-3,7,8)"
   printf ": "
@@ -258,7 +261,7 @@ fn_Confirm()
   # =======================================
   local chr_YN
 
-  printf "\n $1? (y/n) [n]? "
+  printf "\n %s? (y/n) [n]? " "$1"
   read -e chr_YN
   
   case $chr_YN in
@@ -273,29 +276,29 @@ fn_Range()
   # Library function to turn a range of numbers into a list
   # =======================================================
 
-  typeset local str_Input=${1//,/ }
+  local str_Input=${1//,/ }
 
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
       # Bash 3 varient
       # typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
       # typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
-      typeset local  int_First=${int_EachItem%%-*}
-      typeset local int_Last=${int_EachItem#*-}
+      local  int_First=${int_EachItem%%-*}
+      local int_Last=${int_EachItem#*-}
 
-      if [ ${int_First} -le ${int_Last} ] ; then
+      if [ "${int_First}" -le "${int_Last}" ] ; then
         while [[ ${int_First} -le ${int_Last} ]] ; do
-          printf "${int_First} "
+          printf "%s " "${int_First}"
           ((int_First+=1))
         done
       else
         while [[ ${int_First} -ge ${int_Last} ]] ; do
-          printf "${int_First} "
+          printf "%s " "${int_First}"
           ((int_First-=1))
         done
       fi
     else
-      printf  "${int_EachItem} "
+      printf  "%s " "${int_EachItem}"
     fi
   done
 }
@@ -306,9 +309,9 @@ fn_RangeTUI()
   # arr_List="a b c d e f g"
   # fn_RangeTUI "${arr_List}" "$(fn_Range "1,3,5,7")"
   # fn_RangeTUI "${arr_List}" "$(fn_Range "1-4,7")"
-  typeset local arr_Input=${1}
-  typeset local arr_Range=${2:-0}
-  typeset local int_Count=0
+  local arr_Input=${1}
+  local arr_Range=${2:-0}
+  local int_Count=0
   for each_Input in ${arr_Input} ; do
     (( int_Count++ ))
     [[ "$(echo ${arr_Range} | grep -w ${int_Count})" ]] && c_Selected=">" || c_Selected=" "
@@ -318,32 +321,32 @@ fn_RangeTUI()
 
 fn_CreateFile()
 {
-  typeset local file_Name="${1}"
-  typeset local b_Blank="${2:-""}"
+  local file_Name="${1}"
+  local b_Blank="${2:-""}"
   touch "${file_Name}"
   [[ $? -ne 0 ]] && echo "Error: Cannot create file ${file_Name}" && exit 1
   chmod 660 "${file_Name}" 2>/dev/null || :
-  [[ "${b_Blank}" ]] && > "${file_Name}"
+  [[ "${b_Blank}" ]] && true > "${file_Name}"
   if [[ ! -z ${str_Group} ]] ; then
-    chgrp ${str_Group} ${file_Name} 2>/dev/null || :
+    chgrp "${str_Group}" "${file_Name}" 2>/dev/null || :
   fi
 }
 readonly -f fn_CreateFile
 
 fn_Mkdir()
 {
-  typeset local dir_Name="${1}"
+  local dir_Name="${1}"
 
   mkdir -p -m 770 "${dir_Name}" #2>/dev/null
   if [[ ! -z ${str_Group} ]] ; then
-    chgrp ${str_Group} ${dir_Name} 2>/dev/null
+    chgrp "${str_Group}" "${dir_Name}" 2>/dev/null
   fi
 }
 readonly -f fn_Mkdir
 
 fn_GetResumePoint()
 {
-  typeset local file_Log="${1}"
+  local file_Log="${1}"
   tail -500 "${file_Log}" | grep "Resume point:" | tail -1 | ${cmd_AWK} -F":" '{print $NF}'
 }
 readonly -f fn_GetResumePoint
@@ -351,9 +354,10 @@ readonly -f fn_GetResumePoint
 fn_UpdateResumePoint()
 {
   # Updates the "ACTIVE" job 
-  typeset local file_Job="${1}"                             # The Job to update
-  typeset local int_ResumePoint="${2:-0}"                   # The new start task
-  typeset local file_Log="${dir_Log}/$(basename ${file_Job})".log
+  local file_Job="${1}"                             # The Job to update
+  local int_ResumePoint="${2:-0}"                   # The new start task
+  local file_Log
+  file_Log="${dir_Log}/$(basename "${file_Job}")".log
   #(( int_ResumePoint+=0 ))                                  # Just in case a string number has been passed
   fn_CreateFile "${file_Job}"
   fn_CreateFile "${file_Job}".tmp blank
@@ -377,13 +381,13 @@ readonly -f fn_PressEnter
 fn_Trap()
 {
   fn_CreateFile "${file_ProgLog}"
-  echo "${fn_LogDate} ${1}" >> "${file_ProgLog}"
+  echo "$(${fn_LogDate}) ${1}" >> "${file_ProgLog}"
   fn_HouseKeeping
   exit 1
 }
-trap "fn_Trap \"TERMINATED: User ${str_User} probably logged out \"" 1
-trap "fn_Trap \"TERMINATED: User ${str_User} probably ctrl-c \"" 2
-trap "fn_Trap \"TERMINATED: Probably via kill \"" 15
+trap 'fn_Trap "TERMINATED: User ${str_User} probably logged out"' 1
+trap 'fn_Trap "TERMINATED: User ${str_User} probably ctrl-c"' 2
+trap 'fn_Trap "TERMINATED: Probably via kill"' 15
 readonly -f fn_Trap
 
 fn_Select()
@@ -408,9 +412,10 @@ fn_IsAlreadyRunning()
 {
   local str_Process="${1:-""}"
   if [[ ! -z ${str_Process} ]] ; then
-    ps -fu ${str_User} | grep -v grep | grep -s "${str_Process}" && return 0 || return 1
+    # pgrep is not always available so sticking with ps shellcheck=SC2009
+    ps -fu "${str_User}" | grep -v grep | grep -s "${str_Process}" && return 0 || return 1
   else
-    ps -fu ${str_User}
+    ps -fu "${str_User}"
     return 1
   fi
 }
@@ -421,8 +426,8 @@ fn_CheckLatest()
   set +e
   echo ""
   if [[ "${str_Protocol}" == "http" ]] ; then
-    printf "\n\n Checking ${str_Protocol}://${dir_Location}/${file_Version}\n"
-    str_LatestVersion=$(curl ${str_Protocol}://${dir_Location}/${file_Version})
+    printf "\n\n Checking %s://%s/%s\n" "${str_Protocol}" "${dir_Location}" "${file_Version}"
+    str_LatestVersion=$(curl "${str_Protocol}://${dir_Location}/${file_Version}")
     if fn_IsNumber "${str_LatestVersion/\./}" ; then
     #if [[ $? == 0 ]] ; then
       echo "$str_LatestVersion"
@@ -432,7 +437,7 @@ fn_CheckLatest()
     else
       #statements
       printf "\n\n"
-      printf " Latest version <${str_LatestVersion}> may not have be released.\n"
+      printf " Latest version <%s> may not have be released.\n" "${str_LatestVersion}"
       #printf " curl ${str_Protocol}://${dir_Location}/${file_Version}\n"
       #curl ${str_Protocol}://${dir_Location}/${file_Version}
       #str_LatestVersion="check"
@@ -440,7 +445,7 @@ fn_CheckLatest()
     fi
     file_Latest="${str_Protocol}://${dir_Location}/escorch.${str_LatestVersion}.tar"
   else
-    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" ${dir_Base}/scorch.tar | cut -d"=" -f2 | head -1 )
+    str_LatestVersion=$(grep -a "^typeset str_ProgramVersion=" "${dir_Base}/scorch.tar" | cut -d"=" -f2 | head -1 )
   fi
   set -e
 }
@@ -450,12 +455,12 @@ fn_Plugins()
 {
   echo ""
   if [[ "${str_Protocol}" == "http" ]] ; then
-    printf "\n\nChecking available plugins ${str_Protocol}://${dir_URLPlugins}\n"
-    str_Plugins="$(curl ${str_Protocol}://${dir_Location}/${file_Plugins})"
+    printf "\n\nChecking available plugins %s://%s\n" "${str_Protocol}" "${dir_URLPlugins}"
+    str_Plugins="$(curl "${str_Protocol}://${dir_Location}/${file_Plugins}")"
   fi
   printf "\n\n"
   for each_Plugin in ${str_Plugins} ; do
-    printf "\t[ ] ${each_Plugin}\n"
+    printf "\t[ ] %s\n" "${each_Plugin}"
   done
  sleep 5
 }
@@ -464,48 +469,47 @@ readonly -f fn_Plugins
 fn_PullRelease()
 {
   # Pull the release file from source
-  stat -c '%U' ${dir_Base}/${str_ProgramName}
+  stat -c '%U' "${dir_Base}/${str_ProgramName}"
   fn_PressEnter
-  if [ -w $(dirname ${file_MD5}) ] ; then
+  if [ -w "$(dirname "${file_MD5}")" ] ; then
     printf " Pulling release\n"
     printf " ===============\n"
-    printf " Retrieving MD5      (${file_Latest}.md5.txt): "
-    fn_CreateFile ${file_MD5}
-    str_Ouput=$(curl -s -o ${file_MD5} ${file_Latest}.md5.txt)
+    printf " Retrieving MD5      (%s.md5.txt): " "${file_Latest}"
+    fn_CreateFile "${file_MD5}"
+    str_Ouput=$(curl -s -o "${file_MD5}" "${file_Latest}.md5.txt")
     if [[ $? == 0 ]]  ; then
       echo "OK"
-      echo "$(cat ${file_MD5} | cut -d" " -f1 ) scorch.tar" > ${file_MD5}
+      echo "$(cat "${file_MD5}" | cut -d" " -f1 ) scorch.tar" > "${file_MD5}"
     else
       echo "Error"
-      echo ${str_Ouput}
+      echo "${str_Ouput}"
       fn_PressEnter
       return 1
     fi
   else
-    printf " Installation is retricted to the install owner: $(stat -c '%U' ${dir_Base}/${str_ProgramName})"
+    printf " Installation is retricted to the install owner: %s" "$(stat -c '%U' "${dir_Base}/${str_ProgramName}")"
   fi
   #str_MD5=${str_MD5% *}
 
-  printf " Retrieving tar file (${file_Latest}): "
-  cd ${dir_Base}
-  str_Ouput=$(curl -s -o ${file_Tar} ${file_Latest})
+  printf " Retrieving tar file (%s): " "${file_Latest}"
+  cd "${dir_Base}"
+  str_Ouput=$(curl -s -o "${file_Tar}" "${file_Latest}")
   if [[ $? == 0 ]] ; then
     echo "OK"
   else
     echo "Error"
-    echo ${str_Ouput}
+    echo "${str_Ouput}"
     fn_PressEnter
     return 1
   fi
 
-  printf " Verifying MD5       (${file_MD5}): "
-  md5sum -c ${file_MD5}
+  printf " Verifying MD5       (%s): " "${file_MD5}"
   
-  if [[ $? == 0 ]] ; then
+  if md5sum -c "${file_MD5}" ; then
     :
   else
     printf "\n Problem verifying file.\n"
-    head ${file_MD5}
+    head "${file_MD5}"
     printf "\n Check network connection, disk space."
     fn_PressEnter
   fi
@@ -519,14 +523,14 @@ fn_InstallLatest()
   local     file_Tar=${dir_Base}/scorch.tar
   local   dir_Backup=${dir_Base}/.${str_ProgramVersion}.backup
 
-  printf "\n Protocol: $str_Protocol\n\n"
+  printf "\n Protocol: %s\n\n" "$str_Protocol"
   # if protocol is http then pull release
   if [[ "${str_Protocol}" == "http" ]] ; then 
     URL="http://${dir_Location}"
     fn_PullRelease
   else
     echo " Using local install method (${file_Tar})"
-    ls -l ${file_Tar}
+    ls -l "${file_Tar}"
   fi
 
   #printf " Checking for MD5   : "
@@ -545,10 +549,10 @@ fn_InstallLatest()
   #printf " Verifying MD5      : "
   
   if [[ ! -f ${file_Install} ]] ; then
-    fn_CreateFile ${file_Install}
-    chmod 770 ${file_Install}
+    fn_CreateFile "${file_Install}"
+    chmod 770 "${file_Install}"
     if [[ ! -w ${file_Install} ]] ; then
-      printf " Error: Cannot write to install file ${file_Install}\n"
+      printf " Error: Cannot write to install file %s\n" "${file_Install}"
       printf " Install aborted\n"
       fn_PressEnter
       return 1
@@ -557,16 +561,16 @@ fn_InstallLatest()
 
   # Checking files modified since last install..
 
-  lst_Changed=$(find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${dir_Etc}/install.txt)
-  if [[ ! -z $lst_Changed ]] || [[ $(find -L ${dir_Base} -name ${str_ProgramName} -type f -newer ${file_Install}) ]] ; then
-    fn_Mkdir ${dir_Backup}
+  lst_Changed=$(find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${dir_Etc}/install.txt")
+  if [[ ! -z $lst_Changed ]] || [[ $(find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}") ]] ; then
+    fn_Mkdir "${dir_Backup}"
     printf "\n\n"
     printf " Warning: Found files that have been modified\n"
     printf " ============================================\n"
-    printf " Backup directory: ${dir_Backup}\n"
-    printf " (y/n response required for each file)\n${lst_Changed}\n\n"
-    find -L ${dir_Functions} ${dir_Python} ${dir_Plugins} -type f -newer ${file_Install} -okdir cp {} ${dir_Backup}/. \;
-    find -L ${dir_Base} -name ${str_ProgramName} -type f -newer ${file_Install} -okdir cp {} ${dir_Backup}/. \;
+    printf " Backup directory: %s\n" "${dir_Backup}"
+    printf " (y/n response required for each file)\n%s\n\n" "${lst_Changed}"
+    find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
+    find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
   else
     printf "\n\n No modifed files found\n"
   fi
@@ -574,12 +578,12 @@ fn_InstallLatest()
   printf "\n\n"
   printf " Extracting files\n"
   printf " ================\n"
-  cd ${dir_Base}
-  tar oxvf ${file_Tar}
+  cd "${dir_Base}"
+  tar oxvf "${file_Tar}"
 
   if [[ $? == 0 ]] ; then
-    fn_CreateFile ${file_Install}
-    echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> ${file_Install}
+    fn_CreateFile "${file_Install}"
+    echo "${str_LatestVersion} $(${fn_LogDate}) ${str_User}" >> "${file_Install}"
   fi
  # else
  #   echo " Problem verifying file."
@@ -589,7 +593,7 @@ fn_InstallLatest()
   printf "\n"
   printf " Lastest installs\n"
   printf " ================\n" 
-  tail -5 ${file_Install}
+  tail -5 "${file_Install}"
   fn_PressEnter
 }
 readonly -f fn_InstallLatest
@@ -604,10 +608,10 @@ fn_Repair()
   if [[ -f "${file_Install}" ]] ; then
     cat "${file_Install}"
   fi
-  ls -lH $dir_Orig
-  file $dir_Orig/*
+  ls -lH "$dir_Orig"
+  file "$dir_Orig/"*
   echo "and bin"
-  ls -lH $dir_Orig/bin
+  ls -lH "$dir_Orig/bin"
   fn_PressEnter
 }
 readonly -f fn_Repair
@@ -631,6 +635,6 @@ fn_FileOwner()
 {
   # Takes an argument of a filename (or dirname) and return the owner
   local file_Name=$1
-  [[ -r ${file_Name} ]] && ls -ld ${file_Name} | ${cmd_AWK}} -F" " '{print $3}' || echo "unknown"
+  [[ -r ${file_Name} ]] && ls -ld "${file_Name}" | ${cmd_AWK}} -F" " '{print $3}' || echo "unknown"
 }
 readonly -f fn_FileOwner

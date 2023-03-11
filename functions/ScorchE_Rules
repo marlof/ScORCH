@@ -34,9 +34,9 @@ fn_NiceTime()
 fn_GetRequest()
 {
   ## Receive the request from a file or interactively
-  typeset local file_Template="${1:-}"
-  typeset local str_Line=""
-  typeset local int_GetCount=1
+  local file_Template="${1:-}"
+  local str_Line=""
+  local int_GetCount=1
 
   ## global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
@@ -138,7 +138,7 @@ fn_ProcessRequest()
         fi
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
-        printf "\t${fn_Call}: "
+        printf "\t%s: " "${fn_Call}"
 
 
 
