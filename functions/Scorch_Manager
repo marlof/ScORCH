@@ -29,17 +29,18 @@
 ## fn_Filter()
 # shellcheck source=~/scorch.prefs
 # shellcheck disable=SC2154
+# shellcheck disable=SC2034
 
 fn_SkipFailed()
 {
   local file_Job="${1}"                             # The Job to update
 
   int_Count=1
-  int_Last=$(grep "^AUDIT:T:*:" ${file_Job} | cut -d: -f 3 | sort -n | tail -1)
+  int_Last=$(grep "^AUDIT:T:*:" "${file_Job}" | cut -d: -f 3 | sort -n | tail -1)
   declare -A JOB
   while (( int_Count <= int_Last )) ; do
-    echo JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" ${file_Job} | tail -1 | cut -d: -f4)
-    JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" ${file_Job} | tail -1 | cut -d: -f4)
+    echo JOB[T${int_Count}]="$(grep "^AUDIT:T:${int_Count}:" "${file_Job}" | tail -1 | cut -d: -f4)"
+    JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" "${file_Job}" | tail -1 | cut -d: -f4)
     (( int_Count++ ))
   done
 
@@ -54,8 +55,8 @@ fn_SkipFailed()
 fn_Filter()
 {
   printf "\n\n"
-  [[ ! -z ${str_Filter} ]] && printf " Current filter <${str_Filter}> (press enter to clear)\n\n"
-  read -t ${int_Refresh} -p " Job name filter string: " str_Filter || :
+  [[ ! -z ${str_Filter} ]] && printf " Current filter <%s> (press enter to clear)\n\n" "${str_Filter}"
+  read -t "${int_Refresh}" -p " Job name filter string: " str_Filter || :
   #str_Filter=$(echo ${str_Filter})
 }
 readonly -f fn_Filter
@@ -78,12 +79,12 @@ fn_Manager()
     #while read -d '' -r -t 0 ; do read -r -n 1 char_Choice; done
 
     fn_DisplayMOTD
-    printf "\n${dis_Reset}"
+    printf "\n%s" "${dis_Reset}"
     fn_ContextMenu
     (( b_Quick == 1 )) && str_Quick="-n 1" || str_Quick=""
 
 
-    read ${str_Quick} -t ${int_Refresh} char_Choice || :
+    read ${str_Quick} -t "${int_Refresh}" char_Choice || :
 
     case ${char_Choice} in
 
@@ -91,7 +92,7 @@ fn_Manager()
       a | A ) fn_Admin ;;
 
       ## Create a new job
-      n | N ) "${dir_Base}"/${str_ProgramName} -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
+      n | N ) "${dir_Base}/${str_ProgramName}" -new -p "${dir_Plugins}/." -j "${dir_Job}/." ; fn_SetLayout ;;
 
       ## Job State transition
       d | D ) fn_Transition delete  ;; 
@@ -106,7 +107,7 @@ fn_Manager()
       x | X ) break ;;
 
       ## Releases
-      [0-9]* ) (( b_Quick )) && fn_CatchWord ${char_Choice} "number" || fn_AdminFunctions ${char_Choice} ;;
+      [0-9]* ) (( b_Quick )) && fn_CatchWord "${char_Choice}" "number" || fn_AdminFunctions "${char_Choice}" ;;
 
 #      o | O ) 
 #         read -e -t ${int_Refresh} char_ChoiceExtra
@@ -148,21 +149,21 @@ fn_ShowPrefs()
     if [[ -f ${file_Prefs} ]] ; then
       printf "\n\n"
       fn_ShowLine "-" " Prefs ${file_Prefs}"
-      cat ${file_Prefs}
+      cat "${file_Prefs}"
       fn_ShowLine
     fi
     echo ""
     fn_ShowLine "="
     printf "\n "
-    printf "${dis_ULOn}E${dis_ULOff}dit Preferences | "
-    printf "${dis_ULOn}D${dis_ULOff}efaults | "
-    printf " e${dis_ULOn}X${dis_ULOff}it : "
+    printf "%sE%sdit Preferences | " "${dis_ULOn}" "${dis_ULOff}"
+    printf "%sD%sefaults | "         "${dis_ULOn}" "${dis_ULOff}"
+    printf " e%sX%sit : "            "${dis_ULOn}" "${dis_ULOff}"
 
-    read ${str_Quick} -t ${int_Refresh} char_Choice || :
+    read ${str_Quick} -t "${int_Refresh}" char_Choice || :
 
     case ${char_Choice} in
       e | E ) ${cmd_Editor} ${file_Prefs} ; source "${file_Prefs}" ;;
-      d | D ) [[ -w ${file_Prefs} ]] && fn_Confirm "Reset preferences" && rm ${file_Prefs} && fn_SetPrefs ;;
+      d | D ) [[ -w ${file_Prefs} ]] && fn_Confirm "Reset preferences" && rm "${file_Prefs}" && fn_SetPrefs ;;
       x | X ) return 0 ;;
       *     ) return 0 ;;
     esac
@@ -203,13 +204,13 @@ fn_Admin()
   fn_ShowTop
   fn_ShowLine
   printf "\n"
-  printf " C) Check for latest online version       ${str_LatestVersion}\n\n"
+  printf " C) Check for latest online version       %s\n\n" "${str_LatestVersion}"
 
   # POWER User Features
   # fn_FileOwner ${dir_Base}:${str_ProgramName}\n $(fn_FileOwner ${dir_Base}/${str_ProgramName}) == ${str_User}\n\n"
   if (( b_Power == 1 )) ; then
-    printf " B) Build a tar release                   ${dir_Base}/escorch.${str_ProgramVersion}.tar\n\n"
-    printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" ${dir_Lock}
+    printf " B) Build a tar release                   %s/escorch.%s.tar\n\n" "${dir_Base}" "${str_ProgramVersion}"
+    printf " L) View and Delete locks %5s           %s\n\n" "($(ls ${dir_Lock} | wc -l))" "${dir_Lock}"
     [[ "${str_LatestVersion}" != "check" ]] && printf " I) Install latest version                ${str_LatestVersion}\n\n"
     printf " S) Suspend all sessions (Maintenance)    %s\n\n" ${file_Maint}
     printf " F) Function Plugin Manager\n\n"
@@ -237,28 +238,27 @@ fn_Admin()
 
 
 
-  printf " P) Edit Display and Timing Preferences %s\n\n" ${file_Prefs}
-  printf " M) Change the message of the day         %s\n\n" ${file_MOTD}
-  printf " V) View the CSV audit file               %s\n\n" ${file_CSV}
+  printf " P) Edit Display and Timing Preferences %s\n\n"   "${file_Prefs}"
+  printf " M) Change the message of the day         %s\n\n" "${file_MOTD}"
+  printf " V) View the CSV audit file               %s\n\n" "${file_CSV}"
   #fn_ShowLine "-" "Message of the day"
   #fn_DisplayMOTD
   fn_ShowLine "="
   fn_DisplayMOTD
   printf "\n"
-  (( b_Power == 1 )) && printf "${dis_ULOn}B${dis_ULOff}uild Release | "
-  printf "${dis_ULOn}C${dis_ULOff}heck Version | "
+  (( b_Power == 1 )) && printf "%sB%suild Release | " "${dis_ULOn}" "${dis_ULOff}"
+                        printf "%sC%sheck Version | " "${dis_ULOn}" "${dis_ULOff}"
   [[ "${str_LatestVersion}" != "check" ]] && (( b_Power == 1 )) && printf "${dis_ULOn}I${dis_ULOff}nstall ${str_LatestVersion} | ${dis_ULOn}R${dis_ULOff}epair | "
-  printf "${dis_ULOn}P${dis_ULOff}references | "
-  printf "${dis_ULOn}M${dis_ULOff}essage | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}L${dis_ULOff}ocks | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}S${dis_ULOff}upend | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}F${dis_ULOff}unctions | "
-  (( b_Power == 1 )) && printf "${dis_ULOn}D${dis_ULOff}ownload | "
+                        printf "%sP%sreferences | "   "${dis_ULOn}" "${dis_ULOff}"
+                        printf "%sM%sessage | "       "${dis_ULOn}" "${dis_ULOff}"
+  (( b_Power == 1 )) && printf "%sL%socks | "         "${dis_ULOn}" "${dis_ULOff}"
+  (( b_Power == 1 )) && printf "%sS%supend | "        "${dis_ULOn}" "${dis_ULOff}"
+  (( b_Power == 1 )) && printf "%sF%sunctions | "     "${dis_ULOn}" "${dis_ULOff}"
+  (( b_Power == 1 )) && printf "%sD%sownload | "      "${dis_ULOn}" "${dis_ULOff}"
+                        printf "%sV%siew CSV | "     "${dis_ULOn}" "${dis_ULOff}" 
+                        printf "e%sX%sit : "         "${dis_ULOn}" "${dis_ULOff}"
 
-  printf "${dis_ULOn}V${dis_ULOff}iew CSV | "    
-  printf " e${dis_ULOn}X${dis_ULOff}it : "
-
-  read ${str_Quick} -t ${int_Refresh} char_Choice || :
+  read ${str_Quick} -t "${int_Refresh}" char_Choice || :
 
   case ${char_Choice} in
     b | B ) (( b_Power == 1 ))      && fnE_MkEscorchtar ;;
@@ -272,7 +272,7 @@ fn_Admin()
     f | F ) (( b_Power == 1 ))      && fnE_PluginManagerMenu ;;
 
     r | R ) (( b_Power == 1 ))      && fn_Repair ;;
-    s | S ) (( b_Power == 1 ))      && ln -s ${str_ProgramName}.${str_User} ${file_Maint} ;;
+    s | S ) (( b_Power == 1 ))      && ln -s "${str_ProgramName}.${str_User}" "${file_Maint}" ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;
     x | X ) return 0 ;;
@@ -293,7 +293,7 @@ fn_ViewJob()
     read ${str_Quick} -p "Do you want to save your changes to /tmp? [y/n] " char_Answer || :
     printf "\n\n"
     if [[ "${char_Answer}" = "y" ]] || [[ "${char_Answer}" = "Y" ]] ; then
-      mv "${file_View}" /tmp/$(basename "${file_Orig}")
+      mv "${file_View}" "/tmp/$(basename "${file_Orig}")"
       fn_Audit "${file_Orig}" "saved an edited copy of job and saved a copy in /tmp"
     fi
   #fn_PressEnter
@@ -321,37 +321,38 @@ fn_Kill()
 {
   local    file_Link="$1"
   local str_JobState="$2"
-  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  local     file_Log
+  file_Log="${dir_Log}/$(basename "${file_Link}")".log
 
   fn_CheckOwner "${file_Link}"
   echo "${file_Link}"
   if [[ "${str_JobState}" = "running" ]] ; then
 
     printf "From AUDIT PID:"
-    int_PID=$(grep "^AUDIT:PID:" ${file_Log} | tail -1 | cut -d: -f3)
+    int_PID=$(grep "^AUDIT:PID:" "${file_Log}" | tail -1 | cut -d: -f3)
 
-    echo "Processes running at termination:" | tee -a ${file_Log}
-    ps -fu ${str_User}                       | tee -a ${file_Log}
+    echo "Processes running at termination:" | tee -a "${file_Log}"
+    ps -fu "${str_User}"                       | tee -a "${file_Log}"
 
-    echo "Process tree at termination:"      | tee -a ${file_Log}
-    pstree -p ${int_PID}                     | tee -a ${file_Log}
+    echo "Process tree at termination:"      | tee -a "${file_Log}"
+    pstree -p "${int_PID}"                     | tee -a "${file_Log}"
 
-    printf "\n Killing Process with PID[${int_PID}]\n" | tee -a ${file_Log}
-    int_KillTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3) || :
-    kill -15 ${int_PID}                      | tee -a ${file_Log}   
+    printf "\n Killing Process with PID[%s]\n" "${int_PID}" | tee -a "${file_Log}"
+    int_KillTask=$(grep "^AUDIT:T:.*:R" "${file_Link}" | tail -1 | cut -d: -f3) || :
+    kill -15 "${int_PID}"                      | tee -a "${file_Log}   "
 
     echo "AUDIT:T:${int_KillTask}:K" >> "${file_Link}"
-    mv ${file_Link} ${dir_Failed}
+    mv "${file_Link}" "${dir_Failed}"
 
     fn_Audit "${file_Link}" "Job killed during task ${int_KillTask}. Resume point:${int_KillTask}"
     fn_LogWhy "${file_Link}"
 
   elif  [[ "${str_JobState}" = "failed"  ]] || [[ "${str_JobState}" = "manual"  ]]; then
-    int_KillTask=$(grep "^AUDIT:T:.*:" ${file_Link} | tail -1 | cut -d: -f3) || int_KillTask="unknown"
+    int_KillTask=$(grep "^AUDIT:T:.*:" "${file_Link}" | tail -1 | cut -d: -f3) || int_KillTask="unknown"
     fn_LogWhy "${file_Link}"
-    mv ${file_Link} ${dir_Completed}
+    mv "${file_Link}" "${dir_Completed}"
     fn_Audit "${file_Link}" "aborted during task ${int_KillTask:-0}"
-    printf "\n\n Aborted Job : ${file_Link}"
+    printf "\n\n Aborted Job : %s" "${file_Link}"
   else
 
     echo "Incorrect call"
@@ -365,17 +366,18 @@ fn_Cancel()
 {
   local    file_Link="$1"
   local str_JobState="$2"
-  local     file_Log="${dir_Log}/$(basename ${file_Link})".log
+  local     file_Log
+  file_Log="${dir_Log}/$(basename "${file_Link}")".log
 
   fn_CheckOwner "${file_Link}"
   echo "Aborting ${file_Link}..."
-  int_CancelTask=$(grep "^AUDIT:T:.*:R" ${file_Link} | tail -1 | cut -d: -f3) || :
+  int_CancelTask=$(grep "^AUDIT:T:.*:R" "${file_Link}" | tail -1 | cut -d: -f3) || :
   int_CancelTask=${int_CancelTask:-0}
 
   echo "AUDIT:T:${int_CancelTask}:A" >> "${file_Link}"
   fn_Audit "${file_Log}" "aborted [Task ${int_CancelTask}]"
 
-  mv ${file_Link} ${dir_Completed}
+  mv "${file_Link}" "${dir_Completed}"
 
   fn_PressEnter
 }
@@ -387,7 +389,7 @@ fn_CopyTemplate()
   local     file_Log
   local file_TmpCopy
   
-  file_Log="${dir_Log}/$(basename ${file_Link})".log
+  file_Log="${dir_Log}/$(basename "${file_Link}")".log
   file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
   printf "\n\n Template\n ==========\n\n"
   sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
@@ -398,7 +400,7 @@ fn_CopyTemplate()
   fi
 
   if fn_Confirm "Copy template to new job" ; then
-    "${dir_Base}"/${str_ProgramName} -f "${file_TmpCopy}" -p "${dir_Plugins}/." -j "${dir_Job}/."
+    "${dir_Base}/${str_ProgramName}" -f "${file_TmpCopy}" -p "${dir_Plugins}/." -j "${dir_Job}/."
     echo " New job created from template"
     sleep 2
   fi
@@ -417,8 +419,8 @@ fn_AdminFunctions()
 
 
   if ! fn_IsNumber ${char_Choice} ; then
-    str_TaskChoice=$(echo ${char_Choice} | tr -d [0-9])
-    char_Choice=$(echo ${char_Choice} | tr -d [A-z])
+    str_TaskChoice=$(echo "${char_Choice}" | tr -d [0-9])
+    char_Choice=$(echo "${char_Choice}" | tr -d [A-z])
   fi
 
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
@@ -433,8 +435,8 @@ fn_AdminFunctions()
       file_Link="${dir_Job}/${str_JobState}/${str_Job}"
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
-      fn_ContextMenu ${str_JobState}
-      if [ -z ${str_TaskChoice} ] ; then
+      fn_ContextMenu "${str_JobState}"
+      if [ -z "${str_TaskChoice}" ] ; then
         read ${str_Quick} -t 30 char_Choice || :
       else
         char_Choice=${str_TaskChoice}
@@ -488,15 +490,15 @@ fn_AdminFunctions()
 
         ## Resume Job(s)
         r | R ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_ActiveJob}" "resumed task:$(fn_GetResumePoint ${file_Log})"
-                fn_UpdateResumePoint "${file_ActiveJob}" $(fn_GetResumePoint ${file_Log})
+                fn_Audit "${file_ActiveJob}" "resumed task:$(fn_GetResumePoint "${file_Log}")"
+                fn_UpdateResumePoint "${file_ActiveJob}" $(fn_GetResumePoint "${file_Log}")
                 mv "${file_Link}" "${dir_Queued}"
                 return 0 ;;
 
         ## Skip a task in Job(s)
         s | S ) fn_CheckOwner "${file_ActiveJob}"
-                fn_Audit "${file_ActiveJob}" "skipped task:$(fn_GetResumePoint ${file_Log})"
-                fn_UpdateResumePoint "${file_ActiveJob}" "$(( $(fn_GetResumePoint ${file_Log}) + 1 ))"
+                fn_Audit "${file_ActiveJob}" "skipped task:$(fn_GetResumePoint "${file_Log}")"
+                fn_UpdateResumePoint "${file_ActiveJob}" "$(( $(fn_GetResumePoint "${file_Log}") + 1 ))"
                 fn_SkipFailed "${file_ActiveJob}"
                 #echo "AUDIT:T:${int_Task}:S" >> "${file_ActiveJob}"
                 mv "${file_Link}" "${dir_Queued}"
@@ -516,7 +518,7 @@ fn_AdminFunctions()
         ## Unqueue Job(s) back to New State
         u | U ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_ActiveJob}" unqueued
-                if [ -L ${file_Link} ] ; then
+                if [ -L "${file_Link}" ] ; then
                   mv "${file_Link}" "${dir_New}" || :
                 else
                   echo "The job is no longer in queue. Checking starting state...." | tee -a "${file_Log}"
@@ -595,7 +597,7 @@ fn_CatchWord()
   case ${str_Word} in
     t | T      ) fn_ShowTasks "${file_Job}"          ;;
     tail       ) trap "return 0" 2 ; tail -f "${file_Log}" ;;
-    [0-9]*     ) fn_AdminFunctions ${str_Word}  ;;
+    [0-9]*     ) fn_AdminFunctions "${str_Word}"  ;;
     *          ) ${cmd_CLEAR} ;;
   esac
   #echo "${str_Word}"
