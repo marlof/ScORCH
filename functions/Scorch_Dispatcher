@@ -244,7 +244,7 @@ fn_RunJobs()
     [[ -f ${file_EachJob} ]] || continue
     ##########################################################
 
-    printf "\n$(${fn_LogDate}) Starting $(basename "${file_EachJob}")"
+    printf "\n%s Starting %s" "$(${fn_LogDate})" "$(basename "${file_EachJob}")"
     fn_CreateFile "${dir_Log}"/"$(basename "${file_EachJob}").log"
     if [[ -x "${file_EachJob}" ]] ; then
       if [[ -z ${str_Group} ]] ; then
@@ -283,8 +283,8 @@ fn_LockManager()
     int_Count=1
     for file_Lock in ${lst_Locks} ; do
       printf "%s%s%${int_Column1Width}s | "  "${dis_Reset}" "${str_StatusColour}" "${int_Count}"
-      printf "${file_Lock} -> $(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)\n"
-      arr_Locks[${int_Count}]="${file_Lock}"
+      printf "%s -> %s\n" "${file_Lock}" "$(ls -l ${dir_Lock}/${file_Lock} | cut -d ">" -f2)"
+      arr_Locks[int_Count]="${file_Lock}"
       (( int_Count+=1 ))
     done
     if [[ ${int_Count} -lt 2 ]] ; then
@@ -302,11 +302,12 @@ fn_LockManager()
       case "${char_Choice}" in
 
         ## Lock transition
-        d | D ) printf "rm lock "  ;;
+        d | D ) printf "rm lock " ;;
         [0-9]* ) echo "removing ${dir_Lock}/${arr_Locks[${char_Choice}]}" ; rm "${dir_Lock}/${arr_Locks[${char_Choice}]}" ; sleep 2 ;;
 
         x | X ) return 0 ;;
       esac
+      lst_Locks=$(ls "${dir_Lock}")
     fi
   ##  fn_RunJobs
   done

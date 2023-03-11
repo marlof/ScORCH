@@ -59,10 +59,10 @@ fn_JobHeader()
   ##
   ## The file to be created is passed as a variable
 
-  typeset local file_Job=${1}
+  local file_Job=${1}
   echo "Creating ${file_Job}"
   printf "\tactive file\t"
-  fn_CreateFile "${dir_Active}/$(basename ${file_Job})" blank
+  fn_CreateFile "${dir_Active}/$(basename "${file_Job}")" blank
   printf "Done\n\tsym-link\t"
   ln -s "${dir_Active}/$(basename "${file_Job}")" "${file_Job}"
   printf "Done\n\tadding header\t"
@@ -224,7 +224,7 @@ fn_JobFooter()
   ##
   ## The file to be appended to is passed as a variable
 
-  typeset local file_Job="${1}"
+  local file_Job="${1}"
   printf "\tadding footer\t"
 
   (( int_TaskCount-- ))
@@ -328,9 +328,9 @@ readonly -f fn_NewJob
 fn_GetRequest()
 {
   ## Receive the request from a file or interactively
-  typeset local file_Template="${1:-}"
-  typeset local str_Line=""
-  typeset local int_GetCount=1
+  local file_Template="${1:-}"
+  local str_Line=""
+  local int_GetCount=1
 
   ## global tmp file
   file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
@@ -350,7 +350,7 @@ fn_GetRequest()
       read -e -r str_Line
       str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       if [[  ${str_ULine} =~ HELP ]] ; then
-        typeset local str_Help=${str_Line#help }
+        local str_Help=${str_Line#help }
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
           declare -f fn_ExtractPairs | grep -w "GetVar"
@@ -361,7 +361,7 @@ fn_GetRequest()
           echo "==============="
         fi
       else
-        [[ ${str_ULine} =~ CANCEL ]] && rm ${dir_Tmp}/${str_ProgramName}.$$.[0-9]* && break
+        [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}."$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
         echo "${str_Line}" | grep ":" >> "${file_Request}"
       fi
@@ -372,12 +372,12 @@ fn_GetRequest()
 
 fn_ProcessRequest()
 {
-  typeset local int_JobCount=1
-  typeset local int_FileCount=1
+  local int_JobCount=1
+  local int_FileCount=1
 
   int_JobID=$(fn_GetJobID)
   # Multi Action is enterprise feature
-  for str_EachFile in ${dir_Tmp}/${str_ProgramName}.$$.* ; do
+  for str_EachFile in "${dir_Tmp}/${str_ProgramName}."$$.* ; do
     [[ -e ${str_EachFile} ]] || break
     file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     #echo "${str_EachFile}"
@@ -392,8 +392,7 @@ fn_ProcessRequest()
         if type -t "SP_${ACTION}" >/dev/null ; then
           fn_Call="SP_${ACTION}"
         else
-          printf "\n\nCannot find a function called SP_${ACTION}\n"
-    
+          printf "\n\nCannot find a function called SP_%s\n" "${ACTION}"
           fn_PressEnter
           return 0
         fi
@@ -402,14 +401,9 @@ fn_ProcessRequest()
         file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
         fn_CreateFile "${dir_Log}"/"$(basename "${file_Job}").log"
         
-        
-        
-        
-        
-        
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
-        printf "\t${fn_Call}: "
+        printf "\t%s: " "${fn_Call}"
 
         #echo "$(${fn_LogDate}) Plugin:${str_Call}" >> "${dir_Log}"/$(basename "${file_Job}").log
         #echo ${fn_Call} #>> "${dir_Log}"/$(basename "${file_Job}").log
@@ -468,7 +462,7 @@ fn_GetJobID()
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
   [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
   
-  typeset local file_JobIDLock="${file_JobID}".lock
+  local file_JobIDLock="${file_JobID}".lock
   if which flock >/dev/null 2>&1 ; then
     fn_CreateFile $file_JobIDLock
     (
@@ -488,7 +482,7 @@ fn_GetJobID()
     echo ${int_JobID} > "${file_JobID}"
     echo ${int_JobID}
   fi 
-  rm $file_JobIDLock 2>/dev/null
+  rm "$file_JobIDLock" 2>/dev/null
 }
 readonly -f fn_GetJobID
 
@@ -641,11 +635,11 @@ Task()
   ## This function will Add Tasks to a scorch Job
   ## ================================================================================
   int_TaskCount=${int_TaskCount:-0}
-  typeset local   str_Task1=${1:-""}
-  typeset local      str_OR=${2:-""}
-  typeset local   str_Task2=${3:-""}
-  typeset local str_AltTask=
-  typeset local file_Job=${file_Job:-"/dev/null"}
+  local   str_Task1=${1:-""}
+  local      str_OR=${2:-""}
+  local   str_Task2=${3:-""}
+  local str_AltTask=
+  local file_Job=${file_Job:-"/dev/null"}
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) >> \"\${file_Log}\" 2>&1" >> "${file_Job}"
 #  [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ( ${str_Task2} ) | tee -a \"\${file_Log}\"" >> "${file_Job}"
   [[ "${str_OR}" = "OR" ]] && [[ "${str_Task2}" != "" ]] && str_AltTask="|| ${str_Task2} "
@@ -742,15 +736,15 @@ GetVar()
   # Examples
   #
   # GetVar -pattern "data label" -name DATA_LABEL -d "None"
-  typeset local str_Pattern=
-  typeset local str_Name=
-  typeset local str_Value=
-  typeset local str_Default=
-  typeset local b_IgnoreCase=1
-  typeset local b_List=
-  typeset local b_Upper=
-  typeset local b_Lower=
-  typeset local b_Mandatory=
+  local str_Pattern=
+  local str_Name=
+  local str_Value=
+  local str_Default=
+  local b_IgnoreCase=1
+  local b_List=
+  local b_Upper=
+  local b_Lower=
+  local b_Mandatory=
  
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -811,14 +805,14 @@ GetVar()
 
 OGetVar()
 {
-  typeset local str_Pattern=
-  typeset local str_Name=
-  typeset local str_Value=
-  typeset local str_Default=
-  typeset local b_IgnoreCase=1
-  typeset local b_List=
-  typeset local b_Upper=
-  typeset local b_Lower=
+  local str_Pattern=
+  local str_Name=
+  local str_Value=
+  local str_Default=
+  local b_IgnoreCase=1
+  local b_List=
+  local b_Upper=
+  local b_Lower=
   
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
@@ -850,7 +844,7 @@ fn_Transition()
   ## Transition a job to a new state
   ## ===============================
 
-  typeset local str_Transition="${1}"
+  local str_Transition="${1}"
   fn_ShowTop
   printf "\n\nSelect jobs to move to $1 state\n\n"
 
@@ -895,10 +889,10 @@ fn_Transition()
         return 0
       fi
 
-      typeset local  file_Link="${dir_Job}"/${arr_States[${int_Choice}]}/${arr_Jobs[${int_Choice}]}
-      typeset local   file_Job="${dir_Active}/${arr_Jobs[${int_Choice}]}"
-      typeset local   file_Log="${dir_Log}/$(basename "${file_Job}")".log
-      typeset local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
+      local  file_Link="${dir_Job}"/${arr_States[${int_Choice}]}/${arr_Jobs[${int_Choice}]}
+      local   file_Job="${dir_Active}/${arr_Jobs[${int_Choice}]}"
+      local   file_Log="${dir_Log}/$(basename "${file_Job}")".log
+      local file_Rules="${dir_Active}/$(basename "${file_Link}")".rules
 
       fn_Audit "${file_Job}" "$(basename "${str_Target}")"
       case ${str_Transition} in
@@ -958,7 +952,7 @@ readonly -f fn_CheckOwnJobs
 
 fn_SetJobOwner()
 {
-  typeset local file_Job="${1}"
+  local file_Job="${1}"
   if grep "^str_Owner=" "${file_Job}" ; then
     fn_Audit "${file_Job}" "accepted ownership of the job"
     sed 's/^str_Owner=.*/str_Owner='${str_User}'/g' "${file_Job}" > "${file_Job}".tmp
@@ -969,7 +963,7 @@ readonly -f fn_SetJobOwner
 
 fn_CheckOwner()
 {
-  typeset local file_Job="${1}"
+  local file_Job="${1}"
   if ! grep -q "^str_Owner=${str_User}" "${file_Job}" ; then
 
     printf "\n\nYou do not own this job\n\nCurrent owner: $(grep "^str_Owner=" "${file_Job}")\n\n"
@@ -985,5 +979,5 @@ readonly -f fn_CheckOwner
 fn_JobState()
 {
   local file_Job=${1}
-  basename $(dirname $(find -L ${dir_Job} -name ${file_Job} | grep -v "/active/"))
+  basename "$(dirname "$(find -L "${dir_Job}" -name "${file_Job}" | grep -v "/active/")")"
 }
