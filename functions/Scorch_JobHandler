@@ -186,31 +186,20 @@ Try()
 
 fn_ListTasksRemaining()
 {
-int_Count=0
-declare -A JOB
-while (( int_Count <= int_Last )) ; do
-  JOB[T\${int_Count}]=\$(grep "^AUDIT:T:\${int_Count}:" "\${file_Job}" | tail -1 | cut -d: -f4)
-  (( int_Count++ ))
-done
+  int_Count=0
+  declare -A JOB
+  while (( int_Count <= int_Last )) ; do
+    JOB[T\${int_Count}]=\$(grep "^AUDIT:T:\${int_Count}:" "\${file_Job}" | tail -1 | cut -d: -f4)
+    (( int_Count++ ))
+  done
 
-int_Count=0
-#if [[ "\${str_Mode}" == "skip" ]] ; then
-#  while (( int_Count <= int_Last )) ; do
-#    if [[ " " == "\$(echo \${JOB[T\${int_Count}]})" ]] ; then
-#      echo \${int_Count}
-#    else
-#      echo "AUDIT:T:\${each_FailedTask}:S" >> "\${file_Job}"
-#    fi
-#    (( int_Count++ ))
-#  done
-#else
+  int_Count=0
   while (( int_Count <= int_Last )) ; do
     if [[ "F R K" =~ \$(echo "\${JOB[T\${int_Count}]}") ]] ; then
       echo \${int_Count}
     fi
     (( int_Count++ ))
   done
-#fi
 }
 
 EOF
@@ -235,14 +224,14 @@ int_Last=${int_TaskCount}
 
 fn_ProcessTask()
 {
-    local int_StartTask=\$1
-    printf "===================\n" >> "\${file_Log}"
-    printf "%s Starting task [%s/%s]\n" "\$(${fn_LogDate})"  "\${int_StartTask}"  "\${int_Last}" >> "\${file_Log}"
-    printf "TASK:START:%s\n" "\$(date '+%s')" >> "\${file_Log}"
-    declare -f fn_Task_"\${int_StartTask}" | tail -n +3 | head -n -2 >> "\${file_Log}"
-    echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Active}/\${str_JobName}"
-    fn_Task_"\${int_StartTask}"
-    sleep 1
+  local int_StartTask=\$1
+  printf "===================\n" >> "\${file_Log}"
+  printf "%s Starting task [%s/%s]\n" "\$(${fn_LogDate})"  "\${int_StartTask}"  "\${int_Last}" >> "\${file_Log}"
+  printf "TASK:START:%s\n" "\$(date '+%s')" >> "\${file_Log}"
+  declare -f fn_Task_"\${int_StartTask}" | tail -n +3 | head -n -2 >> "\${file_Log}"
+  echo "AUDIT:T:\${int_StartTask}:R" >> "\${dir_Active}/\${str_JobName}"
+  fn_Task_"\${int_StartTask}"
+  sleep 1
 }
 
 if (( int_StartTask == 0 )) ; then
@@ -315,7 +304,7 @@ fn_NewJob()
 
   local int_Count
   int_Count=$(find -L "${dir_Plugins}" -name "XSP_*" | wc -l)
-  (( int_Count > 0 )) &&   printf "\nDisabled plugins: %s\n" ${int_Count}
+  (( int_Count > 0 )) &&   printf "\nDisabled plugins: %s\n" "${int_Count}"
 
   fn_GetRequest "${file_Template}"
   fn_GetRequestor
@@ -966,7 +955,7 @@ fn_CheckOwner()
   local file_Job="${1}"
   if ! grep -q "^str_Owner=${str_User}" "${file_Job}" ; then
 
-    printf "\n\nYou do not own this job\n\nCurrent owner: $(grep "^str_Owner=" "${file_Job}")\n\n"
+    printf "\n\nYou do not own this job\n\nCurrent owner: %s\n\n" "$(grep "^str_Owner=" "${file_Job}")"
     read ${str_Quick} -p "Do you wish to take ownership? [y/n]: "
     case $REPLY in
       y | Y ) fn_SetJobOwner "${file_Job}" ;;

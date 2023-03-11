@@ -230,6 +230,7 @@
 ## 3.0.5  230121  marc   #175 Add help documentation
 ## 3.0.6  230130  marc   #177 Fix tar find local and instell directory
 ##                       #173 Added noglob
+## 3.0.7  230312  marc   #178 Code Cleanup
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -237,7 +238,7 @@
 set -uo pipefail     # -e is not used yet as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
 
-typeset str_ProgramVersion="3.0.6"
+typeset str_ProgramVersion="3.0.7"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -453,12 +454,12 @@ fn_LoadFunctions()
   ##   -d    dir
   ##   -pre  pre search
   ##   -post post search
-  ##typeset local dir_Directory="$(basename ${1})"
-  typeset local dir_Directory="${1}"
-  typeset local    str_Search="${2}"
-  #typeset local     b_Display="${3:-true}"
-  typeset local      b_Errors=0
-  typeset local  str_EachFile=
+  ## local dir_Directory="$(basename ${1})"
+  local dir_Directory="${1}"
+  local    str_Search="${2}"
+  # local     b_Display="${3:-true}"
+  local      b_Errors=0
+  local  str_EachFile=
   ##[[ ${b_Display} ]] || printf "\nLoading %s\n" "${dir_Directory}"
   if [ -d "${dir_Directory}" ] ; then
     SAVEIFS=$IFS
@@ -645,7 +646,7 @@ fi
 
 if [[ "${b_BackgroundRun}" ]] ; then
   # ADD LOOP HERE FOR JOB CHECKS
-  typeset local b_Finished=1
+  typeset b_Finished=1
   echo "$(${fn_LogDate}) ${str_User} Running in background to complete queued jobs"
   while [[ "$(find "${dir_Starting}" "${dir_Pending}" "${dir_Queued}" -type l -exec grep -l "str_Owner=${str_User}" {} \;)" ]] ; do
     fn_RunJobs
