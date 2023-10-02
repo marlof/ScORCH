@@ -130,7 +130,6 @@ def fn_ShowLine(cha_LineChar,str_LineTitle):
     ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
         This can actually show a row of strings but they my not fill the whole depending on string width '''
     parity=(len(cha_LineChar))
-    #print(str_LineTitle.center(int(int_Columns),cha_LineChar))
     int_remaining = int(int(int_Columns)/parity) - int(3/parity) 
     print("%s"% cha_LineChar * int(3/parity) + str_LineTitle.ljust(int_remaining, cha_LineChar))
     #print( "%s"% cha_LineChar * int(3/parity) + str_LineTitle + cha_LineChar * ((int(int_Columns)/parity) - (len(str_LineTitle)/parity) - int(3/parity) - 1 ) )
@@ -168,21 +167,21 @@ def fn_ShowJobs(str_State,temp,maxnum):
     global b_More
     global int_More
     global int_Count
+
     if arr_str_DirList2:                                                    #   If there is anything in the directory
 
         fn_ShowLine("-",str_State.upper())
         
-
         if os.name == "nt":
             dir_State = dir_Job + str_State + '\\'
         else:
             dir_State = dir_Job + str_State + '/'
 
-        #print ("debug - testing dir", dir_State)
         os.chdir(dir_State)                                                     # Change to the job/state directory
-        arr_Files = list(os.listdir('.'))
-        #print ("debug - files1 :', files,'\n')
-        arr_Files.sort(key=lambda x: os.path.getmtime(x))
+        arr_Files = [file for file in os.listdir('.') if os.path.exists(file)]
+
+        arr_Files.sort(key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0)
+
         if str_State == "completed":
             arr_Files=list(reversed(arr_Files))
         if str_State == "failed":
@@ -398,6 +397,7 @@ def main(argv):
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
         maxnum = int(rows) - 10
+
 
     # Work for better spanning columns
     #arr_str_DirList  = (listdir(dir_Job))                   #   Create an "ls" list for the directory
