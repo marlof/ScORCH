@@ -85,8 +85,7 @@ fn_CheckSetUp()
     set +e
     for str_Command in ${arr_Commands} ; do
       printf "\tChecking for %s:\t" "${str_Command}"
-      which "${str_Command}" 2>/dev/null
-      if [[ $? != 0 ]] ; then
+      if ! command -v "${str_Command}" 2>/dev/null ; then
         if [[ "${str_Command}" == "python3" ]] && [[ ${str_ShowJobs} != "python" ]] ; then
           echo "Using slow method"
         else
@@ -98,10 +97,10 @@ fn_CheckSetUp()
     set -e
   fi
 
-  cmd_AWK=$(which awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
+  cmd_AWK=$(command -v awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gawk or nawk")
   [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: %s\n" "${cmd_AWK}"
-  cmd_TPUT=$(which tput 2>/dev/null) || cmd_TPUT="echo"
-  cmd_CLEAR=$(which clear 2>/dev/null) || cmd_CLEAR="echo \"\""
+  cmd_TPUT=$(command -v tput 2>/dev/null) || cmd_TPUT="echo"
+  cmd_CLEAR=$(command -v clear 2>/dev/null) || cmd_CLEAR="echo \"\""
 
   ( tput rmam ) || cmd_TPUT="echo"
   (( b_NonInteractive == 1 )) && cmd_CLEAR="echo \"\""
@@ -116,8 +115,10 @@ fn_CheckSetUp()
     exit 1
   fi
 
-  ps -f > /dev/null
-  [[ $? -ne 0 ]] && echo "ps is core dumping. Restart system" && exit 1
+  if ! ps -f > /dev/null ; then 
+    echo "ps is core dumping. Restart system"
+    exit 1
+  fi
 
   str_JobPrefix="Job_"
 }
@@ -202,7 +203,7 @@ fn_HouseKeeping()
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
 
-  [ "$(ls "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
+  [ "$(find "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
   find -L -H "${dir_Completed}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
