@@ -35,6 +35,7 @@
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
 # 1.17      Marc Loftus     20/02/2020      Python 3
 # 1.18      Marc Loftus     01/11/2022      Wrap os.popen in try block
+# 1.19      Marc Loftus     02/10/2023      Add protection arounf symlinks
 ############################################################################################################
 str_ProgramVersion = '1.18'
 
@@ -178,8 +179,8 @@ def fn_ShowJobs(str_State,temp,maxnum):
             dir_State = dir_Job + str_State + '/'
 
         os.chdir(dir_State)                                                     # Change to the job/state directory
+        
         arr_Files = [file for file in os.listdir('.') if os.path.exists(file)]
-
         arr_Files.sort(key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0)
 
         if str_State == "completed":
