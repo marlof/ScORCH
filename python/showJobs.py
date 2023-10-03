@@ -45,6 +45,7 @@ import time        # Used for ls sorting in time order
 import datetime    # Used for elapsed running time
 import glob
 import re
+import shutil
 
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
