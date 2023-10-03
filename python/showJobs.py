@@ -88,7 +88,9 @@ def fn_ShowLine(cha_LineChar,str_LineTitle):
         This can actually show a row of strings but they my not fill the whole depending on string width '''
     parity        = len(cha_LineChar)
     int_remaining = (int_Columns // parity) - (3 // parity) 
-    print(f"{cha_LineChar * (3 // parity)}{str_LineTitle.ljust(int_remaining, cha_LineChar)}")
+    print("{cha_LineChar * (3 // parity)}{str_LineTitle.ljust(int_remaining, cha_LineChar)}")
+    print("{}{}".format(cha_LineChar * (3 // parity), str_LineTitle.ljust(int_remaining, cha_LineChar)))
+
 
 
 def fn_ColumnMax(arr_Files, int_Column):
