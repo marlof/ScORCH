@@ -91,7 +91,7 @@ def fn_ShowLine(cha_LineChar, str_LineTitle):
     # Calculate the number of characters needed on each side of the title
     title_length = len(str_LineTitle)
     char_length = len(cha_LineChar)
-    side_length = (int_Columns - 3 - title_length)
+    side_length = (columns - 3 - title_length)
 
     # Create the line
     line = cha_LineChar * 3 + str_LineTitle + cha_LineChar * side_length
