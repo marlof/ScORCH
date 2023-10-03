@@ -220,7 +220,8 @@ def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
                     int_Count = int_Count + 1
                 else:
                    # Handle the case when the split list doesn't have enough elements
-                   print(f"\t\tSkipping \"{str_File}\" due to incorrect job format.")
+                   #print(f"\t\tSkipping \"{str_File}\" due to incorrect job format.")
+                   print("\t\tSkipping \"{}\" due to incorrect job format.".format(str_File))
             else:
                 b_More = True
                 int_More = int_More + 1
