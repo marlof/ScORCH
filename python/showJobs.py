@@ -35,7 +35,8 @@
 # 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
 # 1.17      Marc Loftus     20/02/2020      Python 3
 # 1.18      Marc Loftus     01/11/2022      Wrap os.popen in try block
-# 1.19      Marc Loftus     02/10/2023      Add protection arounf symlinks
+# 1.19      Marc Loftus     02/10/2023      Add protection around symlinks
+#                                           Improved ShowLine function
 ############################################################################################################
 str_ProgramVersion = '1.18'
 
@@ -82,20 +83,14 @@ class colours:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
-
-#def fn_ShowLine(cha_LineChar,str_LineTitle):
-#    ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
-#        This can actually show a row of strings but they my not fill the whole depending on string width '''
-#    parity        = len(cha_LineChar)
-#    int_remaining = (int_Columns // parity) - (3 // parity) 
-#    print("{cha_LineChar * (3 // parity)}{str_LineTitle.ljust(int_remaining, cha_LineChar)}")
-#    print("{}{}".format(cha_LineChar * (3 // parity), str_LineTitle.ljust(int_remaining, cha_LineChar)))
-
 def fn_ShowLine(cha_LineChar, str_LineTitle):
+    
+    columns, _ = shutil.get_terminal_size(fallback=(int_Columns, 120))
+
     # Calculate the number of characters needed on each side of the title
     title_length = len(str_LineTitle)
     char_length = len(cha_LineChar)
-    side_length = (int_Columns - 3 - title_length) // 2
+    side_length = (int_Columns - 3 - title_length)
 
     # Create the line
     line = cha_LineChar * 3 + str_LineTitle + cha_LineChar * side_length
