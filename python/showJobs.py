@@ -83,15 +83,29 @@ class colours:
     RESET = '\033[0m'
 
 
-def fn_ShowLine(cha_LineChar,str_LineTitle):
-    ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
-        This can actually show a row of strings but they my not fill the whole depending on string width '''
-    parity        = len(cha_LineChar)
-    int_remaining = (int_Columns // parity) - (3 // parity) 
-    print("{cha_LineChar * (3 // parity)}{str_LineTitle.ljust(int_remaining, cha_LineChar)}")
-    print("{}{}".format(cha_LineChar * (3 // parity), str_LineTitle.ljust(int_remaining, cha_LineChar)))
+#def fn_ShowLine(cha_LineChar,str_LineTitle):
+#    ''' Shows a row of characters that fill the width of the screen Takes 2 parameters, char , title
+#        This can actually show a row of strings but they my not fill the whole depending on string width '''
+#    parity        = len(cha_LineChar)
+#    int_remaining = (int_Columns // parity) - (3 // parity) 
+#    print("{cha_LineChar * (3 // parity)}{str_LineTitle.ljust(int_remaining, cha_LineChar)}")
+#    print("{}{}".format(cha_LineChar * (3 // parity), str_LineTitle.ljust(int_remaining, cha_LineChar)))
 
+def fn_ShowLine(cha_LineChar, str_LineTitle):
+    # Calculate the number of characters needed on each side of the title
+    title_length = len(str_LineTitle)
+    char_length = len(cha_LineChar)
+    side_length = (int_Columns - 3 - title_length) // 2
 
+    # Create the line
+    line = cha_LineChar * 3 + str_LineTitle + cha_LineChar * side_length
+
+    # Fill the remaining space on the right if needed
+    remaining = int_Columns - len(line)
+    if remaining > 0:
+        line += cha_LineChar * remaining
+
+    print(line)
 
 def fn_ColumnMax(arr_Files, int_Column):
     int_ColumnMax = 0
