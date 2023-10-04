@@ -240,6 +240,8 @@
 set -uo pipefail     # -e is not used yet as that is how plugins are loaded (or not loaded)
 IFS=$' \n\t'
 
+BUILDTAG=updated-by-jenkins
+
 typeset str_ProgramVersion="3.0.8"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
@@ -495,7 +497,7 @@ fn_LoadFunctions()
         ##echo "$(pwd) ${dir_Directory} could not be found"
   fi
 
-  [[ ${b_Errors} -ge 1 ]] && echo HERE && exit 1
+  [[ ${b_Errors} -ge 1 ]] && printf "\n\nWARNING: Some plugins reported error"
   :
 }
 readonly -f fn_LoadFunctions
