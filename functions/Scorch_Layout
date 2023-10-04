@@ -332,7 +332,6 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
     #fn_PressEnter
     fn_ShowLine
     tail -"${int_Tail}" "${dir_Log}/$(basename ${file_Job}).log"
-	  printf " "
     fn_ShowLine "="
 
     printf "\n\n ${dis_ULOn}R${dis_ULOff}efresh Rate | ${dis_ULOn}P${dis_ULOff}ause | ${dis_ULOn}L${dis_ULOff}og | e${dis_ULOn}X${dis_ULOff}it : "
