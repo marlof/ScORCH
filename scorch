@@ -233,6 +233,7 @@
 ## 3.0.7  230312  marc   #178 Code Cleanup
 ## 3.0.8  231002  marc   #179 Hardened python calls
 ##                       Added TERM default for docker version
+## 3.0.9  231005  marc   Improvement for corrupt jobs
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -242,7 +243,7 @@ IFS=$' \n\t'
 
 BUILDTAG=updated-by-jenkins
 
-typeset str_ProgramVersion="3.0.8"
+typeset str_ProgramVersion="3.0.9"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
