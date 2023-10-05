@@ -433,6 +433,11 @@ fn_AdminFunctions()
     while : ; do
       str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name ${str_Job} -print| grep -v ${dir_Active} )))
       file_Link="${dir_Job}/${str_JobState}/${str_Job}"
+      if [[ ! -s "${file_ActiveJob}" ]] ; then
+        printf  "\n\tActive job \"%s\" is not accessible\n" $(basename ${file_ActiveJob})
+        fn_PressEnter
+        return
+      fi
       fn_JobInfo
       type fnE_RulesMenu >/dev/null 2>&1 && fnE_RulesMenu
       fn_ContextMenu "${str_JobState}"
