@@ -97,7 +97,7 @@ fn_CheckSetUp()
     set -e
   fi
 
-  cmd_AWK=$(command -v awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable gaw)
+  cmd_AWK=$(command -v awk 2>/dev/null) # || cmd_AWK=$(which nawk 2>/dev/null) || (printf "\n\tCant find a suitable  gawk or nawk")
   [[ ${b_NonInteractive} ]] || printf "\n\tcmd_AWK: %s\n" "${cmd_AWK}"
   cmd_TPUT=$(command -v tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(command -v clear 2>/dev/null) || cmd_CLEAR="echo \"\""
@@ -110,7 +110,7 @@ fn_CheckSetUp()
 
   if [[ ${b_SetUp} ]] ; then
     printf "\n\n\n\tThere are missing files, directories, commands or permissions.\n"
-    printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t%s/%s -install\n" "${dir"
+    printf "\tTo automatically create required directories, as the framework owner rerun:\n\t\t%s/%s -install\n" "${dir_Orig}" "${str_ProgramName}"
     sleep 2
     exit 1
   fi
@@ -173,10 +173,10 @@ export      file_Version="version.txt"
     if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
     else
-      printf "\n\n Error: %s is using a group account of %s but you are not a member.\n" "${str_ProgramName}" "${str_Gr"
+      printf "\n\n Error: %s is using a group account of %s but you are not a member.\n" "${str_ProgramName}" "${str_Group}"
       printf "\n Your available groups are:\n "
       groups
-      printf "\n\n Check with %s administrator, or a system administrator. Or change your scorch.prefs file\n" "${str_P"
+      printf "\n\n Check with %s administrator, or a system administrator. Or change your scorch.prefs file\n" "${str_ProgramName}"
       exit 1
     fi
   fi
@@ -203,7 +203,7 @@ fn_HouseKeeping()
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
 
-  [ "$(find "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer 1
+  [ "$(find "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
   find -L -H "${dir_Completed}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
@@ -219,7 +219,7 @@ fn_HouseKeeping()
     fi
   fi
 
-  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived)
+  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived.tar" "{}" + 2>/dev/null )
   find -L "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
   [[ -w ${file_Cache} ]] && rm ${file_Cache}
@@ -363,8 +363,8 @@ fn_UpdateResumePoint()
   fn_CreateFile "${file_Job}"
   fn_CreateFile "${file_Job}".tmp blank
   sed s/^int_ResumePoint=.*/int_ResumePoint=${int_ResumePoint}/ "${file_Job}" > "${file_Job}".tmp
-  [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/del
-  [[ "${int_ResumePoint}" != "unknown" ]] && [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0"
+  [[ "$(grep ^int_ResumePoint "${file_Job}".tmp)" ]] && cp "${file_Job}".tmp "${file_Job}" ; rm "${file_Job}".tmp 2>/dev/null
+  [[ "${int_ResumePoint}" != "unknown" ]] && [[ int_ResumePoint -eq 0 ]] && echo "$(${fn_LogDate}) Starting from task 0" >> "${file_Log}" || echo "$(${fn_LogDate}) Resuming from task ${int_ResumePoint}" >> "${file_Log}"
 }
 readonly -f fn_UpdateResumePoint
 
@@ -563,14 +563,14 @@ fn_InstallLatest()
   # Checking files modified since last install..
 
   lst_Changed=$(find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${dir_Etc}/install.txt")
-  if [[ ! -z $lst_Changed ]] || [[ $(find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}")n
+  if [[ ! -z $lst_Changed ]] || [[ $(find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}") ]] ; then
     fn_Mkdir "${dir_Backup}"
     printf "\n\n"
     printf " Warning: Found files that have been modified\n"
     printf " ============================================\n"
     printf " Backup directory: %s\n" "${dir_Backup}"
     printf " (y/n response required for each file)\n%s\n\n" "${lst_Changed}"
-    find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Ba;
+    find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
     find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
   else
     printf "\n\n No modifed files found\n"
