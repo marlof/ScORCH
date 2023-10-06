@@ -92,7 +92,11 @@ fn_ShowTop()
   (( int_DiskUsage >= 90 )) && str_DiskUsage="${dis_FRed}${int_DiskUsage}${dis_Reset}"
   
   typeset int_DispatcherPID
-  int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')  int_DispatcherPID=${int_DispatcherPID:-0}
+  if [[ -L "${file_DispatchLock}" ]] ; then
+    int_DispatcherPID=$(ls -l "${file_DispatchLock}" 2>/dev/null | ${cmd_AWK} -F"_" '{print $NF}')
+  else
+    int_DispatcherPID=0
+  fi
   printf "  %${int_TitleWidth}s|%${int_Column3Width}s|%${int_Column4Width}s|%${int_Column6Width}s|%s| Group:%s" \
          "${str_ProgramName} [${str_ProgramVersion}]" \
          "D:${int_DispatcherPID}" \

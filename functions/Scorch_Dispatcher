@@ -214,7 +214,7 @@ fn_CheckDispatcher()
       return 0
     else
       echo "This is the dispatch host but the process associated with the dispatch lock file has died. (Removing lock)"
-      rm "${file_DispatchLock}" 2>/dev/null
+      rm "${file_DispatchLock}" 2>/dev/null || :
     fi
   else
     if [[ "$(pgrep -f "${str_ProgramName} -dispatcher -j ${dir_Job}")" ]] ; then
