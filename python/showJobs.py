@@ -161,24 +161,21 @@ def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
                             chr_Owner = ">"
                             break
             except:
-                chr_Owner = "x"
+                print("X  x           Access Issue: " + str_File)
+                continue
                 
 
-            try:
-                if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
-                    chr_PauseFlag = "P"
-                else:
-                    chr_PauseFlag = " "
-            except:
-                chr_PauseFlag = "x"
+            if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
+                chr_PauseFlag = "P"
+            else:
+                chr_PauseFlag = " "
 
-            try:
-                if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
-                    chr_RuleFlag = "R"
-                else:
-                    chr_RuleFlag = " "
-            except:
-                chr_RuleFlag = "x"
+
+            if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
+                chr_RuleFlag = "R"
+            else:
+                chr_RuleFlag = " "
+
 
             ''' Max Display '''
             if int_Count <= maxnum:
