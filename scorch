@@ -258,7 +258,7 @@ typeset         file_Prefs=~/${str_ProgramName}.prefs
 ## User EDITOR preference
 typeset         cmd_Editor="${EDITOR:-vi}"
 
-typeset         str_Group=
+typeset         str_Group=scorch
 typeset              TERM=${TERM:=vt100}
 # Uncomment and set correct group for group directory and file creation
 # export str_Group=scorch

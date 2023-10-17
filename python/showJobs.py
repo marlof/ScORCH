@@ -63,8 +63,8 @@ str_Time = ""
 int_Count             = 1
 str_ProgramName       = __file__
 int_PID               = os.getpid()
-int_Rows = int(os.environ.get('LINES', 25))
-int_Columns = int(os.environ.get('COLUMNS', 120))
+int_Rows              = int(os.environ.get('LINES', 25))
+int_Columns           = int(os.environ.get('COLUMNS', 120))
 list_Dir              = []
 
 dir_Run=os.getcwd()
@@ -153,20 +153,32 @@ def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
 
         for str_File in arr_Files:
             chr_Owner = " "
-            for line in open(str_File, 'r'):
-              if re.search("str_Owner=" + getpass.getuser() + "$", line):
-                chr_Owner = ">"
-                break
 
-            if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
-                chr_PauseFlag = "P"
-            else:
-                chr_PauseFlag = " "
+            try:
+                with open(str_File, 'r') as file:
+                    for line in file:
+                        if re.search("str_Owner=" + getpass.getuser() + "$", line):
+                            chr_Owner = ">"
+                            break
+            except:
+                chr_Owner = "x"
+                
 
-            if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
-                chr_RuleFlag = "R"
-            else:
-                chr_RuleFlag = " "
+            try:
+                if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
+                    chr_PauseFlag = "P"
+                else:
+                    chr_PauseFlag = " "
+            except:
+                chr_PauseFlag = "x"
+
+            try:
+                if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
+                    chr_RuleFlag = "R"
+                else:
+                    chr_RuleFlag = " "
+            except:
+                chr_RuleFlag = "x"
 
             ''' Max Display '''
             if int_Count <= maxnum:

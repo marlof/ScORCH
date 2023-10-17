@@ -408,7 +408,7 @@ fn_JobInfo()
   fn_ShowTop
   fn_ShowLine "-" "Job Details"
   local str_JobOwner
-  str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}")
+  str_JobOwner=$(grep ^str_Owner "${file_ActiveJob}") || str_JobOwner="permissions issue"
   echo " ${str_JobOwner}"
   echo " State at selection : ${str_JobState}"
   basename "${file_ActiveJob}"
@@ -420,7 +420,7 @@ fn_JobInfo()
   echo ""
   fn_ShowRules
   fn_ShowLine "-" "Template"
-  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}"
+  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_ActiveJob}" || :
   echo ""
   fn_ShowLine "-" "Log Summary"
   tail -${int_Tail} "${file_Log}"

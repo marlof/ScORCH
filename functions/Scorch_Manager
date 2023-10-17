@@ -392,7 +392,7 @@ fn_CopyTemplate()
   file_Log="${dir_Log}/$(basename "${file_Link}")".log
   file_TmpCopy="${dir_Tmp}${str_ProgramName}.$$.copy"
   printf "\n\n Template\n ==========\n\n"
-  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}"
+  sed -n -e '/^# Template Begin$/,/^# Template End$/{//!p}' "${file_Link}" > "${file_TmpCopy}" || :
   cat "${file_TmpCopy}"
 
   if fn_Confirm "Do you wish to modify the template" ; then
