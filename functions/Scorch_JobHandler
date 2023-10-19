@@ -50,8 +50,6 @@
 # shellcheck disable=SC2154
 
 
-
-
 fn_JobHeader()
 {
   ## Function to create and initialise the job file. This job file is incomplete without a Footer
