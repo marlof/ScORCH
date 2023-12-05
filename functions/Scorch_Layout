@@ -173,6 +173,7 @@ fn_ShowJobs2()
     [[ "${str_State}" != "completed" ]] && str_Reverse="r" || str_Reverse=""
 #echo "$(pwd)"
 #echo "${file_Cache}"
+    set +o noglob
     ls -"${str_Reverse}"t "${str_State}/${str_JobPrefix}"* 2>/dev/null | grep -v "pause$" | ${cmd_AWK} \
       -v            state=${str_State} \
       -v             user=${str_User} \
@@ -241,6 +242,7 @@ fn_ShowJobs2()
 #       cat "${file_Cache}"
     [[ -r "${file_Cache}" ]] && . "${file_Cache}" && rm "${file_Cache}"
   done
+  set -o noglob
 }
 #readonly -f fn_ShowJobs2
 

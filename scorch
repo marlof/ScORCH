@@ -237,6 +237,7 @@
 ## 3.1.0  231006  marc   #180 fixed dispatcher
 ## 3.1.1  231017  marc   Improvement for permission issue jobs
 ## 3.1.2  231017  marc   Improvement for permission issue jobs
+## 3.1.3  231205  marc   Fixed globbing issue for bash SHowJobs2
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -246,7 +247,7 @@ IFS=$' \n\t'
 
 BUILDTAG=updated-by-jenkins
 
-typeset str_ProgramVersion="3.1.2"
+typeset str_ProgramVersion="3.1.3"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
