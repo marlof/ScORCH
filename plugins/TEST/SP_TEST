@@ -13,5 +13,6 @@ DOCUMENTATION
 #  DOCKER="docker run --rm --name aws2terra -e AWS_REGION=${REGION} "
 #  Task "$DOCKER aws2terra s3"
 #  Task "echo $SCHEDULE"
-sleep 4
+  Manual "step 1"
+  Manual "step 2"
 }

@@ -33,8 +33,17 @@ fn_LogWhy()
   basename "${file_Job}"
   echo ${file_Log}
   printf "\n\n"
-  read -e -p " Enter a reason: " str_Answer
-  echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"              | tee -a "${file_Job}" "${file_Log}" >/dev/null
+  if [[  "${str_JobState}" == "manual" ]] ; then
+    read -e -p " Comment (optional): " str_Answer
+    if [[ ${str_Answer} == "" ]] ; then
+      echo "$(${fn_LogDate}) ${str_User} MANUAL STEP"                              | tee -a "${file_Job}" "${file_Log}" >/dev/null
+    else
+      echo "$(${fn_LogDate}) ${str_User} MANUAL STEP REASON: ${str_Answer}"  | tee -a "${file_Job}" "${file_Log}" >/dev/null
+    fi
+  else
+    read -e -p " Enter a reason: " str_Answer
+    echo "$(${fn_LogDate}) ${str_User} REASON: ${str_Answer}"                      | tee -a "${file_Job}" "${file_Log}" >/dev/null
+  fi
 }
 readonly -f fn_LogWhy
 

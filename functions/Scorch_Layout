@@ -1,4 +1,5 @@
 #!/bin/bash
+##
 ## Copyright 2016 WebMarcIT Ltd
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -273,18 +274,16 @@ fn_FormatTasks()
   local file_Log
   file_Log="${dir_Log}/$(basename "${file_Job}").log"
   local int_RefreshRate=${int_Refresh}
-  # Fake the running state to start with a loop
+  # Get the running state to start the loop
   local str_TmpJobState
   str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
   str_JobState=${str_TmpJobState}
-  echo "${str_JobState} = ${str_TmpJobState}" 
   while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
-    ${cmd_CLEAR}
     fn_ShowTop
     fn_ShowLine
     str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
 
-    printf "\n\n   "
+    printf "\n   "
     ls -lL "${file_Job}"
     [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find-L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
     case ${str_JobState} in
@@ -315,7 +314,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
       if ( task_tmp[4] == "K")      str_Progress="[killed]"
       arr_Progress[task_tmp[3]]=str_Progress
     }
-    if ( $1 ~ "^fn_Task_[1-9]") {
+    if ( $1 ~ "^ *fn_Task_[1-9]") {
       str_Task=$2
       if ( str_Task != "" ) {
         if ( $1 ~ "SubTask" )      { 
@@ -373,12 +372,13 @@ fn_ShowTasks()
   local int_Answer=
   local str_Answer=""
 
-  fn_ShowTop
-  fn_ShowLine
 
   if [[ "${file_Job}" ]] ; then
     fn_FormatTasks "${file_Job}"
   else
+    fn_ShowTop
+    fn_ShowLine
+
     printf "\n Display tasks for which job(s)?\n\n"
 
     fn_ShowJobs superseded manual starting failed fixing queued pending new running completed
