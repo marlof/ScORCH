@@ -132,7 +132,7 @@ fn_SetPrefs()
 ## Permissions options
 ## ===================
 # If the primary group is not the same as the team group set this value (suggested: scorch)
-# export str_Group=
+export str_Group=
 
 ## Layout Option
 ## =============
@@ -161,27 +161,30 @@ export      file_Version="version.txt"
 ' >> "${file_Prefs}"
   fi
   source "${file_Prefs}"
+  fn_CheckGroup
+}
+readonly -f fn_SetPrefs
+
+fn_CheckGroup()
+{
   if [ -n "${str_Group}" ] ; then
+    # Check is str_Group exists
     if ! grep -q "${str_Group}:" /etc/group ; then
-      echo "str_Group set to ${str_Group} but does not exist."
-      echo "Reset to black"
-      str_Group=
+      printf "\n\nWarning: str_Group set to %s but it does not exist in /etc/group.\n" ${str_Group}
     fi
-  fi
-  if [[ -n "${str_Group}" ]] ; then
-    # Check str_Group is ont of groups
+    # Check str_Group is one of the allowed groups
     if [[ "$(groups)" =~ ${str_Group} ]] ; then
       :
     else
-      printf "\n\n Error: %s is using a group account of %s but you are not a member.\n" "${str_ProgramName}" "${str_Group}"
+      printf "\n\n Error: %s is using a group account of \"%s\" but you are not a member.\n" "${str_ProgramName}" "${str_Group}"
       printf "\n Your available groups are:\n "
       groups
-      printf "\n\n Check with %s administrator, or a system administrator. Or change your scorch.prefs file\n" "${str_ProgramName}"
+      printf "\n\n Check with the %s administrator, a system administrator. Or change your scorch.prefs file: %s \n" "${str_ProgramName}" "${file_Prefs}"
       exit 1
     fi
   fi
 }
-readonly -f fn_SetPrefs
+readonly -f fn_CheckGroup
 
 fn_HouseKeeping()
 {

@@ -163,7 +163,7 @@ fn_ShowPrefs()
     read ${str_Quick} -t "${int_Refresh}" char_Choice || :
 
     case ${char_Choice} in
-      e | E ) ${cmd_Editor} "${file_Prefs}" ; source "${file_Prefs}" ;;
+      e | E ) ${cmd_Editor} "${file_Prefs}" ; source "${file_Prefs}" ; fn_CheckGroup ;;
       d | D ) [[ -w ${file_Prefs} ]] && fn_Confirm "Reset preferences" && rm "${file_Prefs}" && fn_SetPrefs ;;
       x | X ) return 0 ;;
       *     ) return 0 ;;
