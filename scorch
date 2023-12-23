@@ -241,6 +241,9 @@
 ## 3.1.4  231205  marc   #183 Fixed globbing issue for bash ShowJobs2
 ## 3.1.5  231222  marc   #184 Adding str_Group option as preferences
 ## 3.1.6  231223  marc   Improvement to CheckLatest function
+## 3.1.7  231223  marc   #182 Adding Documentation Feature
+##                       Small typo fix
+##                       Fixed fn_Audit when job state unknow
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -250,7 +253,7 @@ IFS=$' \n\t'
 
 BUILDTAG=updated-by-jenkins
 
-typeset str_ProgramVersion="3.1.6"
+typeset str_ProgramVersion="3.1.7"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"

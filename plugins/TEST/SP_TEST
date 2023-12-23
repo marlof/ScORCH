@@ -5,14 +5,27 @@ SP_TEST()
 This plugin is for tests
 
 DOCUMENTATION
-  GetVar -pattern "Test" -name TEST -default "" 
+  GetVar -pattern "Test" -name TEST -default ""
+  doc_LIVE="
+
+    This is how to do DOC a
+
+  "
+
+  doc_TEST="
+
+    This is different documentation for b
+
+  "
 #  MYTEST="echo"
 #  REGION="eu-west2b"
 #  #Message "$MYTEST Test"
-  Task "cp /tmp/$TEST/x /tmp/."
+#  Task "cp /tmp/$TEST/x /tmp/."
+  Documentation "doc_LIVE"
 #  DOCKER="docker run --rm --name aws2terra -e AWS_REGION=${REGION} "
 #  Task "$DOCKER aws2terra s3"
 #  Task "echo $SCHEDULE"
   Manual "step 1"
   Manual "step 2"
+  sleep 1
 }
