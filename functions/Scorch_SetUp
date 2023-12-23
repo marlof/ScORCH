@@ -518,7 +518,7 @@ fn_PullRelease()
       return 1
     fi
   else
-    printf " Installation is retricted to the install owner: %s" "$(stat -c '%U' "${dir_Base}/${str_ProgramName}")"
+    printf " Installation is restricted to the install owner: %s" "$(stat -c '%U' "${dir_Base}/${str_ProgramName}")"
   fi
   #str_MD5=${str_MD5% *}
 
