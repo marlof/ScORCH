@@ -33,6 +33,7 @@ fn_LogWhy()
   basename "${file_Job}"
   echo ${file_Log}
   printf "\n\n"
+  str_JobState=${str_JobState:-""}
   if [[  "${str_JobState}" == "manual" ]] ; then
     read -e -p " Comment (optional): " str_Answer
     if [[ ${str_Answer} == "" ]] ; then
