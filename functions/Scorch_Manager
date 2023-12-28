@@ -481,7 +481,7 @@ fn_AdminFunctions()
                 if [ -r "${dir_Active}/${str_Job}".rules ] ; then
                   mv "${file_Link}" "${dir_Pending}"
                 else
-                  mv "${file_Link}" "${dir_Queued}"
+                  fn_Mv "${file_Link}" "${dir_Queued}"
                 fi
                 return 0 ;;
 
@@ -519,7 +519,7 @@ fn_AdminFunctions()
                 else
                   echo "The job is no longer in queue. Checking starting state...." | tee -a "${file_Log}"
                   if find -L "${dir_Starting}" -name "${str_Job}" ; then
-                    mv "${dir_Starting}/${str_Job}" "${dir_New}/."
+                    fn_Mv "${dir_Starting}/${str_Job}" "${dir_New}/."
                   fi
                 fi
                 return 0 ;;
