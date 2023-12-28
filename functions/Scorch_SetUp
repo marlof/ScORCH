@@ -679,7 +679,7 @@ fn_Mv()
     mv "${file_NameSrc}" "${file_NameDst}" || :
   else
     local str_JobState="$(basename $(dirname ${file_NameSrc}))"
-    printf "\n Warning: The job %s is no longer in the %s queue.\n\n" "$(basename ${file_NameSrc})" "${str_JobState}"
+    printf "\n Warning: The job %s is no longer in the %s state.\n\n" "$(basename ${file_NameSrc})" "${str_JobState}"
     echo "${file_NameSrc} ${file_NameDst}"
     fn_PressEnter
   fi
