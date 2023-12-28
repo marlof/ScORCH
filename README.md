@@ -1,6 +1,6 @@
 [![GitHub license](https://img.shields.io/github/license/marlof/ScORCH)](https://github.com/marlof/ScORCH/blob/master/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/marlof/ScORCH)](https://github.com/marlof/ScORCH/issues)
 
-ScORCH Suite
+ScOrch Suite
 ============
 
 Simplicity is a great virtue but it requires hard work to achieve it and education to appreciate it. - Edsger W. Dijkstra
