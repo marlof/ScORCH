@@ -669,3 +669,20 @@ fn_FileOwner()
   [[ -r ${file_Name} ]] && ls -ld "${file_Name}" | ${cmd_AWK}} -F" " '{print $3}' || echo "unknown"
 }
 readonly -f fn_FileOwner
+
+fn_Mv()
+{
+  # Check the state of the file for safe move
+  local file_NameSrc=${1:-}
+  local file_NameDst=${2:-}
+  if [ -L "${file_NameSrc}" ] ; then
+    mv "${file_NameSrc}" "${file_NameDst}" || :
+  else
+    local str_JobState="$(basename $(dirname ${file_NameSrc}))"
+    printf "\n Warning: The job %s is no longer in the %s queue.\n\n" "$(basename ${file_NameSrc})" "${str_JobState}"
+    echo "${file_NameSrc} ${file_NameDst}"
+    fn_PressEnter
+  fi
+  return 0
+}
+readonly -f fn_Mv

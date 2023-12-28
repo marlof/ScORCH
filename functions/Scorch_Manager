@@ -417,8 +417,6 @@ fn_AdminFunctions()
   local str_JobState=
   local file_Link=
 
-
-
   if ! fn_IsNumber ${char_Choice} ; then
     str_TaskChoice=$(echo "${char_Choice}" | tr -d [0-9])
     char_Choice=$(echo "${char_Choice}" | tr -d [A-z])
@@ -426,10 +424,9 @@ fn_AdminFunctions()
 
   if [[ ${char_Choice} -gt 0 ]] && [[ ${char_Choice} -lt ${int_Count} ]] ; then
 
-    #local       file_Job="${dir_Active}/${arr_Jobs[${char_Choice}]}"
     str_Job="${arr_Jobs[${char_Choice}]}"
     file_ActiveJob="${dir_Active}/${str_Job}"
-           file_Log="${dir_Log}/${str_Job}".log
+    file_Log="${dir_Log}/${str_Job}".log
 
     while : ; do
       str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name ${str_Job} -print| grep -v ${dir_Active} )))
@@ -449,7 +446,6 @@ fn_AdminFunctions()
       fi
       fn_CheckDispatcher
 
-
       case ${char_Choice^^} in
 
         c | C ) fn_CopyTemplate "${file_ActiveJob}" ;;
@@ -463,14 +459,9 @@ fn_AdminFunctions()
 
         CANCEL ) fn_Cancel "${file_Link}" "${str_JobState}" ; return 0 ;;
 
-        ## View CSV
-        #c | C ) ${cmd_Editor} "${file_CSV}" ;;
-
         ## Edit job
         v | V ) fn_ViewJob "${file_ActiveJob}" ;;
         e | E ) fn_EditJob "${file_ActiveJob}" ;;
-                #fn_CheckOwner "${file_ActiveJob}"
-                #${cmd_Editor} "${file_ActiveJob}" ;;
         l | L ) ${cmd_Editor} "${file_Log}" ;;
 
         ## Job State transition
@@ -479,7 +470,7 @@ fn_AdminFunctions()
         d | D ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_ActiveJob}" deleted
                 echo ",,,$(date +%s),${str_Job},,,-1,${str_User}" >> "${file_CSV}"
-                mv "${file_Link}" "${dir_Deleted}"
+                fn_Mv "${file_Link}" "${dir_Deleted}"
                 chmod 660 "${file_ActiveJob}"
                 return 0 ;;
 
@@ -498,7 +489,7 @@ fn_AdminFunctions()
         r | R ) fn_CheckOwner "${file_ActiveJob}"
                 fn_Audit "${file_ActiveJob}" "resumed task:$(fn_GetResumePoint "${file_Log}")"
                 fn_UpdateResumePoint "${file_ActiveJob}" $(fn_GetResumePoint "${file_Log}")
-                mv "${file_Link}" "${dir_Queued}"
+                fn_Mv "${file_Link}" "${dir_Queued}"
                 return 0 ;;
 
         ## Skip a task in Job(s)
@@ -506,8 +497,7 @@ fn_AdminFunctions()
                 fn_Audit "${file_ActiveJob}" "skipped task:$(fn_GetResumePoint "${file_Log}")"
                 fn_UpdateResumePoint "${file_ActiveJob}" "$(( $(fn_GetResumePoint "${file_Log}") + 1 ))"
                 fn_SkipFailed "${file_ActiveJob}"
-                #echo "AUDIT:T:${int_Task}:S" >> "${file_ActiveJob}"
-                mv "${file_Link}" "${dir_Queued}"
+                fn_Mv "${file_Link}" "${dir_Queued}"
                 return 0 ;;
 
         ## Pause Job(s)
@@ -541,7 +531,7 @@ fn_AdminFunctions()
                 read -e -p " You may provide a keyword or tracking id: " str_Reply
                 [[ ! -z ${str_Reply} ]] && str_Reply=" [${str_Reply}]"
                 fn_Audit "${file_ActiveJob}" "fix in progress"
-                mv "${file_Link}" "${dir_Fixing}"
+                fn_Mv "${file_Link}" "${dir_Fixing}"
                 echo "$(${fn_LogDate}) Fix in progress${str_Reply}. Resume Point:$(fn_GetResumePoint "${file_Log}" )" >> "${file_Log}"
                 return 0 ;;
 
