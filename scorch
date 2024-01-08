@@ -246,6 +246,7 @@
 ##                       Fixed fn_Audit when job state unknown
 ## 3.1.8  231228  marc   #185 Fixed jobstate differences
 ## 3.1.9  240108  marc   #189 export COLUMNS to showJobs.py
+##                       #188 Strip non printable characters
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
