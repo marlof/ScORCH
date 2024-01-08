@@ -330,13 +330,13 @@ fn_CheckSetUp()
 
   # This function will check that all Scorch components are set to allow a smooth run.
   declare lst_Directories="dir_Common dir_Var dir_Etc dir_LogBase dir_Tmp dir_Timings"
-  [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
+  [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n" || :
   for p_Variable in ${lst_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
-      printf "\n# %s\n\tmkdir -p -m 770 \"%s\"" "${p_Variable}" "${!p_Variable}" && b_SetUp=1
-      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
+      printf "\n# %s\n\tmkdir -p -m 770 \"%s\"" "${p_Variable}" "${!p_Variable}" && b_SetUp=1 || :
+      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp= || :
       if [[ ! -z ${str_Group} ]] ; then
-        Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2
+        Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2 || :
         printf "\n\tchgrp %s %s" "${str_Group}" "${!p_Variable}"
       fi
     fi
@@ -422,7 +422,7 @@ fn_ListTags()
   Verbose "Checking for file_TagDefinition files <${file_TagDefinition}> from ${dir_Project}"
   declare  str_Grep="${1:-}"
   declare b_Timings="${2:-}"
-  [ -n "${b_Timings}" ] && b_Timings="-w"
+  [ -n "${b_Timings}" ] && b_Timings="-w" || :
   if [[ -z "${str_Grep}" ]] ; then
     find -L "${dir_Project}" -name "${file_TagDefinition}" -"${FIND_EXEC}" grep -v ^# {} \; 2>/dev/null
   else
@@ -585,12 +585,11 @@ fn_ProcessFunctions()
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
 
   Message "  Function list : <${lst_Functions}>"
-
+  set +e
   for str_Function in ${lst_Functions} ; do
     Message ${SEPERATOR}
     # Setting audit line 
     str_FunctionName="${str_Function}"
-
     typeset -f "${str_Function}" >/dev/null 2>&1
     if [ $? = 0 ] ; then
       # COMMON Function being used
@@ -641,6 +640,8 @@ fn_ProcessFunctions()
     [[ ${b_Test} ]] || fn_UpdateTimings "${str_Function}" "${int_EndTime}"
 
   done
+  set -e
+
   Verbose ${SEPERATOR}
 }
 readonly -f fn_ProcessFunctions
@@ -767,7 +768,7 @@ declare int_TagArrayCount=0
 while [ $# -gt 0 ] ; do
   lst_TagArgs="${lst_TagArgs} ${1}"
   arr_TagArgs[${int_TagArrayCount}]="${1}"
-  (( int_TagArrayCount++ ))
+  (( int_TagArrayCount++ )) || :
   shift
 done
 Verbose "lst_TagArgs:${lst_TagArgs}"
