@@ -408,14 +408,14 @@ fn_ProcessRequest()
           cat "${file_Request}" >> "${file_Job}"
           echo "# Template End" >> "${file_Job}"
           echo "$(${fn_LogDate}) Error in plugin. Task creation not complete" >> "${dir_Log}"/$(basename "${file_Job}").log
-          mv "${file_Job}" "${dir_Failed}"/.
+          fn_Mv "${file_Job}" "${dir_Failed}"/.
           fn_PressEnter
           return 1
         fi
         printf "\t%s tasks added\n" $((int_TaskCount -1 ))
 
         if [[ ${b_CreateFailed} ]] ; then
-          mv "${file_Job}" "${dir_Failed}/."
+          fn_Mv "${file_Job}" "${dir_Failed}/."
           echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
         else
           fn_JobFooter "${file_Job}"
@@ -427,14 +427,14 @@ fn_ProcessRequest()
         b_StartGroupAdded=
 
         if [[ $(ls "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" 2>/dev/null)  ]] ; then
-          mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
+          fn_Mv "${dir_Failed}"/"${str_JobPrefix}*_${ACTION}_${ENVIRONMENT}*" "${dir_Superseded}"/.
         fi
         if [[ ${b_Start} ]] ; then
           if [[ ${b_Sync} ]] ; then
-            mv "${file_Job}" "${dir_Queued}/." 
+            fn_Mv "${file_Job}" "${dir_Queued}/." 
             "${file_EachJob}" </dev/null >> "${dir_Log}"/"$(basename "${file_EachJob}").log" 2>&1 
           else
-            mv "${file_Job}" "${dir_Queued}/."
+            fn_Mv "${file_Job}" "${dir_Queued}/."
           fi
         fi
 
@@ -770,7 +770,7 @@ GetVar()
        IGNORECASE='"$b_IgnoreCase"' }
        $1 ~ /^ *'"$str_Pattern"'/ {gsub (/[ \t]+/, "");
          $2=$2;
-         print $2}'       "${file_Request}" )" 
+         print $2}'       "${file_Request}" | tail -1 )"
   fi
 
   ## If a value hasnt been found or is empty, use the default if one is set
@@ -890,22 +890,22 @@ fn_Transition()
         queue   ) fn_CheckOwner "${file_Job}"
                   fn_UpdateResumePoint "${file_Job}" 0
                   if [ -r "${file_Rules}" ] ; then
-                    mv "${file_Link}" "${dir_Pending}"/.
+                    fn_Mv "${file_Link}" "${dir_Pending}"/.
                     echo " Pending Parents[$(cat ${file_Rules} | grep "PARENT:" | wc -l )] " >> "${file_Log}"
                   else
                     mv "${file_Link}" "${str_Target}"/.
                   fi ;;
         unqueue ) fn_CheckOwner "${file_Job}"
-                  mv "${file_Link}" "${str_Target}"/. ;;
+                  fn_Mv "${file_Link}" "${str_Target}"/. ;;
         delete  ) fn_CheckOwner "${file_Job}"
                   echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
-                  mv "${file_Link}" "${str_Target}"/. 
+                  fn_Mv "${file_Link}" "${str_Target}"/. 
                   chmod 660 ${file_Job}
                   ;;
         resume  ) fn_CheckOwner "${file_Job}"
                   fn_LogWhy "${file_Job}"
                   fn_UpdateResumePoint "${file_Job}" "$(fn_GetResumePoint "${file_Log}")"
-                  mv "${file_Link}" "${str_Target}"/.    ;;
+                  fn_Mv "${file_Link}" "${str_Target}"/.    ;;
         pause   ) fn_CheckOwner "${file_Job}"
                   if [ -f "${dir_Active}"/"$(basename "${file_Job}").pause" ] ; then
                     rm "${dir_Active}"/"$(basename "${file_Job}").pause"
@@ -947,7 +947,7 @@ fn_SetJobOwner()
   if grep "^str_Owner=" "${file_Job}" ; then
     fn_Audit "${file_Job}" "accepted ownership of the job"
     sed 's/^str_Owner=.*/str_Owner='${str_User}'/g' "${file_Job}" > "${file_Job}".tmp
-    mv "${file_Job}".tmp "${file_Job}"
+    fn_Mv "${file_Job}".tmp "${file_Job}"
   fi
 }
 readonly -f fn_SetJobOwner
