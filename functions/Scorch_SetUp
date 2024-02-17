@@ -160,6 +160,7 @@ export      file_Version="version.txt"
 
 ' >> "${file_Prefs}"
   fi
+  # shellcheck source=/dev/null
   source "${file_Prefs}"
   fn_CheckGroup
 }
@@ -170,7 +171,7 @@ fn_CheckGroup()
   if [ -n "${str_Group}" ] ; then
     # Check is str_Group exists
     if ! grep -q "${str_Group}:" /etc/group ; then
-      printf "\n\nWarning: str_Group set to %s but it does not exist in /etc/group.\n" ${str_Group}
+      printf "\n\nWarning: str_Group set to %s but it does not exist in /etc/group.\n" "${str_Group}"
     fi
     # Check str_Group is one of the allowed groups
     if [[ "$(groups)" =~ ${str_Group} ]] ; then
@@ -206,7 +207,7 @@ fn_HouseKeeping()
   SAVEIFS=$IFS
   IFS=$(echo -en "\n\b")
 
-  [ "$(find "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t ${dir_Completed} | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
+  [ "$(find "${dir_Completed}/*" 2> /dev/null | wc -l )" -ge ${int_MaxJobs} ] && find -L "${dir_Completed}/*" ! -newer "${dir_Completed}/$(ls -1t "${dir_Completed}" | head -${int_MaxJobs} | tail -1)" -exec mv -f {} ${dir_Archived}/. \; > /dev/null 2>&1
 
   # Remove old completed links
   find -L -H "${dir_Completed}"/"${str_JobPrefix}"* -mtime +${int_DaysDeleted} -exec echo {} \; 2>/dev/null
@@ -222,7 +223,7 @@ fn_HouseKeeping()
     fi
   fi
 
-  ( cd "${dir_Active}" && find -L ./${str_JobPrefix}*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived.tar" "{}" + 2>/dev/null )
+  ( cd "${dir_Active}" && find -L "./${str_JobPrefix}"*  -mtime +${int_DaysActive} -exec tar uf "${dir_Archived}/archived.tar" "{}" + 2>/dev/null )
   find -L "${dir_Active}/${str_JobPrefix}*"  -mtime +${int_DaysActive} -exec rm -f {} \; 2>/dev/null
 
   [[ -w ${file_Cache} ]] && rm ${file_Cache}
@@ -254,7 +255,7 @@ fn_GetAnswer()
   printf " Enter choice "
   [[ "${b_Range}" ]] && printf "(range enabled : i.e 1-3,7,8)"
   printf ": "
-  read -e str_Answer
+  read -r -e str_Answer
   str_Answer=${str_Answer:-"x"}
 }
 readonly -f fn_GetAnswer
@@ -266,7 +267,7 @@ fn_Confirm()
   local chr_YN
 
   printf "\n %s? (y/n) [n]? " "$1"
-  read -e chr_YN
+  read -r -e chr_YN
 
   case $chr_YN in
     y | Y )  return 0 ;;
@@ -341,8 +342,10 @@ fn_Mkdir()
 {
   local dir_Name="${1}"
 
-  mkdir -p -m 770 "${dir_Name}" #2>/dev/null
-  if [[ ! -z ${str_Group} ]] ; then
+  mkdir -p  "${dir_Name}"
+  chmod 770 "${dir_Name}"
+
+  if [[ -n ${str_Group} ]] ; then
     chgrp "${str_Group}" "${dir_Name}" 2>/dev/null
   fi
 }
@@ -351,6 +354,7 @@ readonly -f fn_Mkdir
 fn_GetResumePoint()
 {
   local file_Log="${1}"
+  # shellcheck disable=SC2016
   tail -500 "${file_Log}" | grep "Resume point:" | tail -1 | ${cmd_AWK} -F":" '{print $NF}'
 }
 readonly -f fn_GetResumePoint
@@ -375,7 +379,7 @@ fn_PressEnter()
 {
   if [[ !  "${b_NonInteractive}" ]] ; then
     printf "\n\n"
-    read -n 1 -p " Press any key to continue"
+    read -r -n 1 -p " Press any key to continue"
   else
     printf "\nNon Interactive Mode - pressed any key to continue\n"
   fi
@@ -666,7 +670,7 @@ fn_FileOwner()
 {
   # Takes an argument of a filename (or dirname) and return the owner
   local file_Name=$1
-  [[ -r ${file_Name} ]] && ls -ld "${file_Name}" | ${cmd_AWK}} -F" " '{print $3}' || echo "unknown"
+  [[ -r ${file_Name} ]] && ls -ld "${file_Name}" | "${cmd_AWK}" -F" " '{print $3}' || echo "unknown"
 }
 readonly -f fn_FileOwner
 
@@ -678,8 +682,9 @@ fn_Mv()
   if [ -L "${file_NameSrc}" ] ; then
     mv "${file_NameSrc}" "${file_NameDst}" || :
   else
-    local str_JobState="$(basename $(dirname ${file_NameSrc}))"
-    printf "\n Warning: The job %s is no longer in the %s state.\n\n" "$(basename ${file_NameSrc})" "${str_JobState}"
+    local str_JobState
+    str_JobState="$(basename "$(dirname "${file_NameSrc}")")"
+    printf "\n Warning: The job %s is no longer in the %s state.\n\n" "$(basename "${file_NameSrc}")" "${str_JobState}"
     fn_PressEnter
   fi
   return 0
