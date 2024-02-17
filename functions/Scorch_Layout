@@ -277,13 +277,22 @@ fn_FormatTasks()
   local int_RefreshRate=${int_Refresh}
   # Get the running state to start the loop
   local str_TmpJobState
-  str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
-  str_JobState=${str_TmpJobState}
+  echo "here"
+  if [[ -L "${file_Job}" ]] ; then
+    str_TmpJobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+    str_JobState=${str_TmpJobState}
+  else
+    str_TmpJobState="active"
+    str_JobState="active"
+  fi
   while [ "${str_JobState}" = "${str_TmpJobState}" ] ; do
     fn_ShowTop
     fn_ShowLine
-    str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
-
+    if [[ -L "${file_Job}" ]] ; then
+      str_JobState=$(basename $(dirname $(find -L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
+    else
+      str_JobState="active"
+    fi
     printf "\n   "
     ls -lL "${file_Job}"
     [[ -z ${str_JobState} ]] && str_JobState=$(basename $(dirname $(find-L ${dir_Job} -name $(basename ${file_Job}) -print| grep -v ${dir_Active} )))
