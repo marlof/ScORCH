@@ -556,8 +556,8 @@ fn_InstallLatest()
 
   printf "\n Protocol: %s\n\n" "$str_Protocol"
   # if protocol is http then pull release
-  if [[ "${str_Protocol}" == "http" ]] ; then
-    URL="http://${dir_Location}"
+  if [[ "${str_Protocol}" != "local" ]] ; then
+    URL="${str_Protocol}://${dir_Location}"
     fn_PullRelease
   else
     echo " Using local install method (${file_Tar})"
