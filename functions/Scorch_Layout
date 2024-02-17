@@ -140,6 +140,7 @@ fn_ShowJobs()
     set -o noglob
     if [[ "${str_ShowJobs}" == "python" ]] ; then
       [[ ! -z ${str_Filter} ]] && fn_ShowLine "=" "Filter ${str_Filter}"
+      export COLUMNS
       "${dir_Python}/showJobs.py" -n "$int_MaxShown" -o "${file_Cache}" -f "${str_Filter}" $* 
       [[ -r "${file_Cache}" ]] && . "${file_Cache}" || :
       #cat ${file_Cache}
@@ -163,7 +164,7 @@ fn_ShowJobs2()
 
   file_Cache=$(mktemp "${dir_Tmp}"/cache.$$.XXXXX)
   echo "#$$" > "${file_Cache}"
-  [[ ${cmd_TPUT} != echo ]] && int_ScreenWidth=$(${cmd_TPUT} cols) || int_ScreenWidth="${COLUMS}"
+  [[ ${cmd_TPUT} != echo ]] && int_ScreenWidth=$(${cmd_TPUT} cols) || int_ScreenWidth="${COLUMNS}"
   #int_ScreenWidth=${COLUMNS}
   int_ScreenWidth=$(tput cols)
   for str_State in "${@}" ; do

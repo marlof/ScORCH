@@ -81,7 +81,7 @@ fn_GetRequest()
         if [[ ${int_JobCount} -ge 1 ]] ; then
           #printf "Total number of failures       : $(grep $str_Info $file_CSV | cut -d"," -f6)"
           printf "Number of deleted jobs         : %s\n" ${int_FailCount}
-          printf "Average number of  failures    : %s\n" ${int_NonFailCount}
+          printf "Average number of failures     : %s\n" ${int_NonFailCount}
           printf "Max run time                   : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  ${cmd_AWK} 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))
           printf "Average run time               : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)
           printf "\n\n"
@@ -92,7 +92,7 @@ fn_GetRequest()
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
-        echo "${str_Line}" | grep ":" >> "${file_Request}"
+        echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
       fi
     done
   fi

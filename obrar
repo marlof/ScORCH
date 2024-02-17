@@ -65,10 +65,11 @@
 # 1.9 200529    marc        shellcheck start
 # 1.10 200613   marc        #146 Directory fixes for install
 # 1.11 221007   marc        shellcheck improvements and colour warn/error
+# 1.12 240108   marc        #187 Fixed -e option
 # shellcheck disable=SC2174
 
 # Program settings
-str_ProgramVersion="1.10"
+str_ProgramVersion="1.12"
 str_ProgramName="$(basename "$0")"
 str_FunctionName="${str_ProgramName}"
 dir_Run="$(dirname "$0")"
@@ -83,8 +84,7 @@ int_StartTime=$(date +%s)
 int_EndTime=0
 
 # Protect from undeclared variables
-set -u
-set -eio pipefail
+set -euo pipefail
 
 # User maintainable
 str_CommonBase=projects
@@ -138,11 +138,18 @@ Message()
     printf "$($cmd_LogDate) %15s FUNC  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"
   fi
 }
-Verbose() { [ "${b_Verbose}" ] && printf "$($cmd_LogDate) %15s \e[90mDEBUG\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
-Error()   {
+Verbose()
+{
+  if [ "${b_Verbose}" ] ; then
+    printf "$($cmd_LogDate) %15s \e[90mDEBUG\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log}
+  fi
+}
+Error()
+{
   (( int_WarningCount=int_WarningCount + 1 ))
   printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]"
-  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111;}
+  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111
+}
 Warning() { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s \e[33mWARN\e[0m  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
 fn_GetJobID()
@@ -151,7 +158,7 @@ fn_GetJobID()
   # Function to create an atomic action of getting and recording a new job id
 
   file_JobID="${dir_Var}"/JobID.${str_ProgramName}
-  [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}"
+  [[ ! -f "${file_JobID}" ]] && fn_CreateFile "${file_JobID}" || :
 
   declare file_JobIDLock="${file_JobID}".lock
   if ( set -o noclobber; true > "${file_JobIDLock}") 2> /dev/null ; then
@@ -181,7 +188,7 @@ fn_CreateFile()
     exit 1
   fi
   chmod 664 "${file_Name}" 2>/dev/null
-  [[ "${b_Blank}" ]] && true > "${file_Name}"
+  [[ "${b_Blank}" ]] && true > "${file_Name}" || :
   if [[ ! -z ${str_Group} ]] ; then
     Verbose "chgrp file '${file_Name}' with chgrp ${str_Group} " && sleep 2
     chgrp "${str_Group}" "${file_Name}" || echo "Error: Cannot chgrp ${str_Group} ${file_Name}. Check file and groups."
@@ -200,8 +207,8 @@ fn_Mkdir()
     Verbose "chgrp dir '${dir_Name}' with chgrp ${str_Group} " && sleep 2
     chgrp "${str_Group}" "${dir_Name}" || echo "Error: Cannot chgrp ${str_Group} ${dir_Name}. Check file and groups."
   else
-    :
     Verbose "Creating dir $dir_Name <${str_Group}>"
+    :
   fi
 }
 readonly -f fn_Mkdir
@@ -323,13 +330,13 @@ fn_CheckSetUp()
 
   # This function will check that all Scorch components are set to allow a smooth run.
   declare lst_Directories="dir_Common dir_Var dir_Etc dir_LogBase dir_Tmp dir_Timings"
-  [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n"
+  [[ ${b_Install} ]] && printf "\n\n\tInitialising....\n\n" || :
   for p_Variable in ${lst_Directories} ; do
     if [[ ! -d ${!p_Variable} ]] ; then
-      printf "\n# %s\n\tmkdir -p -m 770 \"%s\"" "${p_Variable}" "${!p_Variable}" && b_SetUp=1
-      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp=
+      printf "\n# %s\n\tmkdir -p -m 770 \"%s\"" "${p_Variable}" "${!p_Variable}" && b_SetUp=1 || :
+      [[ ${b_Install} ]] && mkdir -p -m 770 "${!p_Variable}" && b_SetUp= || :
       if [[ ! -z ${str_Group} ]] ; then
-        Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2
+        Verbose "chgrp dir ${!p_Variable} with chgrp ${str_Group} " && sleep 2 || :
         printf "\n\tchgrp %s %s" "${str_Group}" "${!p_Variable}"
       fi
     fi
@@ -377,8 +384,12 @@ fn_CheckSetUp()
   Verbose "Making log directory mkdir -p -m 775 '${dir_LogBase}'"
   fn_Mkdir "${dir_LogBase}"
 
-  [[ -z ${file_TagDefinition} ]] && Error "No file_TagDefinition defined"
-  [[ -z ${str_Tag}     ]] && Error "No TAG passed"
+  if [[ -z ${file_TagDefinition} ]] ; then
+    Error "No file_TagDefinition defined"
+  fi
+  if [[ -z ${str_Tag}     ]] ; then
+    Error "No TAG passed"
+  fi
 }
 readonly -f fn_CheckSetUp
 
@@ -411,7 +422,7 @@ fn_ListTags()
   Verbose "Checking for file_TagDefinition files <${file_TagDefinition}> from ${dir_Project}"
   declare  str_Grep="${1:-}"
   declare b_Timings="${2:-}"
-  [ -n "${b_Timings}" ] && b_Timings="-w"
+  [ -n "${b_Timings}" ] && b_Timings="-w" || :
   if [[ -z "${str_Grep}" ]] ; then
     find -L "${dir_Project}" -name "${file_TagDefinition}" -"${FIND_EXEC}" grep -v ^# {} \; 2>/dev/null
   else
@@ -574,12 +585,11 @@ fn_ProcessFunctions()
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
 
   Message "  Function list : <${lst_Functions}>"
-
+  set +e
   for str_Function in ${lst_Functions} ; do
     Message ${SEPERATOR}
     # Setting audit line 
     str_FunctionName="${str_Function}"
-
     typeset -f "${str_Function}" >/dev/null 2>&1
     if [ $? = 0 ] ; then
       # COMMON Function being used
@@ -609,7 +619,11 @@ fn_ProcessFunctions()
 
     # Process Function
     str_Logging=
-    [[ ${b_Test} ]] && Message "TESTMODE: ${str_Function}" || ${str_Function} 2>&1 | tee -a ${file_Log}
+    if [[ ${b_Test} ]] ; then
+      Message "TESTMODE: ${str_Function}"
+    else
+      ${str_Function} 2>&1 | tee -a ${file_Log}
+    fi
     int_ReturnCode=${PIPESTATUS[0]}
     str_FunctionName=${str_ProgramName}
 
@@ -626,6 +640,8 @@ fn_ProcessFunctions()
     [[ ${b_Test} ]] || fn_UpdateTimings "${str_Function}" "${int_EndTime}"
 
   done
+  set -e
+
   Verbose ${SEPERATOR}
 }
 readonly -f fn_ProcessFunctions
@@ -656,8 +672,8 @@ fn_UpdateTimings()
       (( int_Diff = int_CurrentAverage - int_Timing ))
       str_Diff="quicker"
     fi
-    (( int_Min > int_Timing )) && int_Min=${int_Timing}
-    (( int_Max < int_Timing )) && int_Max=${int_Timing}
+    (( int_Min > int_Timing )) && int_Min=${int_Timing} || :
+    (( int_Max < int_Timing )) && int_Max=${int_Timing} || :
     (( int_Average = int_CurrentAverage * int_Runs + int_Timing ))
     (( int_Runs++ ))
     (( int_Average = int_Average / int_Runs ))
@@ -712,7 +728,7 @@ Verbose "Sourcing common project etc files and functions"
 if [[ -r "${dir_Functions}" ]] ; then
   for file_CommonFunction in "${dir_Functions}/${str_FunctionIdentifier}"* ; do
     Verbose "  ${file_CommonFunction}"
-    ( bash "${dir_Functions}"/"${file_CommonFunction}" >/dev/null 2>&1 ) && source "${dir_Functions}"/"${file_CommonFunction}"
+    ( bash "${dir_Functions}"/"${file_CommonFunction}" >/dev/null 2>&1 ) && source "${dir_Functions}"/"${file_CommonFunction}" || :
   done
 else
   Warning "Cannot access common functions directory: ${dir_Functions}"
@@ -752,13 +768,16 @@ declare int_TagArrayCount=0
 while [ $# -gt 0 ] ; do
   lst_TagArgs="${lst_TagArgs} ${1}"
   arr_TagArgs[${int_TagArrayCount}]="${1}"
-  (( int_TagArrayCount++ ))
+  (( int_TagArrayCount++ )) || :
   shift
 done
 Verbose "lst_TagArgs:${lst_TagArgs}"
 
 # If only asked to list the TAGs - only list the TAGs
-[ "${b_ListTags}" ] && fn_ListTags "${str_Tag}" && exit 0
+if [ "${b_ListTags}" ] ; then
+  fn_ListTags "${str_Tag}"
+  exit 0
+fi
 
 # If its not the TAGs, check everything it set up and process the request
 fn_CheckSetUp

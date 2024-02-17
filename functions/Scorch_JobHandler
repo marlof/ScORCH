@@ -352,7 +352,7 @@ fn_GetRequest()
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}."$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-        echo "${str_Line}" | grep ":" >> "${file_Request}"
+        echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
       fi
     done
   fi
