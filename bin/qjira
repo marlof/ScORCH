@@ -57,6 +57,9 @@ fn_Help()
   echo "    -j <ticket number>       Jira Ticket ID"
   echo "    -u <user:password>"
   echo " "
+  echo "    -s                       Show the state"
+  echo "    -d                       Show the description"
+  echo "    -a                       Show the assignee"
   echo " "
   echo " # Help"
   echo "    -h | --help                          Show help"
@@ -73,6 +76,7 @@ fn_Help()
   echo " # Example"
   echo "    ${str_ProgramName} -j DEP-1         Show full ticket details"
   echo "    ${str_ProgramName} -s -j DEP-1      Show status"
+  echo "    ${str_ProgramName} -v -j DEP-1      Show the json output"
 }
 
 [[ ! -r ${file_Conf} ]] && Error "${str_ProgramName} not configured. Expecting JIRA_SERVER= to be set in ${file_Conf}"
@@ -210,11 +214,17 @@ fn_ShowTicket()
                              -H "Content-Type: application/json" \
                              --data '{"jql":"key = '${TICKET}'"}' \
                              "${JIRA_SEARCH_URL}")
+  [[ ${VERBOSE} ]] && echo "4{CURL} -k -s -X POST -H \"Authorization: Basic ${AUTH_HEADER}\" \
+                              -H \"Content-Type: application/json\" \
+                              --data '{\"jql\":\"key = '${TICKET}'\"}'
+                              \"${JIRA_SEARCH_URL}\"
+"
   [[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
 
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>'       && Error "Invalid jira username:password"
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q "Reason : AUTHENTICATION_DENIED"          && Error "Password may be valid but account may be temporarily locked"
+  echo "${_JIRA_ISSUE_DETAILS}" | grep -q "^<?xml"          && Error "${_JIRA_ISSUE_DETAILS}. New issue when trying to run "
   [[ -z ${_JIRA_ISSUE_DETAILS} ]] && Error "Jira page seems blank - has jira $JIRA_SERVER started correctly '${dir_Orig}/${str_ProgramName}'"
   if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
     #if echo "${_JIRA_ISSUE_DETAILS}" ; then #| jshon -e errorMessages -a -u | grep -q "does not exist for field 'key'" ; then

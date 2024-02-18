@@ -247,6 +247,11 @@
 ## 3.1.8  231228  marc   #185 Fixed jobstate differences
 ## 3.1.9  240108  marc   #189 export COLUMNS to showJobs.py
 ##                       #188 Strip non printable characters
+## 3.1.10 240116  marc   #190 Handle duplicated main vars that are not list
+##                       #191 COLUMNS default updated
+##                       Switched more mv to fn_Mv
+## 3.1.11 240129  marc   #186 See archived jobs
+##                       
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -256,7 +261,7 @@ IFS=$' \n\t'
 
 BUILDTAG=updated-by-jenkins
 
-typeset str_ProgramVersion="3.1.9"
+typeset str_ProgramVersion="3.1.11"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -406,8 +411,8 @@ typeset           b_Debug=
 typeset           b_Quick=
 typeset b_StartGroupAdded=
 typeset  str_StatusColour=
-typeset   int_ScreenWidth=80
-typeset           COLUMNS=80
+typeset   int_ScreenWidth=150
+typeset           COLUMNS=${COLUMS:-150}
 
 
 typeset         str_Log=log

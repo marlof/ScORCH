@@ -242,6 +242,7 @@ fn_Admin()
   printf " P) Edit Display and Timing Preferences %s\n\n"   "${file_Prefs}"
   printf " M) Change the message of the day         %s\n\n" "${file_MOTD}"
   printf " V) View the CSV audit file               %s\n\n" "${file_CSV}"
+  printf " O) View Older jobs\n\n"
   #fn_ShowLine "-" "Message of the day"
   #fn_DisplayMOTD
   fn_ShowLine "="
@@ -274,6 +275,7 @@ fn_Admin()
 
     r | R ) (( b_Power == 1 ))      && fn_Repair ;;
     s | S ) (( b_Power == 1 ))      && ln -s "${str_ProgramName}.${str_User}" "${file_Maint}" ;;
+    o | O )                            fn_ShowOlder ;;
     ## View CSV
     v | V ) ${cmd_Editor} "${file_CSV}" ;;
     x | X ) return 0 ;;
@@ -281,6 +283,47 @@ fn_Admin()
 
   esac
   done
+}
+
+fn_ShowOlder()
+{
+  while : ; do
+  fn_ShowTop
+  fn_ShowLine "-" "OLDER"
+  fn_ShowJobs active
+  fn_ShowLine "="
+  fn_ContextMenu
+  fn_GetAnswer
+  #str_Answer=$(fn_Range "${str_Answer}")
+
+  if [ "${str_Answer,,}" != "x " ] ; then
+
+      case "${str_Answer,,}" in
+      f | F ) fn_Filter ;;
+      [0-9]*)
+        if [[ ${str_Answer} -le 0 ]] || [[ ${str_Answer} -ge ${int_Count} ]] ; then
+          printf "Out of range"
+          fn_PressEnter
+          return 0
+        fi
+
+      ls -l  "${dir_Active}/${arr_Jobs[${str_Answer}]}"
+      #fn_FormatTasks "${dir_Active}/${arr_Jobs[${str_Answer}]}"
+      file_ActiveJob="${dir_Active}/${arr_Jobs[${str_Answer}]}"
+      str_JobState="active"
+
+    file_Log="${dir_Log}/${arr_Jobs[${str_Answer}]}".log
+    fn_JobInfo
+    fn_PressEnter
+
+;;
+  * ) echo "Here" ; break ;;
+esac
+
+
+  fi
+  done
+  
 }
 
 fn_ViewJob()
