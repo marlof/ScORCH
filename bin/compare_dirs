@@ -1,0 +1,38 @@
+#!/bin/bash
+
+fn_compare_dirs()
+{
+  dir_1=${1:-}
+  dir_2=£{2:-}
+
+  if [ -e ${dir_1} ] ; then
+    if [ -d $${dir_1} ] ; then
+      echo "Checking ${dir_1}"
+    else
+      echo "Error. Value 1 [${dir_1}] is not a directory or not accessible"
+      return 0
+    fi
+  else
+    printf "Enter the paths of two similar directrories to compare\n\n"
+    read -p "  Directory 1 : " dir_1
+    read -p "  Directory 2 : " dir_2
+  fi
+
+  file_1=/tmp/f1.$$
+  file_2=/tmp/f1.$$
+
+  find ${dir_1} -type f -exec md5sum {} \; > ${file_1}
+  find ${dir_2} -type f -exec md5sum {} \; > ${file_2}
+
+  sed "s/${dir_1}//g" ${file_1} > ${file_1}.tmp
+  sed "s/${dir_2}//g" ${file_1} > ${file_2}.tmp
+
+  printf "%s\t\t\t%s" ${file_1}.tmp ${file_2}.tmp
+
+  sdiff ${file_1}.tmp ${file_2}.tmp
+
+  rm ${file_1} ${file_2} ${file_1}.tmp ${file_2}.tmp
+
+}
+
+fn_compare_dirs $1 $2
