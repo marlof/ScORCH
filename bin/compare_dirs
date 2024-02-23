@@ -24,8 +24,8 @@ fn_compare_dirs()
   find ${dir_1} -type f -exec md5sum {} \; > ${file_1}
   find ${dir_2} -type f -exec md5sum {} \; > ${file_2}
 
-  sed "s/${dir_1}//g" ${file_1} > ${file_1}.tmp
-  sed "s/${dir_2}//g" ${file_1} > ${file_2}.tmp
+  sed "s/${dir_1}//g" ${file_1} | sort -k2 > ${file_1}.tmp
+  sed "s/${dir_2}//g" ${file_1} | sort -k2 > ${file_2}.tmp
 
   printf "%s\t\t\t%s" ${file_1}.tmp ${file_2}.tmp
 
