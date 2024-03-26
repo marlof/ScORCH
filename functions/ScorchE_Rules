@@ -166,7 +166,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/"$(basename "${file_Job}").log"
         else
           fn_JobFooter "${file_Job}"
-          chmod 770 "${file_Job}"
+          chmod 770 "${file_Job}" 2>/dev/null 
           echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/"$(basename "${file_Job}").log"
         fi
 

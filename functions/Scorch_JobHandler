@@ -286,7 +286,7 @@ EOF
   echo "# Template Begin" >> "${file_Job}"
   cat "${file_Request}" >> "${file_Job}"
   echo "# Template End" >> "${file_Job}"
-  chmod 770 "${file_Job}"
+  chmod 770 "${file_Job}" 2>/dev/null
   printf "Done\n\n"
 }
 readonly -f fn_JobFooter
@@ -419,7 +419,7 @@ fn_ProcessRequest()
           echo "$(${fn_LogDate}) Failed to create job for user ${str_User}. Check log for reason." >> "${dir_Log}"/$(basename "${file_Job}").log
         else
           fn_JobFooter "${file_Job}"
-          chmod 770 "${file_Job}"
+          chmod 770 "${file_Job}" 2>/dev/null
           echo "$(${fn_LogDate}) Created by:${str_User} Tasks[${int_TaskCount}]" >> "${dir_Log}"/$(basename "${file_Job}").log
         fi
         
@@ -900,7 +900,7 @@ fn_Transition()
         delete  ) fn_CheckOwner "${file_Job}"
                   echo ",,,$(date +%s),$(basename ${file_Job}),,,-1,${str_User}" >> "${file_CSV}"
                   fn_Mv "${file_Link}" "${str_Target}"/. 
-                  chmod 660 ${file_Job}
+                  chmod 660 ${file_Job} 2>/dev/null
                   ;;
         resume  ) fn_CheckOwner "${file_Job}"
                   fn_LogWhy "${file_Job}"

@@ -342,8 +342,8 @@ fn_Mkdir()
 {
   local dir_Name="${1}"
 
-  mkdir -p  "${dir_Name}"
-  chmod 770 "${dir_Name}"
+  mkdir -p  "${dir_Name}" 2>/dev/null
+  chmod 770 "${dir_Name}" 2>/dev/null
 
   if [[ -n ${str_Group} ]] ; then
     chgrp "${str_Group}" "${dir_Name}" 2>/dev/null
@@ -585,7 +585,7 @@ fn_InstallLatest()
 
   if [[ ! -f ${file_Install} ]] ; then
     fn_CreateFile "${file_Install}"
-    chmod 770 "${file_Install}"
+    chmod 770 "${file_Install}" 
     if [[ ! -w ${file_Install} ]] ; then
       printf " Error: Cannot write to install file %s\n" "${file_Install}"
       printf " Install aborted\n"

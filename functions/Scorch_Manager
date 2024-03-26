@@ -514,7 +514,7 @@ fn_AdminFunctions()
                 fn_Audit "${file_ActiveJob}" deleted
                 echo ",,,$(date +%s),${str_Job},,,-1,${str_User}" >> "${file_CSV}"
                 fn_Mv "${file_Link}" "${dir_Deleted}"
-                chmod 660 "${file_ActiveJob}"
+                chmod 660 "${file_ActiveJob}" 2>/dev/null
                 return 0 ;;
 
         ## Queue Job(s)
