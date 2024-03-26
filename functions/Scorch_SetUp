@@ -682,10 +682,14 @@ fn_Mv()
   if [ -L "${file_NameSrc}" ] ; then
     mv "${file_NameSrc}" "${file_NameDst}" || :
   else
-    local str_JobState
-    str_JobState="$(basename "$(dirname "${file_NameSrc}")")"
-    printf "\n Warning: The job %s is no longer in the %s state.\n\n" "$(basename "${file_NameSrc}")" "${str_JobState}"
-    fn_PressEnter
+    if [ -f "${file_NameSrc}" ] ; then
+      mv "${file_NameSrc}" "${file_NameDst}" || :
+    else  
+      local str_JobState
+      str_JobState="$(basename "$(dirname "${file_NameSrc}")")"
+      printf "\n Warning: The job %s is no longer in the %s state.\n\n" "$(basename "${file_NameSrc}")" "${str_JobState}"
+      fn_PressEnter
+    fi
   fi
   return 0
 }
