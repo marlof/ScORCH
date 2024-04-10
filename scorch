@@ -687,5 +687,5 @@ else
   fn_CheckOwnJobs
 fi
 fn_HouseKeeping
-${cmd_TPUT} sgr0 2 >/dev/null
+${cmd_TPUT} sgr0 2>/dev/null
 exit 0
