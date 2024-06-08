@@ -54,7 +54,6 @@ from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 from datetime import timedelta
 
-
 str_ProgramVersion = '1.20'
 
 dir_Base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -67,7 +66,6 @@ chr_PauseFlag = ""
 chr_RuleFlag = ""
 str_Time = ""
 chr_Owner = " "
-
 
 int_Count = 1
 str_ProgramName = __file__
@@ -266,7 +264,8 @@ def check_file_owner(str_File):
                     chr_Owner = ">"
                     break
     except (IOError, OSError, FileNotFoundError) as e:
-        print(f"X  x           Access Issue: {str_File} ({e})")
+        # print(f"X  x           Access Issue: {str_File} ({e})")
+        chr_Owner = "X"
     
     return chr_Owner
 
