@@ -1,19 +1,23 @@
 #!/usr/bin/python3
-############################################################################################################
-# This program will find Job files in multiple state directories and turn them into a human readable format
+###############################################################################
+# This program will find Job files in multiple state directories and turn them
+# into a human readable format
 #
 # Created by Marc Loftus 28/10/2017
 #
-# ${dir_Python}/showJobs.py -n $int_MaxShown -o ${file_Cache} -f "${str_Filter}" $*
+# <path>/showJobs.py -n $int_MaxShown -o ${file_Cache} -f "${str_Filter}" $*
 #
-############################################################################################################
+###############################################################################
 # History
 # 1.0       Marc Loftus     21/06/2017      Basic file ls handling
-# 1.1       Marc Loftus     28/10/2017      dir lists turned into dictionary types for ease of searching
-# 1.2       Marc Loftus     28/10/2017      Sorting NEW oldest first, COMPLATED oldest last
-# 1.3       Marc Loftus     30/10/2017      Starting convert of scorch(bash) to scorch(python)
-# 1.4       Marc Loftus     27/11/2017      C|hnaged to self contained ShowJobs function
-# 1.5       Marc Loftus     08/02/2018      Adjustment for args [2] to [1] for output file
+# 1.1       Marc Loftus     28/10/2017      dir lists turned into dictionary
+#                                                 types for ease of searching
+# 1.2       Marc Loftus     28/10/2017      Sorting NEW oldest first,
+#                                                 COMPLATED oldest last
+# 1.3       Marc Loftus     30/10/2017      Starting convert of scorch(bash)
+#                                                 to scorch(python)
+# 1.4       Marc Loftus     27/11/2017      C|hnaged to self contained ShowJobs
+# 1.5       Marc Loftus     08/02/2018      Adjustment for args [2] to [1]
 #      -v int_Column1Width=${int_Column1Width} \
 #      -v int_Column2Width=${int_Column2Width} \
 #      -v int_Column3Width=${int_Column3Width} \
@@ -21,37 +25,38 @@
 #      -v int_Column5Width=${int_Column5Width} \
 #      -v int_Column6Width=${int_Column6Width} \
 # 1.6       Marc Loftus     17/04/2018      Adjustment to OS paths
-# 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs highlighted
-# 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs (or 35 default)
+# 1.7       Marc Loftus     02/05/2018      Colour class added and failed jobs
+#                                                 highlighted
+# 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs
 # 1.8.1                                     changed wording
 # 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
 # 1.10      Marc Loftus     12/06/2018      Adding Pause and Rules flags
 # 1.11      Marc Loftus     15/06/2018      Adding elasped time
-# 1.12      Marc Loftus     04/10/2018      Fixed issues with showline stealing CR
+# 1.12      Marc Loftus     04/10/2018      Fixed issues with showline  CR
 # 1.13      Marc Loftus     23/10/2018      #73 Adding filter option
 # 1.14      Marc Loftus     26/01/2019      #94 Variable Column Width
 #                                           #95 Empty log file protection
 # 1.15      Marc Loftus     11/07/2019      #112 Highlight own jobs
-# 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii characters
+# 1.16      Marc Loftus     29/10/2019      #122 Nulling out non-ascii chars
 # 1.17      Marc Loftus     20/02/2020      Python 3
 # 1.18      Marc Loftus     01/11/2022      Wrap os.popen in try block
 # 1.19      Marc Loftus     02/10/2023      Add protection around symlinks
 #                                           Improved ShowLine function
 # 1.20      Marc            08/06/2024      Flake8 updates
 #                                           Process improvements
-############################################################################################################
+###############################################################################
 
 import os
 import getpass
 import sys
 import time        # Used for ls sorting in time order
-import datetime    # Used for elapsed running time
+# import datetime    # Used for elapsed running time
 import glob
 import re
 import shutil
 
-from os import listdir, access
-from os.path import isfile, join, islink, getmtime
+# from os import listdir, access
+# from os.path import isfile, join, islink, getmtime
 from datetime import timedelta
 
 str_ProgramVersion = '1.20'
@@ -170,7 +175,7 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
         #        # continue
 
             chr_Owner = check_file_owner(str_File)
-            #print(f"Owner check result: {chr_Owner}")
+            # print(f"Owner check result: {chr_Owner}")
 
             if os.access(dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
                 chr_PauseFlag = "P"
@@ -217,31 +222,32 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                     if re.search("WIP", str_LastLine):
                         ansi_colour = colours.RESET
                     if str_State == "running":
-                        # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-                        #str_StartTime = GetStartTime(file_JobLog)
+                        # look in log file for AUDIT:START:[1.*] - yes starting with a one -
+                        # it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
+                        # str_StartTime = GetStartTime(file_JobLog)
 
-                        #str_CurrentTime = int(time.time())
-                        #str_Time = str_CurrentTime - str_StartTime
-                        #str_Time = str(datetime.timedelta(seconds=str_Time))
+                        # str_CurrentTime = int(time.time())
+                        # str_Time = str_CurrentTime - str_StartTime
+                        # str_Time = str(datetime.timedelta(seconds=str_Time))
                         str_Running_Time = GetRunningTime(file_JobLog)
-                        print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
+                        print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s" % (chr_Owner, int_Count,
+                                                                                       chr_PauseFlag, chr_RuleFlag,
+                                                                                       int_JobIDWidth, str_JobID,
+                                                                                       int_ActionWidth, str_Action,
+                                                                                       int_EnvWidth, str_Env,
+                                                                                       int_ReleaseWidth, str_Release,
+                                                                                       str_Running_Time,
+                                                                                       str_LastLine[:int_Width-10], colours.RESET))
+                    else:
+
+                        if re.search(jobfilter, str_File):
+                            print(ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s" % (chr_Owner, int_Count,
                                                                                       chr_PauseFlag, chr_RuleFlag,
                                                                                       int_JobIDWidth, str_JobID,
                                                                                       int_ActionWidth, str_Action,
                                                                                       int_EnvWidth, str_Env,
                                                                                       int_ReleaseWidth, str_Release,
-                                                                                      str_Running_Time, 
-                                                                                      str_LastLine[:int_Width-10], colours.RESET))
-                    else:
-
-                        if re.search(jobfilter, str_File):
-                            print(ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (chr_Owner, int_Count,
-                                                                                     chr_PauseFlag, chr_RuleFlag,
-                                                                                     int_JobIDWidth, str_JobID,
-                                                                                     int_ActionWidth, str_Action,
-                                                                                     int_EnvWidth, str_Env,
-                                                                                     int_ReleaseWidth, str_Release,
-                                                                                     str_LastLine[:int_Width], colours.RESET))
+                                                                                      str_LastLine[:int_Width], colours.RESET))
 
                     int_Count = int_Count + 1
                 else:
@@ -263,10 +269,10 @@ def check_file_owner(str_File):
                 if re.search("str_Owner=" + getpass.getuser() + "$", line):
                     chr_Owner = ">"
                     break
-    except (IOError, OSError, FileNotFoundError) as e:
+    except (IOError, OSError, FileNotFoundError):
         # print(f"X  x           Access Issue: {str_File} ({e})")
         chr_Owner = "X"
-    
+
     return chr_Owner
 
 
@@ -290,11 +296,12 @@ def GetRunningTime(filename):
 
     if latest_timestamp is None:
         return "Running"
-    
+
     time_diff_seconds = current_time - latest_timestamp
     time_diff_human_readable = str(timedelta(seconds=time_diff_seconds))
 
     return time_diff_human_readable
+
 
 def main(argv):
     outputfile = os.devnull
