@@ -51,24 +51,31 @@ fn_GetRequest()
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n"
-    printf " info <plugin>    for further information\n\n"
+    printf " info <plugin>    for statistics information\n"
+    printf " view <plugin>    View the base plugin\n\n"
     printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
-      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
+      str_ULine=$(echo ${str_Line} | tr '[:lower:]' '[:upper:]')
       if [[  ${str_ULine} =~ HELP ]] ; then
-        local str_Help=${str_Line#help }
+        local str_Help=$(echo ${str_Line#help })
         if [[ "${str_Line}" ]] ; then
           echo "==SYSTEM============="
           declare -f fn_ExtractPairs | grep -w "GetVar"
           echo "==CUSTOM============="
-          declare -f "SP_${str_Help}" | grep -w "GetVar"
+          declare -f SP_${str_Help} | grep -w "GetVar"
           echo "==============="
-          declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
+          declare -f SP_${str_Help} | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
           echo "==============="          
         fi
+
+      elif [[ ${str_ULine} =~ VIEW ]]; then
+        local str_View=$(echo ${str_Line#view })
+        echo "$str_View is: SP_${str_View}"
+        declare -f SP_${str_View}
+
       elif [[ ${str_ULine} =~ INFO ]]; then
-        local str_Info=${str_Line#info }
+        local str_Info=$(echo ${str_Line#info })
         # scorchdb -f $file_CSV +job $str_Info -time | ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }'
         local int_JobCount=
         int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
@@ -89,6 +96,7 @@ fn_GetRequest()
           printf " info <plugin>    for further information\n\n"
           printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
         fi
+
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
