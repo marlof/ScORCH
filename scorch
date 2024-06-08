@@ -396,8 +396,8 @@ typeset      int_SubTask=
 typeset      str_SubTask=
 typeset int_DispatchSleep=10
 typeset          hex_MD5=
-typeset       file_Cache=${dir_Memory}/mycache.$$
-typeset       file_Maint=${dir_Memory}/${str_ProgramName}.maintenance
+typeset       file_Cache=/tmp/mycache.$$
+typeset       file_Maint=/tmp/${str_ProgramName}.maintenance
          
 typeset     str_Protocol="http://"
 typeset     dir_Location="www.autoscorch.com/downloads"
