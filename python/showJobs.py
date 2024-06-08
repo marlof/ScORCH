@@ -38,6 +38,7 @@
 # 1.19      Marc Loftus     02/10/2023      Add protection around symlinks
 #                                           Improved ShowLine function
 # 1.20      Marc            08/06/2024      Flake8 updates
+#                                           Process improvements
 ############################################################################################################
 
 import os
@@ -51,8 +52,10 @@ import shutil
 
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
+from datetime import timedelta
 
-str_ProgramVersion = '1.18'
+
+str_ProgramVersion = '1.20'
 
 dir_Base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dir_Job = dir_Base + "/jobs/"
@@ -63,6 +66,8 @@ cmd_Clear = "os.system('clear')"
 chr_PauseFlag = ""
 chr_RuleFlag = ""
 str_Time = ""
+chr_Owner = " "
+
 
 int_Count = 1
 str_ProgramName = __file__
@@ -144,7 +149,6 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
         else:
             ansi_colour = colours.RESET
 
-        chr_Owner = " "
         int_Magic = 7                                    # including pipes and spaces
         int_JobNumWidth = 3                              # 1 Job num
         int_JobIDWidth = fn_ColumnMax(arr_Files, 2)      # 2 Job ID
@@ -156,15 +160,19 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
         for str_File in arr_Files:
             chr_Owner = " "
 
-            try:
-                with open(str_File, 'r') as file:
-                    for line in file:
-                        if re.search("str_Owner=" + getpass.getuser() + "$", line):
-                            chr_Owner = ">"
-                            break
-            except:
-                print("X  x           Access Issue: " + str_File)
-                continue
+        #    try:
+        #        with open(str_File, 'r') as file:
+        #            for line in file:
+        #                if re.search("str_Owner=" + getpass.getuser() + "$", line):
+        #                    chr_Owner = ">"
+        #                    break
+        #    except:
+        #        print("X  x           Access Issue: " + str_File)
+        #        return "X"
+        #        # continue
+
+            chr_Owner = check_file_owner(str_File)
+            #print(f"Owner check result: {chr_Owner}")
 
             if os.access(dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
                 chr_PauseFlag = "P"
@@ -212,21 +220,19 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                         ansi_colour = colours.RESET
                     if str_State == "running":
                         # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-                        str_StartTime = GetStartTime(file_JobLog)
-                        str_TaskTime = GetRunningTime(file_JobLog)
+                        #str_StartTime = GetStartTime(file_JobLog)
 
-                        str_CurrentTime = int(time.time())
-                        str_Time = str_CurrentTime - str_StartTime
-                        str_Time = str(datetime.timedelta(seconds=str_Time))
-                        str_Task = str_CurrentTime - str_TaskTime
-                        str_Task = str(datetime.timedelta(seconds=str_Task))
+                        #str_CurrentTime = int(time.time())
+                        #str_Time = str_CurrentTime - str_StartTime
+                        #str_Time = str(datetime.timedelta(seconds=str_Time))
+                        str_Running_Time = GetRunningTime(file_JobLog)
                         print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
                                                                                       chr_PauseFlag, chr_RuleFlag,
                                                                                       int_JobIDWidth, str_JobID,
                                                                                       int_ActionWidth, str_Action,
                                                                                       int_EnvWidth, str_Env,
                                                                                       int_ReleaseWidth, str_Release,
-                                                                                      str_Time,
+                                                                                      str_Running_Time, 
                                                                                       str_LastLine[:int_Width-10], colours.RESET))
                     else:
 
@@ -250,31 +256,46 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                 int_More = int_More + 1
 
 
-def GetStartTime(filename):
-    MAX_READ = range(10)
-    x = int(time.time())
-    with open(filename) as origin:
-        for line, _ in zip(origin, MAX_READ):
-            if "AUDIT:START:1" in line:
-                try:
-                    x = int(line.split(':')[2])
-                except:
-                    x = int(time.time())
-                break
-    return x
+def check_file_owner(str_File):
+    chr_Owner = " "
+
+    try:
+        with open(str_File, 'r') as file:
+            for line in file:
+                if re.search("str_Owner=" + getpass.getuser() + "$", line):
+                    chr_Owner = ">"
+                    break
+    except (IOError, OSError, FileNotFoundError) as e:
+        print(f"X  x           Access Issue: {str_File} ({e})")
+    
+    return chr_Owner
 
 
 def GetRunningTime(filename):
-    x = int(time.time())
-    for line in reversed(open(filename).readlines()):
-        if "TASK:START" in line:
-            try:
-                x = int(line.split(':')[2])
-            except:
-                x = GetStartTime(filename)
-            break
-    return x
+    current_time = int(time.time())  # Get the current time in epoch format
+    latest_timestamp = None  # Initialize the latest timestamp to None
+    audit_pattern = re.compile(r"AUDIT:START:[1-9]")
 
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                if audit_pattern.search(line):
+                    try:
+                        latest_timestamp = int(line.split(':')[2])
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing line for timestamp: {e}")
+                        continue  # Skip the current line if parsing fails
+    except (IOError, OSError) as e:
+        print(f"Error reading file {filename}: {e}")
+        latest_timestamp = current_time  # Fallback to current time if file read fails
+
+    if latest_timestamp is None:
+        return "Running"
+    
+    time_diff_seconds = current_time - latest_timestamp
+    time_diff_human_readable = str(timedelta(seconds=time_diff_seconds))
+
+    return time_diff_human_readable
 
 def main(argv):
     outputfile = os.devnull
@@ -299,7 +320,19 @@ def main(argv):
             list_Dir.append(args[0])
             args = args[1:]
 
-    temp = open(outputfile, 'w+')
+    try:
+        temp = open(outputfile, 'w+')
+    except PermissionError as e:
+        print(f"Permission denied trying to create temp file: {e}")
+        print("Ensure " + outputfile + " has the correct permission")
+
+        sys.exit(1)
+    except IOError as e:
+        print(f"IO error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        sys.exit(1)
 
     if maxnum == 999:
         rows, columns = os.popen('stty size', 'r').read().split()
@@ -313,7 +346,8 @@ def main(argv):
 
     temp.write('int_Count='+str(int_Count)+'\n')
 
-    temp.close()
+    if 'temp' in locals():
+        temp.close()
 
 
 if __name__ == "__main__":
