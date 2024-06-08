@@ -37,10 +37,12 @@
 # 1.18      Marc Loftus     01/11/2022      Wrap os.popen in try block
 # 1.19      Marc Loftus     02/10/2023      Add protection around symlinks
 #                                           Improved ShowLine function
+# 1.20      Marc            08/06/2024      Flake8 updates
 ############################################################################################################
-str_ProgramVersion = '1.18'
 
-import os, getpass, sys
+import os
+import getpass
+import sys
 import time        # Used for ls sorting in time order
 import datetime    # Used for elapsed running time
 import glob
@@ -50,24 +52,26 @@ import shutil
 from os import listdir, access
 from os.path import isfile, join, islink, getmtime
 
-dir_Base=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dir_Job   = dir_Base + "/jobs/"
-dir_Log   = dir_Base + "/var/log/"
+str_ProgramVersion = '1.18'
+
+dir_Base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dir_Job = dir_Base + "/jobs/"
+dir_Log = dir_Base + "/var/log/"
 str_Pause = "pause"
-str_Rule  = "rules"
+str_Rule = "rules"
 cmd_Clear = "os.system('clear')"
 chr_PauseFlag = ""
 chr_RuleFlag = ""
 str_Time = ""
 
-int_Count             = 1
-str_ProgramName       = __file__
-int_PID               = os.getpid()
-int_Rows              = int(os.environ.get('LINES', 25))
-int_Columns           = int(os.environ.get('COLUMNS', 120))
-list_Dir              = []
+int_Count = 1
+str_ProgramName = __file__
+int_PID = os.getpid()
+int_Rows = int(os.environ.get('LINES', 25))
+int_Columns = int(os.environ.get('COLUMNS', 120))
+list_Dir = []
 
-dir_Run=os.getcwd()
+dir_Run = os.getcwd()
 # Default maxnum
 maxnum = 35
 b_More = False
@@ -84,13 +88,13 @@ class colours:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
+
 def fn_ShowLine(cha_LineChar, str_LineTitle):
-    
+
     columns, _ = shutil.get_terminal_size(fallback=(int_Columns, 120))
 
     # Calculate the number of characters needed on each side of the title
     title_length = len(str_LineTitle)
-    char_length = len(cha_LineChar)
     side_length = (columns - 3 - title_length)
 
     # Create the line
@@ -103,6 +107,7 @@ def fn_ShowLine(cha_LineChar, str_LineTitle):
 
     print(line)
 
+
 def fn_ColumnMax(arr_Files, int_Column):
     int_ColumnMax = 0
     for str_File in arr_Files:
@@ -113,43 +118,40 @@ def fn_ColumnMax(arr_Files, int_Column):
                 int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
 
-def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
+
+def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
-    
-    arr_str_DirList2 = glob.glob(os.path.join(dir_Job,str_State)+'/Job*'+jobfilter+'*')   #   Create an "ls $jobdir/Job*"
+
+    arr_str_DirList2 = glob.glob(os.path.join(dir_Job, str_State)+'/Job*'+jobfilter+'*')   # Create an "ls $jobdir/Job*"
     global b_More
     global int_More
     global int_Count
 
-    if arr_str_DirList2:                                                    #   If there is anything in the directory
-
-        fn_ShowLine("-",str_State.upper())
-        
+    if arr_str_DirList2:   # If there is anything in the directory
+        fn_ShowLine("-", str_State.upper())
         dir_State = os.path.join(dir_Job, str_State)
+        os.chdir(dir_State)  # Change to the job/state directory
 
-        os.chdir(dir_State)                                                     # Change to the job/state directory
-        
         arr_Files = [file for file in os.listdir('.') if os.path.exists(file)]
         arr_Files.sort(key=lambda x: os.path.getmtime(x) if os.path.exists(x) else 0)
 
         if str_State == "completed":
-            arr_Files=list(reversed(arr_Files))
+            arr_Files = list(reversed(arr_Files))
 
         if str_State == "failed":
-          ansi_colour=colours.FAIL
+            ansi_colour = colours.FAIL
         else:
-          ansi_colour=colours.RESET
+            ansi_colour = colours.RESET
 
-        chr_Owner=" "
-        int_Magic=7                                   # including pipes and spaces
-        int_JobNumWidth=3                             # 1 Job num
-        int_JobIDWidth=fn_ColumnMax(arr_Files,2)      # 2 Job ID
-        int_ActionWidth=fn_ColumnMax(arr_Files,3)     # 3 Longest Action
-        int_EnvWidth=fn_ColumnMax(arr_Files,4)        # 4 Longest Envrionment
-        int_ReleaseWidth=fn_ColumnMax(arr_Files,5)    # 5 Longest Release 
-        #int_LogWidth=99                              # 6 Width left for the log
-        int_Width=int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
+        chr_Owner = " "
+        int_Magic = 7                                    # including pipes and spaces
+        int_JobNumWidth = 3                              # 1 Job num
+        int_JobIDWidth = fn_ColumnMax(arr_Files, 2)      # 2 Job ID
+        int_ActionWidth = fn_ColumnMax(arr_Files, 3)     # 3 Longest Action
+        int_EnvWidth = fn_ColumnMax(arr_Files, 4)        # 4 Longest Envrionment
+        int_ReleaseWidth = fn_ColumnMax(arr_Files, 5)    # 5 Longest Release     # 6 Width left for the log
+        int_Width = int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
 
         for str_File in arr_Files:
             chr_Owner = " "
@@ -163,19 +165,16 @@ def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
             except:
                 print("X  x           Access Issue: " + str_File)
                 continue
-                
 
-            if os.access ( dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
+            if os.access(dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
                 chr_PauseFlag = "P"
             else:
                 chr_PauseFlag = " "
 
-
-            if os.access ( dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
+            if os.access(dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
                 chr_RuleFlag = "R"
             else:
                 chr_RuleFlag = " "
-
 
             ''' Max Display '''
             if int_Count <= maxnum:
@@ -190,87 +189,91 @@ def fn_ShowJobs(str_State,temp,maxnum, job_filter=""):
                     str_Action = str_JobSplit[3]
                     str_Env = str_JobSplit[4]
                     str_Release = str_JobSplit[5]
-                
-                    file_JobLog  = dir_Log + str_File + ".log"
+
+                    file_JobLog = dir_Log + str_File + ".log"
 
                     # Collect the last line of the log file
-                    if os.access (file_JobLog, os.R_OK):
+                    if os.access(file_JobLog, os.R_OK):
 
-                        ptr_JobLogFile = open(file_JobLog,"r")
+                        ptr_JobLogFile = open(file_JobLog, "r")
 
                         str_JobLogFile = ptr_JobLogFile.readlines()
                         ptr_JobLogFile.close()
                         try:
-                            str_LastLine   = re.sub(r'[^\x0e-\x7e]',r'\\', str_JobLogFile[-1].rstrip('\n'))
+                            str_LastLine = re.sub(r'[^\x0e-\x7e]', r'\\', str_JobLogFile[-1].rstrip('\n'))
                         except IndexError:
-                            str_LastLine   = "Warning: Empty file"
+                            str_LastLine = "Warning: Empty file"
 
                     else:
-                        str_LastLine   = "Error: Cannot read file. Check permissions for read access."
+
+                        str_LastLine = "Error: Cannot read file. Check permissions for read access."
 
                     if re.search("WIP", str_LastLine):
-                      ansi_colour=colours.RESET
-                    if str_State == "running":                        
-                      # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-                      str_StartTime=GetStartTime(file_JobLog)
-                      str_TaskTime=GetRunningTime(file_JobLog)
+                        ansi_colour = colours.RESET
+                    if str_State == "running":
+                        # look in log file for AUDIT:START:[1.*] - yes starting with a one - it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
+                        str_StartTime = GetStartTime(file_JobLog)
+                        str_TaskTime = GetRunningTime(file_JobLog)
 
-                      str_CurrentTime=int(time.time())
-                      str_Time=str_CurrentTime - str_StartTime
-                      str_Time=str(datetime.timedelta(seconds=str_Time))
-                      str_Task=str_CurrentTime - str_TaskTime
-                      str_Task=str(datetime.timedelta(seconds=str_Task))               
-                      print (ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
-                        chr_PauseFlag,chr_RuleFlag,
-                        int_JobIDWidth,str_JobID,
-                        int_ActionWidth,str_Action,
-                        int_EnvWidth,str_Env,
-                        int_ReleaseWidth,str_Release, 
-                        str_Time, 
-                        str_LastLine[:int_Width-10], colours.RESET))
+                        str_CurrentTime = int(time.time())
+                        str_Time = str_CurrentTime - str_StartTime
+                        str_Time = str(datetime.timedelta(seconds=str_Time))
+                        str_Task = str_CurrentTime - str_TaskTime
+                        str_Task = str(datetime.timedelta(seconds=str_Task))
+                        print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s"% (chr_Owner, int_Count,
+                                                                                      chr_PauseFlag, chr_RuleFlag,
+                                                                                      int_JobIDWidth, str_JobID,
+                                                                                      int_ActionWidth, str_Action,
+                                                                                      int_EnvWidth, str_Env,
+                                                                                      int_ReleaseWidth, str_Release,
+                                                                                      str_Time,
+                                                                                      str_LastLine[:int_Width-10], colours.RESET))
                     else:
-                      if re.search(jobfilter,str_File):
-                            print (ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (chr_Owner,int_Count,
-                                chr_PauseFlag,chr_RuleFlag,
-                                int_JobIDWidth,str_JobID,
-                                int_ActionWidth,str_Action,
-                                int_EnvWidth,str_Env,
-                                int_ReleaseWidth,str_Release, 
-                                str_LastLine[:int_Width], colours.RESET))
+
+                        if re.search(jobfilter, str_File):
+                            print(ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s"% (chr_Owner, int_Count,
+                                                                                     chr_PauseFlag, chr_RuleFlag,
+                                                                                     int_JobIDWidth, str_JobID,
+                                                                                     int_ActionWidth, str_Action,
+                                                                                     int_EnvWidth, str_Env,
+                                                                                     int_ReleaseWidth, str_Release,
+                                                                                     str_LastLine[:int_Width], colours.RESET))
 
                     int_Count = int_Count + 1
                 else:
-                   # Handle the case when the split list doesn't have enough elements
-                   #print(f"\t\tSkipping \"{str_File}\" due to incorrect job format.")
-                   print("\t\tSkipping \"{}\" due to incorrect job format.".format(str_File))
+
+                    # Handle the case when the split list doesn't have enough elements
+                    print("\t\tSkipping \"{}\" due to incorrect job format.".format(str_File))
             else:
+
                 b_More = True
                 int_More = int_More + 1
 
+
 def GetStartTime(filename):
-    MAX_READ=range(10)
+    MAX_READ = range(10)
     x = int(time.time())
     with open(filename) as origin:
-      for line, _ in zip(origin,MAX_READ):
-        if "AUDIT:START:1" in line:
-          try:
-            x = int(line.split(':')[2])
-          except:
-            x = int(time.time())
-          break 
+        for line, _ in zip(origin, MAX_READ):
+            if "AUDIT:START:1" in line:
+                try:
+                    x = int(line.split(':')[2])
+                except:
+                    x = int(time.time())
+                break
     return x
+
 
 def GetRunningTime(filename):
     x = int(time.time())
     for line in reversed(open(filename).readlines()):
-      if "TASK:START" in line:
-        try:
-          x = int(line.split(':')[2])
-        except:
-          x = GetStartTime(filename) #int(time.time())
-        break
+        if "TASK:START" in line:
+            try:
+                x = int(line.split(':')[2])
+            except:
+                x = GetStartTime(filename)
+            break
     return x
-
 
 
 def main(argv):
@@ -285,17 +288,16 @@ def main(argv):
             outputfile = args[1]
             args = args[2:]
         elif args[0] == '-v':
-            option = args[1]
             args = args[1:]
         elif args[0] == '-n':
             maxnum = int(args[1])
             args = args[2:]
         elif args[0] == '-f':
             jobfilter = args[1]
-            args = args[2:] 
+            args = args[2:]
         else:
             list_Dir.append(args[0])
-            args = args[1:] # shift
+            args = args[1:]
 
     temp = open(outputfile, 'w+')
 
@@ -304,18 +306,15 @@ def main(argv):
         maxnum = int(rows) - 10
 
     for eachDir in list_Dir:
-        fn_ShowJobs(eachDir,temp,maxnum)
+        fn_ShowJobs(eachDir, temp, maxnum)
 
     if b_More is True:
         print("+++ ["+str(int_More)+" more]")
 
     temp.write('int_Count='+str(int_Count)+'\n')
 
-    name= 'varname'
-    value= 'something'
-
     temp.close()
 
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])

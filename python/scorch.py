@@ -47,13 +47,10 @@ def yesno(prompt):
   answer = input(prompt + " (Y/N): ")
   return answer.strip().lower() == "y"
 
-
-
-
-Debug    = logging.debug
-Message  = logging.info
-#Warning  = logging.warning
-Error    = logging.error
+Debug = logging.debug
+Message = logging.info
+Warning  = logging.warning
+Error = logging.error
 Critical = logging.critical
 Debug('Hello')
 Warning('This is a warning')
