@@ -166,7 +166,7 @@ fn_NiceTime()
 Manual(){  printf "\n\t%s*\n\n"                   "\$*" ; return 99 ; }
 Message(){ printf "\nTask Message: %s\n"          "\$*" ; sleep "$int_Refresh" ; }
 Error(){   printf "\nForced Error: %s\n"          "\$*" ; sleep "$int_Refresh" ; return 1 ; }
-Sleep(){   printf "\nSleeping for %s seconds\n" "\$1" ; sleep "\$1" ; }
+Sleep(){   printf "\n  Sleeping for %s seconds\n" "\$1" ; sleep "\$1" ; }
 
 Documentation(){ var_DOC="DOC_\${*}" ; printf "\n\${!var_DOC}\n" ; return 99 ; }
 
