@@ -152,7 +152,7 @@ export        cmd_Editor="vi"
 export           b_Quick="0"
 
 # Set Protocol for installing new version (http or local)
-export      str_Protocol="https"
+export      str_Protocol="http"
 
 # Set Location of version and tar file for HTTP
 export      dir_Location="s3.eu-west-2.amazonaws.com/autoscorchdownload.com"
