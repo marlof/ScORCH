@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 ###############################################################################
 # This program will find Job files in multiple state directories and turn them
-# into a human readable format
+# into a human-readable format
 #
 # Created by Marc Loftus 28/10/2017
 #
@@ -13,10 +13,10 @@
 # 1.1       Marc Loftus     28/10/2017      dir lists turned into dictionary
 #                                                 types for ease of searching
 # 1.2       Marc Loftus     28/10/2017      Sorting NEW oldest first,
-#                                                 COMPLATED oldest last
+#                                                 COMPLETED oldest last
 # 1.3       Marc Loftus     30/10/2017      Starting convert of scorch(bash)
 #                                                 to scorch(python)
-# 1.4       Marc Loftus     27/11/2017      C|hnaged to self contained ShowJobs
+# 1.4       Marc Loftus     27/11/2017      Changed to self-contained ShowJobs
 # 1.5       Marc Loftus     08/02/2018      Adjustment for args [2] to [1]
 #      -v int_Column1Width=${int_Column1Width} \
 #      -v int_Column2Width=${int_Column2Width} \
@@ -29,9 +29,9 @@
 #                                                 highlighted
 # 1.8       Marc Loftus     21/05/2018      Now uses int_MaxShown prefs
 # 1.8.1                                     changed wording
-# 1.9       Marc Loftus     05/06/2018      Added rows for auto scaling
+# 1.9       Marc Loftus     05/06/2018      Added rows for auto-scaling
 # 1.10      Marc Loftus     12/06/2018      Adding Pause and Rules flags
-# 1.11      Marc Loftus     15/06/2018      Adding elasped time
+# 1.11      Marc Loftus     15/06/2018      Adding elapsed time
 # 1.12      Marc Loftus     04/10/2018      Fixed issues with showline  CR
 # 1.13      Marc Loftus     23/10/2018      #73 Adding filter option
 # 1.14      Marc Loftus     26/01/2019      #94 Variable Column Width
@@ -49,27 +49,21 @@
 import os
 import getpass
 import sys
-import time        # Used for ls sorting in time order
-# import datetime    # Used for elapsed running time
+import time  # Used for ls sorting in time order
 import glob
 import re
 import shutil
-
-# from os import listdir, access
-# from os.path import isfile, join, islink, getmtime
 from datetime import timedelta
 
 str_ProgramVersion = '1.20'
 
 dir_Base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dir_Job = dir_Base + "/jobs/"
-dir_Log = dir_Base + "/var/log/"
+dir_Job = os.path.join(dir_Base, "jobs")
+dir_Log = os.path.join(dir_Base, "var/log")
 str_Pause = "pause"
 str_Rule = "rules"
-cmd_Clear = "os.system('clear')"
 chr_PauseFlag = ""
 chr_RuleFlag = ""
-str_Time = ""
 chr_Owner = " "
 
 int_Count = 1
@@ -80,11 +74,9 @@ int_Columns = int(os.environ.get('COLUMNS', 120))
 list_Dir = []
 
 dir_Run = os.getcwd()
-# Default maxnum
 maxnum = 35
 b_More = False
 int_More = 0
-
 
 class colours:
     HEADER = '\033[95m'
@@ -96,25 +88,15 @@ class colours:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
-
 def fn_ShowLine(cha_LineChar, str_LineTitle):
-
     columns, _ = shutil.get_terminal_size(fallback=(int_Columns, 120))
-
-    # Calculate the number of characters needed on each side of the title
     title_length = len(str_LineTitle)
     side_length = (columns - 3 - title_length)
-
-    # Create the line
     line = cha_LineChar * 3 + str_LineTitle + cha_LineChar * side_length
-
-    # Fill the remaining space on the right if needed
     remaining = int_Columns - len(line)
     if remaining > 0:
         line += cha_LineChar * remaining
-
     print(line)
-
 
 def fn_ColumnMax(arr_Files, int_Column):
     int_ColumnMax = 0
@@ -126,12 +108,10 @@ def fn_ColumnMax(arr_Files, int_Column):
                 int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
 
-
 def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
     '''ShowLine2 takes a state argument which is turned into a directory location
        and the files in the directory are broken up into columns'''
-
-    arr_str_DirList2 = glob.glob(os.path.join(dir_Job, str_State)+'/Job*'+jobfilter+'*')   # Create an "ls $jobdir/Job*"
+    arr_str_DirList2 = glob.glob(os.path.join(dir_Job, str_State, 'Job*' + job_filter + '*'))
     global b_More
     global int_More
     global int_Count
@@ -156,40 +136,25 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
         int_JobNumWidth = 3                              # 1 Job num
         int_JobIDWidth = fn_ColumnMax(arr_Files, 2)      # 2 Job ID
         int_ActionWidth = fn_ColumnMax(arr_Files, 3)     # 3 Longest Action
-        int_EnvWidth = fn_ColumnMax(arr_Files, 4)        # 4 Longest Envrionment
+        int_EnvWidth = fn_ColumnMax(arr_Files, 4)        # 4 Longest Environment
         int_ReleaseWidth = fn_ColumnMax(arr_Files, 5)    # 5 Longest Release     # 6 Width left for the log
         int_Width = int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
 
         for str_File in arr_Files:
             chr_Owner = " "
-
-        #    try:
-        #        with open(str_File, 'r') as file:
-        #            for line in file:
-        #                if re.search("str_Owner=" + getpass.getuser() + "$", line):
-        #                    chr_Owner = ">"
-        #                    break
-        #    except:
-        #        print("X  x           Access Issue: " + str_File)
-        #        return "X"
-        #        # continue
-
             chr_Owner = check_file_owner(str_File)
-            # print(f"Owner check result: {chr_Owner}")
 
-            if os.access(dir_Job + "active/" + str_File + "." + str_Pause, os.R_OK):
+            if os.access(os.path.join(dir_Job, "active", str_File + "." + str_Pause), os.R_OK):
                 chr_PauseFlag = "P"
             else:
                 chr_PauseFlag = " "
 
-            if os.access(dir_Job + "active/" + str_File + "." + str_Rule, os.R_OK):
+            if os.access(os.path.join(dir_Job, "active", str_File + "." + str_Rule), os.R_OK):
                 chr_RuleFlag = "R"
             else:
                 chr_RuleFlag = " "
 
-            ''' Max Display '''
             if int_Count <= maxnum:
-                ''' Class handling '''
                 temp.write('arr_States['+str(int_Count)+']='+str_State+'\n')
                 temp.write('arr_Jobs['+str(int_Count)+']='+str_File+'\n')
 
@@ -201,34 +166,22 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                     str_Env = str_JobSplit[4]
                     str_Release = str_JobSplit[5]
 
-                    file_JobLog = dir_Log + str_File + ".log"
+                    file_JobLog = os.path.join(dir_Log, str_File + ".log")
 
                     # Collect the last line of the log file
                     if os.access(file_JobLog, os.R_OK):
-
-                        ptr_JobLogFile = open(file_JobLog, "r")
-
-                        str_JobLogFile = ptr_JobLogFile.readlines()
-                        ptr_JobLogFile.close()
                         try:
-                            str_LastLine = re.sub(r'[^\x0e-\x7e]', r'\\', str_JobLogFile[-1].rstrip('\n'))
+                            with open(file_JobLog, "r") as ptr_JobLogFile:
+                                str_JobLogFile = ptr_JobLogFile.readlines()
+                                str_LastLine = re.sub(r'[^\x0e-\x7e]', r'\\', str_JobLogFile[-1].rstrip('\n'))
                         except IndexError:
                             str_LastLine = "Warning: Empty file"
-
                     else:
-
                         str_LastLine = "Error: Cannot read file. Check permissions for read access."
 
                     if re.search("WIP", str_LastLine):
                         ansi_colour = colours.RESET
                     if str_State == "running":
-                        # look in log file for AUDIT:START:[1.*] - yes starting with a one -
-                        # it'll be a long time till is starts 2 (18 May 2033 03:33:20 in fact)
-                        # str_StartTime = GetStartTime(file_JobLog)
-
-                        # str_CurrentTime = int(time.time())
-                        # str_Time = str_CurrentTime - str_StartTime
-                        # str_Time = str(datetime.timedelta(seconds=str_Time))
                         str_Running_Time = GetRunningTime(file_JobLog)
                         print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s" % (chr_Owner, int_Count,
                                                                                        chr_PauseFlag, chr_RuleFlag,
@@ -239,8 +192,7 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                                                                                        str_Running_Time,
                                                                                        str_LastLine[:int_Width-10], colours.RESET))
                     else:
-
-                        if re.search(jobfilter, str_File):
+                        if re.search(job_filter, str_File):
                             print(ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s" % (chr_Owner, int_Count,
                                                                                       chr_PauseFlag, chr_RuleFlag,
                                                                                       int_JobIDWidth, str_JobID,
@@ -249,16 +201,12 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                                                                                       int_ReleaseWidth, str_Release,
                                                                                       str_LastLine[:int_Width], colours.RESET))
 
-                    int_Count = int_Count + 1
+                    int_Count += 1
                 else:
-
-                    # Handle the case when the split list doesn't have enough elements
                     print("\t\tSkipping \"{}\" due to incorrect job format.".format(str_File))
             else:
-
                 b_More = True
-                int_More = int_More + 1
-
+                int_More += 1
 
 def check_file_owner(str_File):
     chr_Owner = " "
@@ -270,11 +218,9 @@ def check_file_owner(str_File):
                     chr_Owner = ">"
                     break
     except (IOError, OSError, FileNotFoundError):
-        # print(f"X  x           Access Issue: {str_File} ({e})")
         chr_Owner = "X"
 
     return chr_Owner
-
 
 def GetRunningTime(filename):
     current_time = int(time.time())  # Get the current time in epoch format
@@ -301,7 +247,6 @@ def GetRunningTime(filename):
     time_diff_human_readable = str(timedelta(seconds=time_diff_seconds))
 
     return time_diff_human_readable
-
 
 def main(argv):
     outputfile = os.devnull
@@ -331,7 +276,6 @@ def main(argv):
     except PermissionError as e:
         print(f"Permission denied trying to create temp file: {e}")
         print("Ensure " + outputfile + " has the correct permission")
-
         sys.exit(1)
     except IOError as e:
         print(f"IO error: {e}")
@@ -354,7 +298,6 @@ def main(argv):
 
     if 'temp' in locals():
         temp.close()
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
