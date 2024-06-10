@@ -31,77 +31,76 @@ fn_NiceTime()
   printf "%02dh %02dm %02ds\n" $hours $minutes $seconds
 }
 
-fn_GetRequest()
-{
+fn_GetRequest() {
   ## Receive the request from a file or interactively
   local file_Template="${1:-}"
   local str_Line=""
   local int_GetCount=1
+  local file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
 
-  ## global tmp file
-  file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
   fn_CreateFile "${file_Request}"
 
-  if [ ! -z "${file_Template}" ] ; then
-    [[ $b_NonInteractive ]] || echo "$($fn_LogDate): Processing file:${file_Template}"
-    while read -r str_Line ; do
-      str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
-      [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
+  if [ -n "${file_Template}" ]; then
+    [[ $b_NonInteractive ]] || echo "$($(fn_LogDate)): Processing file: ${file_Template}"
+    while read -r str_Line; do
+      [[ "${str_Line^^}" =~ ACTION ]] && ((int_GetCount++)) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n"
     printf " info <plugin>    for statistics information\n"
     printf " view <plugin>    View the base plugin\n\n"
-    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
-    while [[ "${str_Line}" != "." ]] ; do
+    printf " Please enter the request below.\n To complete the request use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
+    while [[ "${str_Line}" != "." ]]; do
       read -e -r str_Line
-      str_ULine=$(echo ${str_Line} | tr '[:lower:]' '[:upper:]')
-      if [[  ${str_ULine} =~ HELP ]] ; then
-        local str_Help=$(echo ${str_Line#help })
-        if [[ "${str_Line}" ]] ; then
-          echo "==SYSTEM============="
-          declare -f fn_ExtractPairs | grep -w "GetVar"
-          echo "==CUSTOM============="
-          declare -f SP_${str_Help} | grep -w "GetVar"
-          echo "==============="
-          declare -f SP_${str_Help} | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
-          echo "==============="          
-        fi
-
-      elif [[ ${str_ULine} =~ VIEW ]]; then
-        local str_View=$(echo ${str_Line#view })
-        echo "$str_View is: SP_${str_View}"
-        declare -f SP_${str_View}
-
-      elif [[ ${str_ULine} =~ INFO ]]; then
-        local str_Info=$(echo ${str_Line#info })
-        # scorchdb -f $file_CSV +job $str_Info -time | ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }'
-        local int_JobCount=
-        int_JobCount=$(grep "\_$str_Info\_" $file_CSV | wc -l)
-        local int_NonFailCount
-        int_NonFailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep -v "\-1$" |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }')
-        local int_FailCount=
-        int_FailCount=$(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f8 | grep "\-1$" | wc -l)
-        printf "\n"
-        printf "Total number of jobs logged    : %s\n" ${int_JobCount}
-        if [[ ${int_JobCount} -ge 1 ]] ; then
-          #printf "Total number of failures       : $(grep $str_Info $file_CSV | cut -d"," -f6)"
-          printf "Number of deleted jobs         : %s\n" ${int_FailCount}
-          printf "Average number of failures     : %s\n" ${int_NonFailCount}
-          printf "Max run time                   : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | grep -v "\-1,.*$" | cut -d"," -f6 |  ${cmd_AWK} 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}'))
-          printf "Average run time               : %s %s %s\n" $(fn_NiceTime $(grep "\_${str_Info}\_" $file_CSV | cut -d"," -f6 |  ${cmd_AWK} '{ sum += $1 } END { if (NR > 0) print sum / NR }') 2>/dev/null)
-          printf "\n\n"
-          printf "\n help <plugin>    at any time for additional parameters\n"
-          printf " info <plugin>    for further information\n\n"
-          printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
-        fi
-
-      else
-        [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]* && break
-        [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
-        echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
-      fi
+      str_ULine="${str_Line^^}"
+      case "${str_ULine}" in
+        HELP*)
+          local str_Help=${str_Line##* }
+          if [ -n "${str_Line}" ]; then
+            echo "==SYSTEM============="
+            declare -f fn_ExtractPairs | grep -w "GetVar"
+            echo "==CUSTOM============="
+            declare -f "SP_${str_Help}" | grep -w "GetVar"
+            echo "==============="
+            declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
+            echo "==============="
+          fi
+          ;;
+        VIEW*)
+          local str_View=${str_Line##* }
+          echo "$str_View is: SP_${str_View}"
+          declare -f "SP_${str_View}"
+          ;;
+        INFO*)
+          local str_Info=${str_Line##* }
+          local int_JobCount=$(grep "\_${str_Info}\_" "$file_CSV" | wc -l)
+          local int_NonFailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep -v "\-1$" | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }')
+          local int_FailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep "\-1$" | wc -l)
+          printf "\n"
+          printf "Total number of jobs logged    : %s\n" "$int_JobCount"
+          if [[ $int_JobCount -ge 1 ]]; then
+            printf "Number of deleted jobs         : %s\n" "$int_FailCount"
+            printf "Average number of failures     : %s\n" "$int_NonFailCount"
+            printf "Max run time                   : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | grep -v "\-1,.*$" | cut -d"," -f6 | awk 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}')")"
+            printf "Average run time               : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f6 | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }' 2>/dev/null)")"
+            printf "\n\n"
+          fi
+          ;;
+        CANCEL*)
+          rm "${dir_Tmp}/${str_ProgramName}.$$."[0-9]*
+          break
+          ;;
+        ACTION*)
+          ((int_GetCount++))
+          file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
+          echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          ;;
+        *)
+          echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          cat ${file_Request}
+          ;;
+      esac
     done
   fi
 }
@@ -116,16 +115,15 @@ fn_ProcessRequest()
 
   for str_EachFile in "${dir_Tmp}"/${str_ProgramName}.$$.* ; do
     [[ -e ${str_EachFile} ]] || break
-    file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
-    #echo "${str_EachFile}"
 
+    file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_FileCount}
     fn_ExtractPairs
 
     for ACTION in ${ACTION_LIST} ; do
-
       for ENVIRONMENT in ${ENVIRONMENT_LIST} ; do
-        fn_Call="no-action"
-        int_TaskCount=0
+        local fn_Call="no-action"
+        local int_TaskCount=0
+
         if type -t "SP_${ACTION}" >/dev/null ; then
           fn_Call="SP_${ACTION}"
         else
@@ -134,9 +132,12 @@ fn_ProcessRequest()
           fn_PressEnter
           return 0
         fi
-        str_Call=${fn_Call#SP_}
-        [[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
-        file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
+
+        local str_Call=${fn_Call#SP_}
+        local str_Label="${LABEL:-${ACTION}}"
+        #[[ ! -z "${LABEL}" ]]  && str_Label="${LABEL}" || str_Label="${ACTION}"
+        local file_Job="${dir_New}"/${str_JobPrefix}${TICKET}_${int_JobID}.${str_Label}.${int_JobCount}_${str_Call}_${ENVIRONMENT}_${RELEASE}
+
         fn_CreateFile "${dir_Log}"/"$(basename "${file_Job}").log"
 
         if [[ ! -z "${PARENT_LIST}" ]] ; then
@@ -144,16 +145,14 @@ fn_ProcessRequest()
             echo "PARENT:${str_JobPrefix}${TICKET}_${int_JobID}.${str_EachRule}.*" >> "${dir_Active}/$(basename "${file_Job}")".rules
           done
         fi
+
         fn_JobHeader "${file_Job}"
         Task "echo AUDIT:START:\${str_StartTime}"
         printf "\t%s: " "${fn_Call}"
 
-
-
-
         set +u 
           ${fn_Call}
-          int_ReturnCode=${PIPESTATUS[0]}
+          local int_ReturnCode=${PIPESTATUS[0]}
         set -u
 
         # PIPESTATUS AND USE PIPE TEE
@@ -202,12 +201,13 @@ fn_ProcessRequest()
 }
 readonly -f fn_ProcessRequest
 
-fn_ShowRules()
-{
-  ## typeset local file_Job="${1}"
+fn_ShowRules() {
   echo ""
-  [[ -r "${file_ActiveJob}.rules" ]] && ( fn_ShowLine "-" "Rules" ; cat "${file_ActiveJob}.rules" ; echo "" )
-  :
+  if [[ -r "${file_ActiveJob}.rules" ]]; then
+    fn_ShowLine "-" "Rules"
+    cat "${file_ActiveJob}.rules"
+    echo ""
+  fi
 }
 readonly -f fn_ShowRules
 
