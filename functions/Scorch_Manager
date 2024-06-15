@@ -42,14 +42,14 @@ fn_SkipFailed()
   while (( int_Count <= int_Last )) ; do
     echo JOB[T${int_Count}]="$(grep "^AUDIT:T:${int_Count}:" "${file_Job}" | tail -1 | cut -d: -f4)"
     JOB[T${int_Count}]=$(grep "^AUDIT:T:${int_Count}:" "${file_Job}" | tail -1 | cut -d: -f4)
-    (( int_Count++ ))
+    (( int_Count = int_Count + 1 ))
   done
 
   int_Count=1
   while (( int_Count <= int_Last )) ; do
     [[ "F" == "${JOB[T${int_Count}]}" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
     [[ "K" == "${JOB[T${int_Count}]}" ]] && echo "AUDIT:T:${int_Count}:S" >> ${file_Job}
-    (( int_Count++ ))
+    (( int_Count = int_Count + 1 ))
   done
 }
 

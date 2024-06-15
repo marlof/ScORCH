@@ -43,7 +43,7 @@ fn_GetRequest() {
   if [ -n "${file_Template}" ]; then
     [[ $b_NonInteractive ]] || echo "$($(fn_LogDate)): Processing file: ${file_Template}"
     while read -r str_Line; do
-      [[ "${str_Line^^}" =~ ACTION ]] && ((int_GetCount++)) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
+      [[ "${str_Line^^}" =~ ACTION ]] && ((int_GetCount = int_GetCount + 1)) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
       echo "${str_Line}" | grep ":" >> "${file_Request}"
     done < "${file_Template}"
   else
@@ -92,7 +92,7 @@ fn_GetRequest() {
           break
           ;;
         ACTION*)
-          ((int_GetCount++))
+          ((int_GetCount = int_GetCount + 1))
           file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
           echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
           ;;
@@ -195,7 +195,7 @@ fn_ProcessRequest()
 
       done
     done
-    (( int_FileCount++ ))
+    (( int_FileCount = int_FileCount +1  ))
     rm "${file_Request}"
   done
 }

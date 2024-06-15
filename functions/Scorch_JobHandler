@@ -190,7 +190,7 @@ fn_ListTasksRemaining()
   declare -A JOB
   while (( int_Count <= int_Last )) ; do
     JOB[T\${int_Count}]=\$(grep "^AUDIT:T:\${int_Count}:" "\${file_Job}" | tail -1 | cut -d: -f4)
-    (( int_Count++ ))
+    (( int_Count = int_Count + 1 ))
   done
 
   int_Count=0
@@ -198,7 +198,7 @@ fn_ListTasksRemaining()
     if [[ "F R K" =~ \$(echo "\${JOB[T\${int_Count}]}") ]] ; then
       echo \${int_Count}
     fi
-    (( int_Count++ ))
+    (( int_Count = int_Count + 1 ))
   done
 }
 
@@ -440,7 +440,7 @@ fn_ProcessRequest()
 
       done
     done
-    (( int_FileCount++ ))
+    (( int_FileCount = int_FileCount + 1 ))
     rm "${file_Request}"
   done
 }
@@ -613,7 +613,7 @@ EndGroup()
 {
   printf "fn_Task_${int_TaskCount}(){\tfn_PIDWait\t>> \"\${file_Log}\" 2>&1 ; fn_CheckTask \$? \"\${int_StartTask}\";}\t#${str_ProgramName}_Task\n" >> "${file_Job}"
   b_Background=
-  (( int_TaskCount++ ))
+  (( int_TaskCount = int_TaskCount + 1 ))
   int_SubTask=0
 }
 
@@ -655,7 +655,7 @@ Task()
     Try*                      ) printf " fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
     *                         ) printf " fn_Task_${int_TaskCount}${str_GroupTask}(){\t${str_Task1}\t ${str_AltTask} >> \"\${file_Log}${str_LogExtension}\" 2>&1 ; ${str_CheckTask} }\t#${str_ProgramName}_Task\n" >> "${file_Job}" ;;
   esac
-  (( int_TaskCount++ )) || true
+  (( int_TaskCount = int_TaskCount + 1 )) || true
 }
 readonly -f Task
 
@@ -670,7 +670,7 @@ Documentation(){
   Task "Documentation ${*}"
 }
 
-PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; (( b_CreateFailed++ )) ; echo "mv job to failed" ; }
+PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; (( b_CreateFailed = b_CreateFailed + 1 )) ; echo "mv job to failed" ; }
 
 #tryTask()
 #{

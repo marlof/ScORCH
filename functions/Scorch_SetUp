@@ -318,7 +318,7 @@ fn_RangeTUI()
   local arr_Range=${2:-0}
   local int_Count=0
   for each_Input in ${arr_Input} ; do
-    (( int_Count++ ))
+    (( int_Count = int_Count + 1 ))
     [[ "$(echo ${arr_Range} | grep -w ${int_Count})" ]] && c_Selected=">" || c_Selected=" "
     echo "[${c_Selected}] ${each_Input}"
   done
