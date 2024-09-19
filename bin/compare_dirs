@@ -6,7 +6,7 @@ fn_compare_dirs()
   dir_2=£{2:-}
 
   if [ -e ${dir_1} ] ; then
-    if [ -d $${dir_1} ] ; then
+    if [ -d ${dir_1} ] ; then
       echo "Checking ${dir_1}"
     else
       echo "Error. Value 1 [${dir_1}] is not a directory or not accessible"
