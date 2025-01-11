@@ -44,8 +44,7 @@
 # =================
 typeset local     file_DB=txtdb				              # The default DB file name
 typeset local dir_Project=~/scorch/ScORCH/projects	# Default root directory for files to be searched for
-typeset              c_FS="" 				                # The field seperator character
-
+typeset              c_FS="" 				                # The field separator character
 
 # System variables
 # ================
@@ -67,7 +66,7 @@ SYNOPSIS
 OPTIONS
 \t--file <file>  \tSpecify a file name to use
 \t               \tThe default is ${file_DB}\n
-\t--FS <char>    \tSpecify a different field seperator character
+\t--FS <char>    \tSpecify a different field separator character
 \t               \tThe default is \"${c_FS}\"\n
 \t--full         \tIgnore the columns and show the full line\n
 \t--list         \tList all available column names found in default
@@ -75,11 +74,11 @@ OPTIONS
 \t--strict       \tOnly allow whitespace between multiple strings\n
 \t-<col> [-<col>]\tDisplay result for columns specified\n
 \t<regex string> \tA regex expression used to return columns\n
-\t+<col> <string>\tLimit to next search string to the column mentioned (horizonal grep)
+\t+<col> <string>\tLimit to next search string to the column mentioned (horizontal grep)
 \t               \tAlthough powerful this feature can be slow so only used when necessary.\n\n
 EXAMPLES
 \tscorchdb -ip -server\n
-\tWill display the columsn labelled l a and i from a file named host
+\tWill display the columns labelled l a and i from a file named host
 \tThis might be the ip address, longname and alias to make a hosts file\n\n
 \tscorchdb --file testdb\n
 \tWill list the available column searches in the testdb file\n\n
@@ -89,14 +88,10 @@ EXAMPLES
 \tWill treat the passwd file as a scorchdb searchable file and return all the names where false appears\n"
   exit 0
 }
-# pcmdb host -lai
-# col1    col2 col3 col4 col5 col6 col7 col8 col9
-# -long   -a   -i   -x   -p   -s   -t   -b   -w
 
-#typeset arr_Options=""
 STRINGS=$(which strings 2>/dev/null || echo "cat")
 
-# Get the full list of paramaters
+# Get the full list of parameters
 # ===============================
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
@@ -117,170 +112,117 @@ fi
 
 # Check if DB file is readable
 # ============================
-#if [ ! -f ${file_DB} ] ; then 
-#  echo "${file_DB}: No such file or directory"
-#else
-#  if [[ "$(echo ${file_DB} | grep "/")" ]] ; then
-#    echo single file
-#    [ ! -r ${file_DB} ] && echo "${file_DB}: not a readable file" && exit 1
-#  else
-#    file_DB="$(find ${dir_Project} -name ${file_DB})"
-#  fi
-#
-#fi
+if [ ! -f "${file_DB}" ] ; then 
+  echo "${file_DB}: No such file or directory"
+  exit 1
+else
+  if [[ "$(echo ${file_DB} | grep "/")" ]] ; then
+    echo single file
+    [ ! -r "${file_DB}" ] && echo "${file_DB}: not a readable file" && exit 1
+  else
+    file_DB="$(find ${dir_Project} -name ${file_DB})"
+  fi
+fi
 
 fn_GetDetail()
 {
-typeset local file_DB=${1}
-# Find the defined columns names in the text file and turn it into an array
-# =========================================================================
-[[ -z ${str_Columns} ]] && str_Columns=$(grep "^#DEF" ${file_DB} 2>/dev/null | head -1)
-#[[ -z ${c_FS} ]]        && grep "^#FS" ${file_DB} 2>/dev/null | head -1
-[[ -z ${c_FS} ]] && c_tmpFS=$(grep "^#FS" ${file_DB} 2>/dev/null | head -1) && c_FS="$(echo ${c_tmpFS#\#FS=} | sed 's/[^[:print:]]//g' )"
-#[ ! -z "${c_tmpFS}" ]     && str_FS="-F${c_tmpFS#\#FS=}"
-[   -z "${str_Columns}" ] && echo "Cannot find a column definition in file:${file_DB}" && exit 1
-arr_Columns=(${str_Columns#\#DEF})
-#echo "<${c_FS}>"
-[[ -z ${c_FS} ]] && str_FS="" || str_FS=" -F${c_FS}"
-#sleep 3
+  typeset local file_DB=${1}
+  # Find the defined columns names in the text file and turn it into an array
+  # =========================================================================
+  [[ -z ${str_Columns} ]] && str_Columns=$(grep "^#DEF" "${file_DB}" 2>/dev/null | head -1)
+  [[ -z ${c_FS} ]] && c_tmpFS=$(grep "^#FS" "${file_DB}" 2>/dev/null | head -1) && c_FS="$(echo ${c_tmpFS#\#FS=} | sed 's/[^[:print:]]//g' )"
+  [ -z "${str_Columns}" ] && echo "Cannot find a column definition in file:${file_DB}" && exit 1
+  arr_Columns=(${str_Columns#\#DEF})
+  [[ -z ${c_FS} ]] && str_FS="" || str_FS=" -F${c_FS}"
 
-# If --list is present, show the columns defined
-# ==============================================
-[ ! -z "${b_List}" ] && echo " ${arr_Columns[@]}" | sed 's/ / -/g' && exit 0
+  # If --list is present, show the columns defined
+  # ==============================================
+  [ ! -z "${b_List}" ] && echo " ${arr_Columns[@]}" | sed 's/ / -/g' && exit 0
 
+  # If a Regex is passed set the cmd for grep
+  # =========================================
+  [ ! -z "${str_Regex}" ] && cmd_GREP="| grep -i "  || cmd_GREP=""
 
-# If a Regex is passed set the cmd for grep
-# =========================================
-[ ! -z "${str_Regex}" ] && cmd_GREP="| grep -i "  || cmd_GREP=""
+  # We can now get rid of the minus signs in the passed column requests
+  # ===================================================================
+  str_Options=$(echo ${str_Options} | tr -d "-")
+  typeset -a arr_Options=(${str_Options})
 
-
-# If we dont find any diplsay usage
-# =================================
-# Usage
-
-
-# We can now get rid of the minus signs in the passed column requests
-# ===================================================================
-str_Options=$(echo ${str_Options} | tr -d "-")
-typeset -a arr_Options=(${str_Options})
-
-
-# Check if Variable in Columns list
-# =================================
-typeset -i int_ColumnCount=1
-typeset -i int_OptionCount=1
-for str_Option in ${arr_Options[@]} ; do
-  [ ${int_OptionCount} -lt ${#arr_Options[@]} ] && c_Comma="," || c_Comma=""
-  # Check if a comman will be required at the end
-  int_ColumnCount=1
-  b_Found=0
-  for str_Column in ${arr_Columns[@]}; do
-    if [ "${str_Option}" = "${str_Column}" ] ; then
-	   str_AWK="${str_AWK} \$${int_ColumnCount}${c_Comma}"
-	   b_Found=1
-    fi
-    (( int_ColumnCount++ ))
+  # Check if Variable in Columns list
+  # =================================
+  typeset -i int_ColumnCount=1
+  typeset -i int_OptionCount=1
+  for str_Option in ${arr_Options[@]} ; do
+    [ ${int_OptionCount} -lt ${#arr_Options[@]} ] && c_Comma="," || c_Comma=""
+    # Check if a comma will be required at the end
+    int_ColumnCount=1
+    b_Found=0
+    for str_Column in ${arr_Columns[@]}; do
+      if [ "${str_Option}" = "${str_Column}" ] ; then
+        str_AWK="${str_AWK} \$${int_ColumnCount}${c_Comma}"
+        b_Found=1
+      fi
+      (( int_ColumnCount++ ))
+    done
+    (( b_Found == 0 )) && printf "Cannot find column ${str_Option}. Available columns:\n" &&  echo " ${arr_Columns[@]}" | sed 's/ / -/g' && exit 1
+    (( int_OptionCount++ ))
   done
-  (( b_Found == 0 )) && printf "Cannot find column ${str_Option}. Available columns:\n" &&  echo " ${arr_Columns[@]}" | sed 's/ / -/g' && exit 1
-  (( int_OptionCount++ ))
-done
 
-(( b_Strict == 1 )) && str_Regex=$(echo "${str_Regex}" | sed "s/[\t| ]\+/ /g") ||  str_Regex=$(echo "${str_Regex}" | sed "s/ /\\.\*/g")
-(( b_Strict == 1 )) && c_GrepCase=""
+  (( b_Strict == 1 )) && str_Regex=$(echo "${str_Regex}" | sed "s/[\t| ]\+/ /g") ||  str_Regex=$(echo "${str_Regex}" | sed "s/ /\\.\*/g")
+  (( b_Strict == 1 )) && c_GrepCase=""
 
-[ -z "${str_Regex}" ] && str_Regex= || str_Regex="\"${str_Regex}\""
+  [ -z "${str_Regex}" ] && str_Regex= || str_Regex="\"${str_Regex}\""
 
-# Run the command to get the right values
-# =======================================
-if [ -z "${str_From}" ] ; then
-  if (( b_Strict == 1 )) ; then
-	# Need to manage ONE or more whitespace. Actually it would be better to match two or more spaces.
-	eval "sed \"s/[\t|  ]\+/ /g\" ${file_DB} ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-  else
-    eval "${STRINGS} ${file_DB} ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-  fi
-  exit
-fi
-
-# FROM method chosen - a little bit slower but restricts the search to the column specified
-# =========================================================================================
-str_Like=""
-b_FoundColumn="FALSE"
-typeset -i int_ColumnCount=1
-typeset -i int_OptionCount=1
-for str_Option in ${str_From} ; do
-  str_Column=${str_Option#+*:}
-  str_Value=${str_Option%*:*}
-  [ ${int_OptionCount} -lt ${#arr_Options[@]} ] && c_Comma="," || c_Comma=""
-  # Check if a comma will be required at the end
-  int_ColumnCount=1
-  for str_Check in ${arr_Columns[@]}; do
-    if [ "+${str_Check}" = "${str_Value}" ] ; then
-      b_FoundColumn=TRUE
-	    int_MyCount=${int_ColumnCount}
-	    str_MyStr=${str_Column}
-	    [ -z "${str_Like}" ] && str_Like="${str_Value} = ${str_Column}" ||  str_Like="${str_Like} AND ${str_Value} = ${str_Column}"
-	    break
+  # Run the command to get the right values
+  # =======================================
+  if [ -z "${str_From}" ] ; then
+    if (( b_Strict == 1 )) ; then
+      # Need to manage ONE or more whitespace. Actually it would be better to match two or more spaces.
+      eval "sed \"s/[\t|  ]\+/ /g\" ${file_DB} ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
+    else
+      eval "${STRINGS} ${file_DB} ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
     fi
-    (( int_ColumnCount++ ))
-  done
-  (( int_OptionCount++ ))
-  if [ "${b_FoundColumn}" = "FALSE" ] ; then
-    echo "ERROR - no column found"
-    exit 1
+    exit
   fi
-done
 
-arr_Found=$(eval "awk ${str_FS} '{print \$$int_ColumnCount}' ${file_DB} | grep ${c_GrepCase} -n ${str_MyStr} | cut -d: -f1")
-for int_EachGrep in ${arr_Found} ; do
-  eval "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-done
+  # FROM method chosen - a little bit slower but restricts the search to the column specified
+  # =========================================================================================
+  str_Like=""
+  b_FoundColumn="FALSE"
+  typeset -i int_ColumnCount=1
+  typeset -i int_OptionCount=1
+  for str_Option in ${str_From} ; do
+    str_Column=${str_Option#+*:}
+    str_Value=${str_Option%*:*}
+    [ ${int_OptionCount} -lt ${#arr_Options[@]} ] && c_Comma="," || c_Comma=""
+    # Check if a comma will be required at the end
+    int_ColumnCount=1
+    for str_Check in ${arr_Columns[@]}; do
+      if [ "+${str_Check}" = "${str_Value}" ] ; then
+        b_FoundColumn=TRUE
+        int_MyCount=${int_ColumnCount}
+        str_MyStr=${str_Column}
+        [ -z "${str_Like}" ] && str_Like="${str_Value} = ${str_Column}" ||  str_Like="${str_Like} AND ${str_Value} = ${str_Column}"
+        break
+      fi
+      (( int_ColumnCount++ ))
+    done
+    (( int_OptionCount++ ))
+    if [ "${b_FoundColumn}" = "FALSE" ] ; then
+      echo "ERROR - no column found"
+      exit 1
+    fi
+  done
+
+  arr_Found=$(eval "awk ${str_FS} '{print \$$int_ColumnCount}' ${file_DB} | grep ${c_GrepCase} -n ${str_MyStr} | cut -d: -f1")
+  for int_EachGrep in ${arr_Found} ; do
+    eval "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
+  done
 }
 
 for str_EachFile in ${file_DB} ; do
   typeset str_AWK=""
-  fn_GetDetail ${str_EachFile}
+  fn_GetDetail "${str_EachFile}"
 done
 
 exit
-
-#echo select ${str_Options} from ${file_DB} where ${str_Like}
-#echo "for int_EachGrep in \$(eval awk '{print \$$int_ColumnCount}' ${file_DB} | grep -n ${str_MyStr} | cut -d: -f1) ; do"
-# Work for selecting from specific columns
-#echo ""
-#echo "The checks"
-#echo "Options       :${arr_Options[@]}"
-#echo "From column checks :${str_From}"
-#echo "regex         :${str_Regex}"
-#echo ${arr_Columns[@]##*os} ; echo $?
-#echo ${arr_Columns[@]#test} ; echo $?
-#str_FS="-F${c_tmpFS#\#FS=}"
-#str_AWK=""
-
-#echo ${int_OptionCount},${int_ColumnCount}
-#echo "Need to check Columns ${str_AWK}"
-
-#printf "\nTesting mode:\n"
-#arr_Found=$(eval "awk  '{print \$$int_ColumnCount}' ${file_DB} | grep ${c_GrepCase} -n ${str_MyStr} | cut -d: -f1")
-#echo "awk '{print \$$int_ColumnCount}' ${file_DB} | grep -in ${str_MyStr} | cut -d: -f1"
-
-#for int_EachGrep in ${arr_Found} ; do
-#  echo "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-#  eval "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-#done
-
-#printf "\n\nPartially works:\n"
-#for int_EachGrep in $(awk '{print $int_ColumnCount}' ${file_DB} | grep -n ${str_MyStr} | cut -d: -f1) ; do
-#  echo "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-#  eval "head -${int_EachGrep} ${file_DB} | tail -1 ${cmd_GREP} ${str_Regex} | grep -v \"^#\" | awk ${str_FS} '{print ${str_AWK}}'"
-#done
-
-#printf "\nPart2:\n\t./scorchdb  +os Windows\n"
- # echo Check for ${str_Column} in $str_Value column
- # echo "Version with 10 and FS <${c_FS}>"
-#  grep "${c_FS}*.*${c_FS}*.*${c_FS}*10" ${file_DB}
-#  echo "checking str_Option ${str_Option} in ${str_Column} value ${str_Value} "
-#	   echo "str_Option ${str_Option} found in column ${int_ColumnCount}"
-	   #str_AWK="${str_AWK} \$${int_ColumnCount}${c_Comma} : ${str_Check} "
-#echo "Need this to work when FS != \" \" "
-#echo select ${str_Options} from ${file_DB} where ${str_Like}
