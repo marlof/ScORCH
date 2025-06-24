@@ -261,7 +261,7 @@ def main(argv):
     global jobfilter
     jobfilter = ""
     args = sys.argv[1:]
-    global int_More
+
     while len(args):
         if args[0] == '-o':
             outputfile = args[1]
