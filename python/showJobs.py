@@ -76,7 +76,8 @@ list_Dir = []
 dir_Run = os.getcwd()
 maxnum = 35
 b_More = False
-# int_More = 0
+int_More = 0
+
 
 class colours:
     HEADER = '\033[95m'
@@ -88,6 +89,7 @@ class colours:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
+
 def fn_ShowLine(cha_LineChar, str_LineTitle):
     columns, _ = shutil.get_terminal_size(fallback=(int_Columns, 120))
     title_length = len(str_LineTitle)
@@ -98,6 +100,7 @@ def fn_ShowLine(cha_LineChar, str_LineTitle):
         line += cha_LineChar * remaining
     print(line)
 
+
 def fn_ColumnMax(arr_Files, int_Column):
     int_ColumnMax = 0
     for str_File in arr_Files:
@@ -107,6 +110,7 @@ def fn_ColumnMax(arr_Files, int_Column):
             if int_TmpMax >= int_ColumnMax:
                 int_ColumnMax = int_TmpMax
     return int_ColumnMax + 1
+
 
 def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
     '''ShowLine2 takes a state argument which is turned into a directory location
@@ -208,6 +212,7 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                 b_More = True
                 int_More += 1
 
+
 def check_file_owner(str_File):
     chr_Owner = " "
 
@@ -221,6 +226,7 @@ def check_file_owner(str_File):
         chr_Owner = "X"
 
     return chr_Owner
+
 
 def GetRunningTime(filename):
     current_time = int(time.time())  # Get the current time in epoch format
@@ -247,6 +253,7 @@ def GetRunningTime(filename):
     time_diff_human_readable = str(timedelta(seconds=time_diff_seconds))
 
     return time_diff_human_readable
+
 
 def main(argv):
     outputfile = os.devnull
@@ -298,6 +305,7 @@ def main(argv):
 
     if 'temp' in locals():
         temp.close()
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
