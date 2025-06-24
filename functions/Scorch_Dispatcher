@@ -17,9 +17,9 @@
 
 ## This file contains functions to set and display layout
 ## fn_Dispatcher()        Runs the dispatcher in a while loop for a number of attempts
-## fn_CheckRunning()      Looks at ruuning jobs and makes sure they are still running (Only the Dispatch host should do this)
+## fn_CheckRunning()      Looks at running jobs and makes sure they are still running (Only the Dispatch host should do this)
 ## fn_IsDispatchHost()    Checks if the host is the Dispatch host
-## fn_CheckDispatcher()   Checks that the lock file matches the process of the dispatcher (Only yhe Dispatch host should do this)
+## fn_CheckDispatcher()   Checks that the lock file matches the process of the dispatcher (Only the Dispatch host should do this)
 ## fn_RunJobs()           Each sessions will check for owned jobs in the run state to start
 ## fn_LockManager()
 # shellcheck disable=SC2016
