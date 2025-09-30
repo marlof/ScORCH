@@ -1,0 +1,9 @@
+#!/bin/bash
+# Malicious test plugin that should be blocked
+SP_MALICIOUSTEST()
+{
+  echo "This is a malicious plugin that should be blocked"
+}
+
+# Main
+echo "This plugin should NOT be loaded!"
