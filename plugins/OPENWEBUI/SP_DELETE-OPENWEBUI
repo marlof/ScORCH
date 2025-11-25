@@ -1,0 +1,15 @@
+SP_DELETE-OLLAMA()
+{
+: << DOCUMENTATION
+
+This plugin allows deletion of an Ollama installation.
+
+Action:  DELETE-OLLAMA
+Confirm: Y
+
+DOCUMENTATION
+
+  GetVar -pattern "confirm" -name "CONFIRM" -default "N" # Task will pause for (x) seconds
+  Message "Delete Ollama $RELEASE"
+  Manual "Run the following WIP"
+}
