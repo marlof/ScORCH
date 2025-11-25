@@ -1,0 +1,16 @@
+SP_RUN-OPENWEBUI()
+{
+: << DOCUMENTATION
+
+This plugin runs an OPENWEBUI installation on a specified port.
+
+Action: RUN-OPENWEBUI
+Port:   8080
+
+DOCUMENTATION
+
+  GetVar -pattern "port" -name "PORT" -default "8080" # Task will pause for (x) seconds
+  Message "Run OPENWEBUI $RELEASE port $PORT"
+  Task "docker start open-webui"
+
+}
