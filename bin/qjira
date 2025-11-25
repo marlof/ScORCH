@@ -28,12 +28,26 @@
 ## 1.0  181110     marc        First release
 ## 1.1  181207     marc        Improvements
 ## 1.2  210315     marc        Changing jshon to jq for some systems
-typeset str_ProgramVersion="1.2"
+## 1.3  240620     marc        Using jirapass for password management
+## 1.4  240624     marc        Fixing create ticket JSON formatting
+## 1.5  240625     marc        Fixing create ticket JSON formatting issue with description field
+set -euo pipefail
+typeset str_ProgramVersion="1.5"
 
 typeset    str_ProgramName="$(basename "$0")"
 typeset            dir_Run="$(dirname "$0")"
 typeset           dir_Orig="$(cd $dir_Run && pwd)"
 typeset          file_Conf="${dir_Run}/../etc/${str_ProgramName}.conf"
+
+typeset VERBOSE=
+typeset b_STATUS=
+typeset b_ASSIGNEE=
+typeset b_DESCRIPTION=
+typeset b_TIMESPENT=
+typeset b_LABELS=
+typeset b_SUMMARY=
+typeset PROJECT=
+typeset COMMENT=
 
 Error()
 {
@@ -49,34 +63,44 @@ fn_Usage()
 fn_Help()
 {
   # Help
-  echo " ${str_ProgramName}"
-  echo " "
-  echo " Using ${file_Conf} to locate the JIRA Server: $JIRA_SERVER"
-  echo " "
-  echo " # Query Options"
-  echo "    -j <ticket number>       Jira Ticket ID"
-  echo "    -u <user:password>"
-  echo " "
-  echo "    -s                       Show the state"
-  echo "    -d                       Show the description"
-  echo "    -a                       Show the assignee"
-  echo " "
-  echo " # Help"
-  echo "    -h | --help                          Show help"
-  echo "    -v | --verbose                       Display version"
-  echo " "
-  echo " # Future features and development "
-  echo "    create, assign, transition, comment"
-  echo "    -c | --create            Create a ticket"
-  echo "    -d description"
-  echo "    -s state"
-  echo "    -a assignee"
-  echo "    -set [-d -s -a]"
-  echo " "
-  echo " # Example"
-  echo "    ${str_ProgramName} -j DEP-1         Show full ticket details"
-  echo "    ${str_ProgramName} -s -j DEP-1      Show status"
-  echo "    ${str_ProgramName} -v -j DEP-1      Show the json output"
+  echo " ${str_ProgramName}
+
+    Using ${file_Conf} to locate the JIRA Server: $JIRA_SERVER
+
+    # Query Options
+       -j <ticket number>       Jira Ticket ID
+       -u <user:password>
+
+       -s                       Show the state
+       -d                       Show the description
+       -a                       Show the assignee
+
+    # Extended Query Options
+       --timespent              Show time spent
+       --labels                 Show labels
+       --summary                Show summary
+
+    # Further Options
+      -L | --List               List all ticket fields
+      -F | --Fields             Show specific fields (comma separated)
+
+    # Help
+       -h | --help                          Show help
+       -v | --verbose                       Display version
+
+    # Future features and development
+       create, assign, transition, comment
+       -c | --create            Create a ticket
+       -d description
+       -s state
+       -a assignee
+       -set [-d -s -a]
+
+    # Example
+       ${str_ProgramName} -j DEP-1         Show full ticket details
+       ${str_ProgramName} -s -j DEP-1      Show status
+       ${str_ProgramName} -v -j DEP-1      Show the json output
+   "
 }
 
 [[ ! -r ${file_Conf} ]] && Error "${str_ProgramName} not configured. Expecting JIRA_SERVER= to be set in ${file_Conf}"
@@ -91,7 +115,8 @@ typeset      TICKET=$1
 typeset       STATUS= ASSIGNEE= DESCRIPTION= VERBOSE= DESCRIPTION=simple SET=
 
 typeset   PYTHON=$(which python)
-typeset     CURL=$(which curl)
+typeset     CURL=$(which curl)     || Error "curl command not found. Please install curl or add to PATH"
+which jirapass || Error "jirapass command not found. Please install jirapass or add to PATH"
 typeset JIRAPASS=$(which jirapass)
 
 # Jira pass will now be used - turning off hard coded password
@@ -170,7 +195,7 @@ EOF
 
 }
 
-fn_GetTransistionID()
+fn_GetTransitionID()
 {
   local typeset l_str_Ticket=${1}
   local typeset l_str_Transition="${2}"
@@ -183,6 +208,69 @@ fn_GetTransistionID()
      ${JIRA_ISSUE_URL}/${TICKET}/transitions | jq -r '.transitions[] | select(.name | contains ("'"${l_str_Transition}"'")) .id')
   fn_CheckResponse $RESPONSE
   echo $RESPONSE
+}
+
+fn_JiraAPI()
+{
+  local typeset l_str_Method=${1}
+  local typeset l_str_URL=${2}
+  local typeset l_str_Params=${3}
+
+  echo curl -k -sS \
+     -H "Authorization: Basic ${AUTH_HEADER}" \
+     -H "Content-Type: application/json" \
+     -X ${l_str_Method} \
+     ${l_str_URL} ${l_str_Params}
+}
+
+fn_NiceTime()
+{
+  # Takes time in seconds and returns a human readable format
+  local typeset l_str_TimeSpent=${1}
+  local typeset l_str_NiceTime=""
+  local typeset l_str_Days=""
+  local typeset l_str_Hours=""
+  local typeset l_str_Minutes=""
+  local typeset l_str_Seconds=""
+
+  l_str_Days=$(( l_str_TimeSpent / 86400 ))
+  l_str_Hours=$(( (l_str_TimeSpent % 86400) / 3600 ))
+  l_str_Minutes=$(( (l_str_TimeSpent % 3600) / 60 ))
+  l_str_Seconds=$(( l_str_TimeSpent % 60 ))
+
+  [[ ${l_str_Days} -gt 0 ]]    && l_str_NiceTime="${l_str_NiceTime}${l_str_Days}d "
+  [[ ${l_str_Hours} -gt 0 ]]   && l_str_NiceTime="${l_str_NiceTime}${l_str_Hours}h "
+  [[ ${l_str_Minutes} -gt 0 ]] && l_str_NiceTime="${l_str_NiceTime}${l_str_Minutes}m "
+  [[ ${l_str_Seconds} -gt 0 ]] && l_str_NiceTime="${l_str_NiceTime}${l_str_Seconds}s "
+  echo "${l_str_NiceTime}"
+}
+
+fn_ShowFields()
+{
+  local typeset l_str_Ticket=${1}
+  local typeset l_str_Fields=${2:-}
+
+  RESPONSE=$(${CURL} -k -s \
+                    -H "Authorization: Basic ${AUTH_HEADER}" \
+                    -H "Content-Type: application/json" \
+                    -X POST \
+                    --data '{"jql":"key = '${l_str_Ticket}'","fields":['${l_str_Fields}']}' \
+                    "${JIRA_ISSUE_URL}")
+
+  [[ ${VERBOSE} ]] && echo " ${CURL} -k -s \
+                    -H \"Authorization: Basic ${AUTH_HEADER}\" \
+                    -H \"Content-Type: application/json\" \
+                    -X POST \
+                    --data '{\"jql\":\"key = '${l_str_Ticket}'\",\"fields\":['${l_str_Fields}']}' \
+                    \"${JIRA_ISSUE_URL}\" "
+  if echo ${RESPONSE} | grep -q "errorMessages" ; then
+    echo "Error. Check jira API messages:"
+    echo "${RESPONSE}" | jq '.errorMessages'
+    exit 1
+  else
+    echo "${RESPONSE}" | jq '.issues[].fields | keys[] as $k | "\($k): \(.[$k])"'
+  fi
+
 }
 
 fn_AssignTicket()
@@ -210,6 +298,73 @@ EOF
 
 fn_ShowTicket()
 {
+  local l_str_Ticket="${1:-}"
+  local _JIRA_ISSUE_DETAILS=$(${CURL} -k -s \
+                             -H "Authorization: Basic ${AUTH_HEADER}" \
+                             -H "Content-Type: application/json" \
+                             -X GET  \
+                             --data '{"jql":"issuekey = '${l_str_Ticket}'"}' \
+                             "${JIRA_ISSUE_URL}")
+
+  [[ ${VERBOSE} ]] && echo "${CURL} -k -s \
+                             -H \"Authorization: Basic ${AUTH_HEADER}\" \
+                             -H \"Content-Type: application/json\" \
+                             -X GET  \
+                             --data '{\"jql\":\"issuekey = '${l_str_Ticket}'\"}' \
+                             \"${JIRA_ISSUE_URL}\""
+
+  if echo ${_JIRA_ISSUE_DETAILS} | grep -q "Unauthorized" ; then
+    Error "Invalid jira username:password"
+  fi
+  if echo ${_JIRA_ISSUE_DETAILS} | grep -q "errorMessages" ; then
+    echo "Error. Check jira API messages:"
+    echo "${_JIRA_ISSUE_DETAILS}" | jq '.errorMessages'
+    exit 1
+  fi
+
+  STATUS=$(      jq -select '[.[].issues[]] | unique_by(.key)[] | .fields .status .name' <<< "${_JIRA_ISSUE_DETAILS}")
+  ASSIGNEE=$(    jq -select '.fields .assignee .name' <<< "${_JIRA_ISSUE_DETAILS}")
+  SUMMARY=$(     jq -select '.fields .summary' <<< "${_JIRA_ISSUE_DETAILS}")
+  DESCRIPTION=$( jq -select '.fields .description' <<< "${_JIRA_ISSUE_DETAILS}")
+  TIMESPENT=$(   jq -select '.fields .timespent' <<< "${_JIRA_ISSUE_DETAILS}")
+  LABELS=$(      jq -select '.fields .labels' <<< "${_JIRA_ISSUE_DETAILS}")
+
+  [[ ${SUMMARY} ]]     && printf "Summary:"  && echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .summary'
+  [[ ${DESCRIPTION} ]] && printf "Description:" && echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .description'
+  [[ ${TIMESPENT} ]]   && printf "Time Spent:" && l_str_NiceTime=$(fn_NiceTime $(echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .timespent')) && echo "${l_str_NiceTime}"
+  [[ ${LABELS} ]]      && printf "Labels:"   && echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .labels'
+  [[ ${STATUS} ]]      && printf "Status:"   && echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .status .name'
+  [[ ${ASSIGNEE} ]]    && printf "Assignee:" && echo ${_JIRA_ISSUE_DETAILS} | jq '.fields .assignee .name'
+
+}
+
+fn_ShowTickets()
+{
+  jql_query="${@}"
+  int_MaxResults=50
+  int_StartAt=0
+  int_Total=1
+
+  while [ ${int_StartAt} -lt ${int_Total} ] ; do
+    RESPONSE=$(${CURL} -k -s \
+               -H "Authorization: Basic ${AUTH_HEADER}" \
+               -H "Content-Type: application/json" \
+               -X POST \
+               --data '{"jql":"'"${jql_query}"'","startAt":'${int_StartAt}',"maxResults":'${int_MaxResults}'}' \
+               "${JIRA_SEARCH_URL}")
+
+    echo ${RESPONSE} | jq -r '.issues[] | "\(.key): \(.fields.summary)"'
+
+    int_Total=$(echo ${RESPONSE} | jq '.total')
+    int_IssuesReturned=$(echo ${RESPONSE} | jq '.issues | length')
+    echo "Showing issues ${int_StartAt} to $(( int_StartAt + int_IssuesReturned - 1 )) of ${int_Total}"
+    int_StartAt=$(( int_StartAt + int_IssuesReturned ))
+  done
+
+}
+
+fn_ShowTicket_old()
+{
   _JIRA_ISSUE_DETAILS=$(${CURL} -k -s -X POST -H "Authorization: Basic ${AUTH_HEADER}" \
                              -H "Content-Type: application/json" \
                              --data '{"jql":"key = '${TICKET}'"}' \
@@ -220,6 +375,7 @@ fn_ShowTicket()
                               \"${JIRA_SEARCH_URL}\"
 "
   [[ ${VERBOSE} ]]     && echo "${_JIRA_ISSUE_DETAILS}"
+
 
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<p>Problem accessing /rest/api/2/search' && Error "Problem accessing REST Api. Check JIRA_SERVER in ${file_Conf}"
   echo "${_JIRA_ISSUE_DETAILS}" | grep -q '<title>Unauthorized (401)</title>'       && Error "Invalid jira username:password"
@@ -257,7 +413,7 @@ fn_ShowTicket()
   fi
 }
 
-
+set -x
 
 if [ $# -ne 0 ] ; then
   while [ $# -gt 0 ] ; do
@@ -271,6 +427,17 @@ if [ $# -ne 0 ] ; then
       ## API Mode
       -j | --jira    ) shift ; TICKET=$1 ;;
       -u             ) shift ;   AUTH=$1 ;;
+
+      --jql          ) shift ; JQL_QUERY=$1 ; fn_ShowTickets "$JQL_QUERY" ; exit 0 ;;
+
+      ## Extended Query Options
+      --timespent    ) b_TIMESPENT=1 ;;
+      --labels       ) b_LABELS=1 ;;
+      --summary      ) b_SUMMARY=1 ;;
+
+      ## Further Options
+      -L | --list    ) fn_ShowFields $TICKET ; exit 0 ;;
+      -F | --fields  ) shift ; FIELDS=$1 ; fn_ShowFields $TICKET "$FIELDS" ; exit 0 ;;
 
       ## Not yet working
       -set | --set  ) SET=1 ;;

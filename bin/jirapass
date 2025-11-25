@@ -1,4 +1,7 @@
 #!/bin/bash
+: << DOCUMENTATION
+This script securely stores and retrieves a Jira password for a user using OpenSSL encryption.
+DOCUMENTATION
 ##
 ## Copyright 2017 WebMarcIT Ltd
 ##
@@ -31,9 +34,70 @@ fn_Usage()
   -r                  Read the stored value for jirapass.
   -w                  Write a new jirapass.
 
+  -s | --set          Set Jira username and password.
+  -c | --check        Check Jira username and password.
+
   "
 }
 
+fn_SetVars()
+{
+  # Set any variables we need
+  :
+  AUTH_HEADER=""
+  AUTH_HEADER=$(cat ${file_Cred})
+}
+
+fn_CheckResponseCode()
+{
+  # Check HTTP response code from Jira server
+  int_ResponseCode=${1:-000}
+  case ${int_ResponseCode} in
+    200 ) echo "Authorisation succeeded." ;;
+    401 ) echo "Unauthorized: Incorrect username or password." ;;
+    403 ) echo "Forbidden: You do not have permission to access this resource." ;;
+    404 ) echo "Not Found: The requested resource could not be found." ;;
+    500 ) echo "Internal Server Error: There is a problem with the Jira server." ;;
+    *   ) echo "Unexpected response code: ${int_ResponseCode}" ;;
+  esac
+}
+
+fn_CheckPassword()
+{
+  # Simplified password checking function
+  fn_SetVars
+  if [[ ! -f ${file_Cred} ]] ; then
+    echo "Credential file ${file_Cred} does not exist. Please set a password first."
+    exit 1
+  fi
+  AUTH_HEADER=$(cat ${file_Cred})
+  int_ResponseCode=$(curl -X GET \
+    -s \
+    -o /dev/null \
+    -w "%{http_code}" \
+    -H "Authorization: Basic ${AUTH_HEADER}" \
+    http://localhost:8080/rest/api/2/myself)
+    fn_CheckResponseCode ${int_ResponseCode}
+}
+
+fn_SetPassword()
+{
+  # Simplified password setting function
+  fn_SetVars
+  read -p    "username: " str_Username
+  read -s -p "password: " str_Password
+  echo ""
+  AUTH_HEADER=$(echo -n "${str_Username}:${str_Password}" | base64 | tr -d '\n')
+  mkdir -p $(dirname ${file_Cred})
+  echo "${AUTH_HEADER}" > ${file_Cred}
+  if [[ $? -ne 0 ]] ; then
+    echo "Error writing to ${file_Cred}"
+    exit 1
+  else
+    echo "Successfully wrote AUTH_HEADER to ${file_Cred}"
+  fi
+  chmod 600 ${file_Cred}
+}
 
 fn_Write()
 {
@@ -110,6 +174,9 @@ if [ $# -ne 0 ] ; then
       -r          ) READ=jirapass  ; fn_Read  ;;
       -w          ) WRITE=jirapass ; fn_Write ;;
       -e          ) vi ${file_Cred}      ;;
+
+      -s | --set  ) fn_SetPassword       ;;
+      -c | --check) fn_CheckPassword     ;;
       -*          ) fn_Usage ; exit 1    ;;
       ## Not yet working          -f          ) shift ; dir_Functions="$(fn_BaseDir ${1})"  ;;
     esac
