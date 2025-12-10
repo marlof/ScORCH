@@ -3,22 +3,30 @@ SP_UPDATE-LINUX()
 
   Task "sudo -n true" OR Manual "Exit scorch and run sudo true before restarting."
 
-  case $(grep "ID=" /etc/os-release | cut -d"=" -f2) in
-  
-    centos ) echo centos-esk
-          Task "sudo yum check-update"
-          Task "sudo yum update"
-    
+  # Get OS ID and ID_LIKE
+  OS_ID=$(grep -E '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+  OS_LIKE=$(grep -E '^ID_LIKE=' /etc/os-release | cut -d= -f2 | tr -d '"')
+
+  # Combine both into a single string to match against
+  OS_FAMILY="$OS_ID $OS_LIKE"
+
+  case "$OS_FAMILY" in
+    *centos*|*rhel*|*fedora*)
+      echo "RedHat-like system detected"
+      Task "sudo yum check-update"
+      Task "sudo yum update -y" OR "sudo dnf upgrade -y"
+      ;;
+
+    *debian*|*ubuntu*)
+      echo "Debian-like system detected"
+      Task "sudo apt update"
+      Task "sudo apt upgrade -y"
+      ;;
+
+    *)
+      echo "Unknown or unsupported Linux distribution: $OS_ID"
+      exit 1
     ;;
-    debian | ubuntu ) echo debian-esk
-          Task "sudo apt update"
-          Task "sudo apt upgrade -y"
-    ;;
-         
-    fedora ) echo Red-hat-esk
-          Task "sudo dnf upgrade"
-    ;;
-    
-  esac
+esac
 
 }
