@@ -147,7 +147,7 @@ pipeline {
   post {
     always {
       sh "df -h"
-      archiveArtifacts artifacts: '*.tar *.sha256 *.md5', followSymlinks: false
+      archiveArtifacts artifacts: '*.tar, *.sha256, *.md5', followSymlinks: false
     }
   }
 }
