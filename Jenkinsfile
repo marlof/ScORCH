@@ -3,7 +3,8 @@ pipeline {
     // Option A: run inside amazon/aws-cli docker image (recommended if agents don't have awscli)
     // docker { image 'amazon/aws-cli' }
     // Option B: use a normal agent that already has awscli installed
-    label 'linux && awscli'
+    // label 'linux && awscli'
+    any
   }
 
   options {
