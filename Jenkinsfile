@@ -1,9 +1,21 @@
 pipeline {
-  agent any
+  agent {
+    // Option A: run inside amazon/aws-cli docker image (recommended if agents don't have awscli)
+    // docker { image 'amazon/aws-cli' }
+    // Option B: use a normal agent that already has awscli installed
+    label 'linux && awscli'
+  }
 
   options {
-    buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '5'))
+    buildDiscarder(logRotator(numToKeepStr: '5'))
     timestamps()
+  }
+
+  environment {
+    BUCKET = 'autoscorchdownload.com'
+    AWS_REGION = 'eu-west-2'
+    PROGRAM = 'scorch'
+    CREDENTIALS_ID = 'aws-creds' // change to your Jenkins credential id
   }
 
   parameters {
@@ -15,23 +27,40 @@ pipeline {
   }
 
   stages {
-
-    stage('Clean') {
-      when {
-        expression { params.doClean }
-      }
+    stage('Checkout master') {
       steps {
-        cleanWs()
-      }
-    }
-
-    stage('Checkout') {
-      steps {
+        // If the job is configured to build master (Pipeline script from SCM),
+        // this will re-checkout the same repo/branch that loaded the Jenkinsfile.
         checkout scm
       }
     }
 
-    stage('Setup') {
+    // stage('Prepare & Package') {
+    //   steps {
+    //     sh '''
+    //       set -euo pipefail
+    //       str_ProgramName=${PROGRAM}
+    //       str_ProgramVersion=$(grep -a "^typeset str_ProgramVersion=" ${str_ProgramName} | cut -d"=" -f2 | tr -d '"')
+    //       echo "Program: ${str_ProgramName} Version: ${str_ProgramVersion}"
+    //       ls -l
+    //       tar cf scorch.tar ${str_ProgramName} bin obrar python functions plugins/DEMO
+    //       ls -lR
+    //       md5sum scorch.tar > scorch.tar.md5
+    //       sha256sum scorch.tar > scorch.tar.sha256
+    //       cp scorch.tar        escorch.${str_ProgramVersion}.tar
+    //       cp scorch.tar.md5    escorch.${str_ProgramVersion}.tar.md5.txt
+    //       cp scorch.tar.sha256 escorch.${str_ProgramVersion}.tar.sha256.txt
+    //       echo ${str_ProgramVersion} > version.txt
+    //       mv scorch.tar        latest.tar
+    //       mv scorch.tar.md5    latest.tar.md5
+    //       mv scorch.tar.sha256 latest.tar.sha256
+    //       mv bin/install       install
+    //       ls -l
+    //     '''
+    //   }
+    // }
+
+        stage('Setup') {
       steps {
         script {
 
@@ -144,10 +173,34 @@ pipeline {
     }
   }
 
+
+  //   stage('Upload to S3') {
+  //     steps {
+  //       // Use AWS Credentials plugin binding to set AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY
+  //       withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${CREDENTIALS_ID}"]]) {
+  //         sh '''
+  //           set -euo pipefail
+  //           export AWS_DEFAULT_REGION=${AWS_REGION}
+  //           # Upload versioned artifacts
+  //           aws s3 cp escorch.${str_ProgramVersion}.tar s3://${BUCKET}/ --acl public-read
+  //           aws s3 cp escorch.${str_ProgramVersion}.tar.md5.txt s3://${BUCKET}/ --acl public-read
+  //           aws s3 cp escorch.${str_ProgramVersion}.tar.sha256.txt s3://${BUCKET}/ --acl public-read
+  //           # Upload latest copies
+  //           aws s3 cp latest.tar s3://${BUCKET}/ --acl public-read
+  //           aws s3 cp latest.tar.md5 s3://${BUCKET}/ --acl public-read
+  //           aws s3 cp latest.tar.sha256 s3://${BUCKET}/ --acl public-read
+  //           # Upload install and version
+  //           aws s3 cp install s3://${BUCKET}/ --acl public-read
+  //           aws s3 cp version.txt s3://${BUCKET}/ --acl public-read
+  //         '''
+  //       }
+  //     }
+  //   }
+  // }
+
   post {
-    always {
-      sh "df -h"
-      archiveArtifacts artifacts: '*.tar, *.sha256, *.md5', followSymlinks: false
-    }
+    success { echo "Pipeline finished: artifacts uploaded to s3://${BUCKET}/" }
+    failure { echo "Pipeline failed — check console output." }
   }
 }
+
