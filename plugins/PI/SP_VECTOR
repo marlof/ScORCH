@@ -4,8 +4,8 @@ SP_VECTOR()
   SP_UPDATE_LINUX
   
   Task "sudo apt-get install python3"
-  Task "sudo apt install python3-pip"
-  Task "sudo apt-get install python3-pil.imagetk"
+  Task "sudo apt install -y python3-pip"
+  Task "sudo apt-get install -y python3-pil.imagetk"
   Task "python3 -m pip install --user anki_vector"
   Task "python3 -m pip install --user --upgrade anki_vector"
   Manual  "Run the following command. You will be prompted for robot name, ip and serial number
