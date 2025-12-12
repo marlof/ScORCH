@@ -1,0 +1,485 @@
+#!/bin/bash
+: << DOCUMENTATION
+Title: manage-vm.sh
+Description: This script resets and recreates a Proxmox VM from a specified template using Cloud-Init for configuration.
+Usage: ./manage-vm.sh
+
+step 1: prepare proxmox host for automation
+  update proxmox and install necessary packages
+    apt update && apt upgrade -y
+    apt install -y qemu-guest-agent cloud-init git curl vim
+  Enable and start proxmox API service
+    systemctl enable pveproxy
+    systemctl start pveproxy
+  Create a VM template with cloud-init support (this can also be done with command line tools)
+    Create a new VM in Proxmox with desired OS (e.g., Ubuntu 20.04)
+    Install qemu-guest-agent, docker, cloud-init inside the VM
+    Shutdown the VM and convert it to a template in Proxmox
+
+step 2: Provision NUC VMs (Control plane and workers)
+  Create 3 vms from template with cloud-init configuration
+    ./manage-vm.sh
+    * CPU: 2 cores
+    * RAM: 4096 MB
+    * Disk: 32 GB
+    * Network: bridged to proxmox host network (vmbr0)
+    * Cloud-Init: set user, password, ssh keys, and network to dhcp
+
+  Automate kubernetes installation with a script executed at first boot
+    Create a script that installs and configures kubernetes (e.g., using kubeadm)
+    Place the script in a location accessible by the VM (e.g., via cloud-init user-data or a git repository)
+    Ensure the script runs at first boot (e.g., using cloud-init runcmd or user-data)
+      curl -sfL https://get.k3s.io | sh -
+    Retrive the node token from the control plane to join worker nodes
+      cat /var/lib/rancher/k3s/server/node-token
+    On other NUCS, run the join command with the token
+      curl -sfL https://get.k3s.io | K3S_URL=https://<CONTROL_PLANE_IP>:6443 K3S_TOKEN=<NODE_TOKEN> sh -
+
+step 3: Provision Fog Node VMs
+  Similar to step 2, create VMs for fog nodes with appropriate resources and cloud-init configuration
+  Install and configure necessary software for fog computing tasks
+    Create a script that installs fog computing software and dependencies
+    Ensure the script runs at first boot via cloud-init
+    * cpu: 2 cores
+    * ram: 2048 MB
+    * disk: 16 GB
+    * network: bridged to proxmox host network (vmbr0)
+
+  Join fog nodes to the kubernetes cluster
+    Use the same join command as worker nodes with the appropriate token
+      curl -sfL https://get.k3s.io | K3S_URL=https://<CONTROL_PLANE_IP>:6443 K3S_TOKEN=<NODE_TOKEN> sh -
+
+  Deploy AI workloads on the fog nodes
+    Use kubectl to deploy AI workloads to the fog nodes
+    Ensure proper resource allocation and scheduling for AI tasks
+      kubectl create deployment  edge-ai --image=python3.11.-slim --replicas=1
+      kubectl apply -f ai-workload-deployment.yaml
+
+step 4: Create Sensor Containers (Simulated IoT Devices)
+  Deploy LXC containers or Docker containers on fog nodes to simulate IoT sensors
+    docker run -a --name sensor-simulation1 python:3.11-slim python -u sensor_simulation.py
+    docker run -a --name sensor-simulation2 python:3.11-slim python -u sensor_simulation.py
+
+  On each fog node, create Docker containers that simulate IoT sensors
+    Create a Dockerfile for the sensor simulation
+      FROM python:3.11-slim
+      WORKDIR /app
+      COPY sensor_simulation.py .
+      CMD ["python", "sensor_simulation.py"]
+    Build and run the Docker containers on the fog nodes
+      docker build -t sensor-simulation .
+
+  With automation:
+    for i in {1..5}; do
+      docker run -d --name sensor$i python:3.11-slim python -u sensor_simulation.py
+    done
+
+step 5: configure networking
+  Internal LAN (Promox vmbr0)
+    Ensure all VMs are connected to the internal LAN for management and inter-node communication
+  External WAN (Proxmox vmbr1)
+    Configure NAT or bridged networking for VMs that require internet access
+
+step 6: Deploy Storage
+  Set up shared storage for the Kubernetes cluster if needed
+    Consider using NFS, GlusterFS, or other distributed storage solutions
+    Ensure proper access permissions and configurations for the storage solution
+      kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/deploy/kubernetes/base/nfs-client-provisioner.yaml
+
+    Or longhorn storage
+    Install Longhorn via Helm
+      helm repo add longhorn https://charts.longhorn.io
+      helm repo update
+      helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace
+
+    Or
+      kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+
+    Creates replicated persistent volumes across the cluster nodes
+
+Step 7: Load Balancing and Ingress
+  Set up load balancing for the Kubernetes cluster
+    Consider using MetalLB for bare-metal load balancing
+      kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+      kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+
+  HAProxy + Keepalived for external load balancing
+    Install HAProxy and Keepalived on dedicated VMs or nodes
+    Configure HAProxy to balance traffic to the Kubernetes control plane nodes
+    Set up Keepalived for high availability of the load balancer IP
+      sudo apt install -y haproxy keepalived
+    Configure HAProxy to forward traffic to fog nodes
+      frontend kubernetes-frontend
+          bind *:6443
+          default_backend kubernetes-backend
+      backend kubernetes-backend
+          balance roundrobin
+          server node1 <FOG_NODE_1_IP>:6443 check
+          server node2 <FOG_NODE_2_IP>:6443 check
+
+    Test failover by stopping HAProxy on the primary load balancer and ensuring traffic is routed through the secondary
+      # Stop Fog Node 1 HAProxy
+      kubectl get nodes
+      kubectl cordon <fog NODE_NAME 1>
+      kubectl drain <fog NODE_NAME 1> --ignore-daemonsets --delete-local-data
+      # Verify traffic is still flowing through Fog Node 2
+
+  Configure Ingress controllers for managing external access to services
+    Install NGINX Ingress Controller via Helm
+      helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      helm repo update
+      helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
+
+step 8: Monitoring and Logging
+  Set up monitoring for the Kubernetes cluster
+    Consider using Prometheus and Grafana for monitoring
+      kubectl create namespace monitoring
+      kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml
+
+  Set up centralized logging
+    Consider using EFK (Elasticsearch, Fluentd, Kibana) stack for logging
+      kubectl apply -f https://raw.githubusercontent.com/kubernetes/kubernetes/master/cluster/addons/fluentd-elasticsearch/fluentd-es-ds.yaml
+
+Step 9: Automated Backups
+  Implement automated backups for the Proxmox VMs and Kubernetes cluster data
+    Use Proxmox built-in backup tools for VM snapshots
+      vzdump 100 --storage backup-storage --mode snapshot --compress lzo
+    Use Velero for Kubernetes cluster backups
+      velero install --provider aws --bucket <BUCKET_NAME> --secret-file ./credentials-velero --backup-location-config region=<REGION>,s3ForcePathStyle="true",s3Url=http://<S3_ENDPOINT>
+
+Step 10: Automated Deployment (Using Ansbile)
+  Create Ansible playbooks to automate the entire setup process
+    Define inventory files for Proxmox host and VMs
+    Create roles for Proxmox configuration, VM provisioning, Kubernetes installation, and application deployment
+    Execute playbooks to set up and manage the entire infrastructure with a single command
+      ansible-playbook -i inventory setup-k8s-cluster.yml
+
+    Example snippet (Ansible tasks for K3s)
+    - name: Install K3s on control plane
+      shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ control_plane_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -
+      when: inventory_hostname in groups['control_plane']
+
+Step 11: Security Enhancements
+  Implement security best practices for the Proxmox host and Kubernetes cluster
+    Regularly update Proxmox and VM operating systems
+    Use firewalls (e.g., UFW, iptables) to restrict access to VMs and services
+    Implement role-based access control (RBAC) in Kubernetes to limit user permissions
+    Use network policies to control traffic between pods in the Kubernetes cluster
+    Regularly audit logs and monitor for suspicious activities
+
+Step 12: Testing and Validation
+  Thoroughly test the entire setup to ensure all components are functioning as expected
+    Validate VM provisioning and Cloud-Init configurations
+    Test Kubernetes cluster functionality, including node communication and workload deployment
+    Verify load balancing and ingress configurations
+    Ensure monitoring and logging systems are capturing data correctly
+    Conduct failover tests for high availability setups
+
+    kubectl get nodes
+    kubectl get pods --all-namespaces
+
+    Verify sensor data flows to fog nodes and is processed correctly
+      kubectl logs <sensor-simulation-pod-name>
+    Test failover scenarios for load balancers and critical services
+      # Simulate failure of primary load balancer (stop HAProxy on primary)
+      # Ensure secondary takes over without service disruption
+
+Automated PoC Deployment structure
+1. Directory Structure
+  /proxmox-automation
+    ├── manage-vm.sh
+    ├── k3s-setup.sh
+    ├── fog-node-setup.sh
+    ├── sensor_simulation.py
+    ├── ansible/
+    │   ├── ansible.cfg
+    │   ├── inventory
+    │   ├── setup-k8s-cluster.yml
+    │   ├── playbooks/
+    │   │   ├── 01_prepare_promox.yml
+    |   |   ├── 02_create_vms.yml
+    │   │   ├── 03_install_k3s.yml
+    │   │   ├── 04_deploy_fog_nodes.yml
+    │   │   ├── 05_deploy_sensors.yml
+    │   │   ├── 06_configure_networking.yml
+    │   │   ├── 07_setup_storage.yml
+    │   │   ├── 08_setup_load_balancing.yml
+    │   │   ├── 09_setup_monitoring_logging.yml
+    │   │   ├── 10_setup_backups.yml
+    │   │   ├── 11_security_hardening.yml
+    │   │   └── 12_testing_validation.yml
+    │   ├── templates/
+    │   │   ├──
+    │   │   ├── vm-provisioning.yml
+    │   │   ├── k3s-installation.yml
+    │   │   └── application-deployment.yml
+    │   └── roles/
+    │       ├── proxmox/
+    │       ├── vm-provisioning/
+    │       ├── k3s-installation/
+    │       ├── application-deployment/
+    │       ├── load-balancing/
+    │       ├── fog-node-setup/
+    │       └── monitoring-logging/
+    └── docs/
+        └── deployment-guide.md
+
+2. Inventory example
+  all:
+    hosts:
+      proxmox:
+        ansible_host: <PROXMOX_HOST_IP>
+        ansible_user: root
+      children:
+        nucs:
+          hosts:
+            k8s_controller:
+              ansible_host: <K8S_CONTROLLER_IP>
+              ansible_user: marc
+            k8s_worker1:
+              ansible_host: <K8S_WORKER1_IP>
+              ansible_user: marc
+        fog_nodes:
+          hosts:
+            fog_node1:
+              ansible_host: <FOG_NODE1_IP>
+              ansible_user: marc
+            fog_node2:
+              ansible_host: <FOG_NODE2_IP>
+              ansible_user: marc
+        sensors:
+          hosts:
+            sensor1:
+              ansible_host: <SENSOR_SIM1_IP>
+              ansible_user: marc
+            sensor2:
+              ansible_host: <SENSOR_SIM2_IP>
+              ansible_user: marc
+
+3. Variables example (vars/main.yml)
+  proxmox_host_ip: <PROXMOX_HOST_IP>
+  nuc_template_id: 9000
+  fog_template_id: 9001
+  sensor_template_id: 9002
+
+  k8s_version: "v1.30.0+k3s1"
+  k3s_token: "<K3S_CLUSTER_TOKEN>"
+  control_plane_ip: "<K8S_CONTROLLER_IP>"
+  vm_cpu: 2
+  vm_ram: 4096
+  vm_disk: 32G
+  fog_vm_cpu: 2
+  fog_vm_ram: 2048
+  fog_vm_disk: 16G
+  ci_user: "marc"
+  ci_password: "!StrongPasswordHere!"
+  ssh_key_path: "/home/marc/.ssh/id_rsa.pub"
+  bridge_network: "vmbr0"
+
+4. Key Playbooks
+
+Playbook 01:Prepare Proxmox
+  - name: Prepare Proxmox Host
+    hosts: proxmox
+    roles:
+      - proxmox
+
+Playbook 02:Create VMs
+  - name: Create Kubernetes and Fog Node VMs
+    hosts: proxmox
+    roles:
+      - vm-provisioning
+
+Playbook 03:Install K3s
+  - name: Install K3s on Kubernetes Nodes
+    hosts: nucs
+    roles:
+      - k3s-installation
+
+Playbook 04:Deploy Fog Nodes
+  - name: Deploy Fog Node Software
+    hosts: fog_nodes
+    roles:
+      - fog-node-setup
+
+# Create all playbooks similarly for other steps...
+
+5. Key Roles
+  Each role will contain tasks, handlers, templates, and files necessary for its specific function as outlined in the playbooks above.
+
+role: proxmox
+  tasks/main.yml
+    - name: Update and upgrade Proxmox
+      apt:
+        update_cache: yes
+        upgrade: dist
+        force_apt_get: yes
+        auto_remove: yes
+    - name: Install necessary packages
+      apt:
+        name:
+          - qemu-guest-agent
+          - cloud-init
+          - git
+          - curl
+          - vim
+        state: present
+    - name: Enable and start pveproxy service
+      systemd:
+        name: pveproxy
+        enabled: yes
+        state: started
+
+role: vm-provisioning
+  tasks/main.yml
+    - name: Clone and configure VMs from template
+      shell: ./manage-vm.sh
+      args:
+        chdir: /proxmox-automation/
+      vars:
+        template_id: "{{ nuc_template_id }}"
+        vm_id_start: 100
+        vm_count: 3
+        ci_user: "{{ ci_user }}"
+        ci_password: "{{ ci_password }}"
+        ssh_key: "{{ ssh_key_path }}"
+
+role: k3s-installation
+  tasks/main.yml
+    - name: Install K3s on control plane
+      shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ control_plane_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -
+      when: inventory_hostname in groups['control_plane']
+    - name: Install K3s on worker nodes
+      shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ control_plane_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -
+      when: inventory_hostname in groups['workers']
+
+role: fog-node-setup
+  tasks/main.yml
+    - name: Install fog computing software
+      shell: |
+        # Add commands to install fog computing software
+        echo "Installing fog computing software..."
+        # Example: Install Docker and run sensor simulation containers
+        apt update && apt install -y docker.io
+        for i in {1..5}; do
+          docker run -d --name sensor$i python:3.11-slim python -u sensor_simulation.py
+        done
+
+role: monitoring-logging
+  tasks/main.yml
+    - name: Deploy Prometheus and Grafana
+      shell: |
+        kubectl create namespace monitoring
+        kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml
+    - name: Deploy EFK stack
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/kubernetes/master/cluster/addons/fluentd-elasticsearch/fluentd-es-ds.yaml
+
+role: load-balancing
+  tasks/main.yml
+    - name: Deploy MetalLB
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+    - name: Install HAProxy and Keepalived
+      apt:
+        name:
+          - haproxy
+          - keepalived
+        state: present
+
+role: deploy-sensors
+  tasks/main.yml
+    - name: Deploy sensor simulation containers
+      shell: |
+        for i in {1..5}; do
+          docker run -d --name sensor$i python:3.11-slim python -u sensor_simulation.py
+        done
+
+role: security-hardening
+  tasks/main.yml
+    - name: Set up UFW firewall
+      ufw:
+        state: enabled
+        rule: allow
+        port: '22'
+        proto: tcp
+    - name: Implement RBAC in Kubernetes
+      shell: |
+        # Add commands to set up RBAC policies
+        echo "Setting up RBAC policies..."
+
+role: testing-validation
+  tasks/main.yml
+    - name: Validate Kubernetes cluster
+      shell: |
+        kubectl get nodes
+        kubectl get pods --all-namespaces
+
+role: backup-setup
+  tasks/main.yml
+    - name: Set up Velero for Kubernetes backups
+      shell: |
+        velero install --provider aws --bucket <BUCKET_NAME> --secret-file ./credentials-velero --backup-location-config region=<REGION>,s3ForcePathStyle="true",s3Url=http://<S3_ENDPOINT>
+
+
+Execution Workflow:
+
+Clone the repository containing the scripts and Ansible playbooks to your Proxmox host.
+  git clone <REPO_URL>
+  cd proxmox-automation
+
+  Run the playbooks sequentially to set up the entire infrastructure.
+    ansible-playbook -i inventory.yml ansible/playbooks/01_prepare_promox.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/02_create_vms.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/03_install_k3s.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/04_deploy_fog_nodes.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/05_deploy_sensors.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/06_configure_networking.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/07_setup_storage.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/08_setup_load_balancing.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/09_setup_monitoring_logging.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/10_setup_backups.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/11_security_hardening.yml
+    ansible-playbook -i inventory.yml ansible/playbooks/12_testing_validation.yml
+
+  Run as a role:
+    ansible-playbook -i inventory.yml -l proxmox ansible/playbooks/01_prepare_promox.yml
+
+
+
+
+DOCUMENTATION
+# manage-vm.sh : Reset and recreate VM 100 from template 9000
+
+TEMPLATE_ID=9000
+VM_ID=100
+VM_NAME="k8s-controller"
+STORAGE="usb1"
+CIUSER="marc"
+CIPASSWORD="!StrongPasswordHere!"
+SSHKEY="/home/marc/.ssh/id_rsa.pub"
+
+
+
+echo ">>> Checking if VM $VM_ID exists..."
+if qm status $VM_ID &>/dev/null; then
+  echo ">>> VM $VM_ID exists, stopping and destroying..."
+  qm stop $VM_ID &>/dev/null
+  qm destroy $VM_ID --purge
+fi
+
+echo ">>> Cloning template $TEMPLATE_ID into VM $VM_ID..."
+qm clone $TEMPLATE_ID $VM_ID --name $VM_NAME --full --storage $STORAGE
+
+echo ">>> Configuring Cloud-Init for VM $VM_ID..."
+qm set $VM_ID --ciuser $CIUSER --cipassword "$CIPASSWORD" --sshkey $SSHKEY --ipconfig0 ip=dhcp
+
+echo ">>> Updating Cloud-Init ISO..."
+qm cloudinit update $VM_ID
+
+echo ">>> Starting VM $VM_ID..."
+qm start $VM_ID
+
+echo ">>> Dumping Cloud-Init user config for verification..."
+qm cloudinit dump $VM_ID user
