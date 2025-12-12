@@ -1,0 +1,62 @@
+#!/bin/bash
+# template-manager.sh : Create and configure a Cloud-Init template in Proxmox
+
+TEMPLATE_ID=9000
+TEMPLATE_NAME="tpl-ubuntu-cloudinit"
+STORAGE="usb1"
+MEMORY=2048
+CORES=2
+CLOUD_IMAGE="/mnt/usb1/noble-server-cloudimg-amd64.img"
+CIUSER="marc"
+CIPASSWORD="StrongPasswordHere"
+SSHKEY="/home/marc/.ssh/id_rsa.pub"
+
+destroy_template() {
+  echo ">>> Destroying old template $TEMPLATE_ID if it exists..."
+  if qm status $TEMPLATE_ID &>/dev/null; then
+    qm stop $TEMPLATE_ID &>/dev/null
+    qm destroy $TEMPLATE_ID --purge
+  fi
+}
+
+create_vm_shell() {
+  echo ">>> Creating VM shell $TEMPLATE_ID..."
+  qm create $TEMPLATE_ID --name $TEMPLATE_NAME --memory $MEMORY --cores $CORES --sockets 1 --cpu host --net0 virtio,bridge=vmbr0
+}
+
+import_cloud_image() {
+  echo ">>> Importing cloud image..."
+  qm importdisk $TEMPLATE_ID $CLOUD_IMAGE $STORAGE
+  qm set $TEMPLATE_ID --scsihw virtio-scsi-pci --scsi0 $STORAGE:$TEMPLATE_ID/vm-$TEMPLATE_ID-disk-0.raw
+}
+
+add_cloudinit_drive() {
+  echo ">>> Adding Cloud-Init drive..."
+  qm set $TEMPLATE_ID --ide2 $STORAGE:cloudinit
+}
+
+configure_defaults() {
+  echo ">>> Configuring Cloud-Init defaults..."
+  qm set $TEMPLATE_ID --ciuser $CIUSER --cipassword "$CIPASSWORD" --sshkey $SSHKEY --ipconfig0 ip=dhcp
+}
+
+set_boot_options() {
+  echo ">>> Setting boot options..."
+  qm set $TEMPLATE_ID --boot c --bootdisk scsi0
+}
+
+convert_to_template() {
+  echo ">>> Converting VM $TEMPLATE_ID to template..."
+  qm template $TEMPLATE_ID
+}
+
+# === Main workflow ===
+destroy_template
+create_vm_shell
+import_cloud_image
+add_cloudinit_drive
+configure_defaults
+set_boot_options
+convert_to_template
+
+echo ">>> Template $TEMPLATE_ID ($TEMPLATE_NAME) ready for cloning!"
