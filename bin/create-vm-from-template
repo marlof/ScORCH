@@ -1,0 +1,36 @@
+#!/bin/bash
+# vm-from-template.sh : Create a new VM from a Cloud-Init template
+
+TEMPLATE_ID=9000
+STORAGE="usb1"
+CIUSER="marc"
+CIPASSWORD="StrongPasswordHere"
+SSHKEY="/home/marc/.ssh/id_rsa.pub"
+
+create_vm_from_template() {
+  local VM_ID=$1
+  local VM_NAME=$2
+  local IP_MODE=$3   # e.g. "dhcp" or "ip=192.168.4.110/24,gw=192.168.4.1"
+
+  echo ">>> Cloning template $TEMPLATE_ID into VM $VM_ID ($VM_NAME)..."
+  qm clone $TEMPLATE_ID $VM_ID --name $VM_NAME --full --storage $STORAGE
+
+  echo ">>> Configuring Cloud-Init for VM $VM_ID..."
+  qm set $VM_ID --ciuser $CIUSER --cipassword "$CIPASSWORD" --sshkey $SSHKEY --ipconfig0 $IP_MODE
+
+  echo ">>> Updating Cloud-Init ISO..."
+  qm cloudinit update $VM_ID
+
+  echo ">>> Starting VM $VM_ID..."
+  qm start $VM_ID
+
+  echo ">>> Dumping Cloud-Init user config for verification..."
+  qm cloudinit dump $VM_ID user
+}
+
+# === Example usage ===
+# Create controller with DHCP
+create_vm_from_template 100 "k8s-controller" "ip=dhcp"
+
+# Create worker with static IP
+#create_vm_from_template 101 "k8s-worker1" "ip=192.168.4.111/24,gw=192.168.4.1"
