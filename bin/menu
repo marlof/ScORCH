@@ -9,7 +9,7 @@ DATA[4]=" #####  ####  ####  #       #### #    #"
 
 # virtual coordinate system is X*Y ${#DATA} * 5
 
-REAL_OFFSET_X=30
+REAL_OFFSET_X=35
 REAL_OFFSET_Y=10
 
 draw_char() {
