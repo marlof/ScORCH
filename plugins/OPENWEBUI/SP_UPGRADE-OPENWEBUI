@@ -2,13 +2,14 @@ SP_UPGRADE-OPENWEBUI()
 {
 : << DOCUMENTATION
 
-This plugin upgrades an OPENWEBUIinstallation.
+This plugin upgrades an OPENWEBUI installation to the latest version.
 
 Action: UPGRADE-OPENWEBUI
 Release: latest
 
 DOCUMENTATION
 
+  RELEASE=${RELEASE:-latest}
   Message "Upgrade OPENWEBUI from x to $RELEASE"
   Task "docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once open-webui"
 

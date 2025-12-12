@@ -1,0 +1,27 @@
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+
+sudo docker run -d -p 3000:8080 \
+  -v ollama:/root/.ollama \
+  -v open-webui:/app/backend/data \
+  --name open-webui \
+  --restart always \
+  ghcr.io/open-webui/open-webui:ollama
+
+echo "Open WebUI with Ollama backend has been set up and is running on port 3000."
+
+sudo docker exec -it open-webui ollama pull codellama:7b
+echo "Codellama 7B model has been pulled into Ollama."
+sudo docker exec -it open-webui ollama pull codellama:13b
+
+cat <<EOF > Modelfile
+FROM codellama:7b
+SYSTEM "You are a helpful assistant specialising in Bash and Python coding. Always provide clean, working examples."
+EOF
+
+sudo docker exec -it open-webui ollama build -t codellama-bash-helper:1.0 Modelfile
+echo "Custom model 'codellama-bash-helper:1.0' has been built."
+sudo docker exec -it open-webui ollama run codellama-bash-helper:1.0
+echo "Custom model 'codellama-bash-helper:1.0' is ready to use."
