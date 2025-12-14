@@ -257,7 +257,7 @@
 ## 3.1.14 240610  marc   Refactor fn_GetRequest
 ## 3.1.15 240615  marc   #196 - improved Dispatcher Functions
 ##                       Changed ++ increments
-##                       
+## 3.1.16 251214 marc    #198 - Improved screen width handling
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
 # shellcheck source=/dev/null
@@ -267,7 +267,7 @@ IFS=$' \n\t'
 
 BUILDTAG=updated-by-jenkins
 
-typeset str_ProgramVersion="3.1.15"
+typeset str_ProgramVersion="3.1.16"
 typeset       str_Codename="Fafnir"
 typeset  str_LatestVersion="check"
 typeset    str_ProgramName="$(basename "$0")"
@@ -457,7 +457,6 @@ typeset file_DispatchLink="${str_ProgramName}_$(hostname)"
 typeset      int_MaxShown="${SHOWMAX:-30}"
 typeset       int_Refresh="${REFRESH:-20}"
 typeset          int_Tail="${TAIL:-25}"
-typeset              cols="${COLS:-120}"
 
 ## Job states
 ## ==========
@@ -597,6 +596,13 @@ fn_LoadFunctions "${dir_Functions}" "Scorch_" ${b_New}
 fn_Mkdir "${dir_Memory}"
 fn_Mkdir "${dir_LogSpace}"
 set -e
+
+# If layout helper is available, get terminal width and export COLUMNS
+if declare -F fn_GetScreenWidth >/dev/null 2>&1 ; then
+  int_ScreenWidth=$(fn_GetScreenWidth)
+  COLUMNS=${int_ScreenWidth}
+  export COLUMNS
+fi
 
 
 #echo "$(fn_CheckLicense)" &&

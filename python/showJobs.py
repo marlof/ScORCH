@@ -69,8 +69,9 @@ chr_Owner = " "
 int_Count = 1
 str_ProgramName = __file__
 int_PID = os.getpid()
-int_Rows = int(os.environ.get('LINES', 25))
-int_Columns = int(os.environ.get('COLUMNS', 120))
+ts = shutil.get_terminal_size(fallback=(120, 25))
+int_Columns = int(os.environ.get('COLUMNS', ts.columns))
+int_Rows = int(os.environ.get('LINES', ts.lines))
 list_Dir = []
 
 dir_Run = os.getcwd()
@@ -91,11 +92,13 @@ class colours:
 
 
 def fn_ShowLine(cha_LineChar, str_LineTitle):
-    columns, _ = shutil.get_terminal_size(fallback=(int_Columns, 120))
+    columns, _ = shutil.get_terminal_size(fallback=(int_Columns, int_Rows))
     title_length = len(str_LineTitle)
     side_length = (columns - 3 - title_length)
+    if side_length < 0:
+        side_length = 0
     line = cha_LineChar * 3 + str_LineTitle + cha_LineChar * side_length
-    remaining = int_Columns - len(line)
+    remaining = columns - len(line)
     if remaining > 0:
         line += cha_LineChar * remaining
     print(line)
@@ -136,13 +139,38 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
         else:
             ansi_colour = colours.RESET
 
+        # get current terminal size (respect -w override which sets int_Columns)
+        ts = shutil.get_terminal_size(fallback=(int_Columns, int_Rows))
+        columns = int(ts.columns)
+
         int_Magic = 7                                    # including pipes and spaces
         int_JobNumWidth = 3                              # 1 Job num
         int_JobIDWidth = fn_ColumnMax(arr_Files, 2)      # 2 Job ID
+        # Cap job ID width to avoid overly wide ID columns (e.g. DEM-001 / ID-385)
+        cap_jobid = 8
+        if int_JobIDWidth > cap_jobid:
+            int_JobIDWidth = cap_jobid
         int_ActionWidth = fn_ColumnMax(arr_Files, 3)     # 3 Longest Action
         int_EnvWidth = fn_ColumnMax(arr_Files, 4)        # 4 Longest Environment
-        int_ReleaseWidth = fn_ColumnMax(arr_Files, 5)    # 5 Longest Release     # 6 Width left for the log
-        int_Width = int(int_Columns) - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
+        int_ReleaseWidth = fn_ColumnMax(arr_Files, 5)    # 5 Longest Release
+
+        # Clamp column widths to behave on very narrow or very wide terminals
+        minCol = 1
+        int_JobIDWidth = max(int_JobIDWidth, minCol)
+        int_ActionWidth = max(int_ActionWidth, minCol)
+        int_EnvWidth = max(int_EnvWidth, minCol)
+        int_ReleaseWidth = max(int_ReleaseWidth, minCol)
+
+        avail_for_cols = columns - int_Magic - int_JobNumWidth
+        # If there's not enough room for the computed widths, shrink them evenly
+        totalCols = int_JobIDWidth + int_ActionWidth + int_EnvWidth + int_ReleaseWidth
+        if totalCols > avail_for_cols:
+            newCol = max(minCol, avail_for_cols // 4)
+            int_JobIDWidth = int_ActionWidth = int_EnvWidth = int_ReleaseWidth = newCol
+
+        int_Width = columns - int_Magic - int_JobNumWidth - int_JobIDWidth - int_ActionWidth - int_EnvWidth - int_ReleaseWidth
+        if int_Width < 10:
+            int_Width = 10
 
         for str_File in arr_Files:
             chr_Owner = " "
@@ -187,17 +215,21 @@ def fn_ShowJobs(str_State, temp, maxnum, job_filter=""):
                         ansi_colour = colours.RESET
                     if str_State == "running":
                         str_Running_Time = GetRunningTime(file_JobLog)
-                        print(ansi_colour + "%s%3d%s%s%+*s|%+*s|%+*s|%+*s|%+s|%s%s" % (chr_Owner, int_Count,
+                        # protect slice width
+                        log_slice = int_Width - 10
+                        if log_slice < 0:
+                            log_slice = 0
+                        print(ansi_colour + "%s%3d%s%s%*s|%*s|%*s|%*s|%s|%s%s" % (chr_Owner, int_Count,
                                                                                        chr_PauseFlag, chr_RuleFlag,
                                                                                        int_JobIDWidth, str_JobID,
                                                                                        int_ActionWidth, str_Action,
                                                                                        int_EnvWidth, str_Env,
                                                                                        int_ReleaseWidth, str_Release,
                                                                                        str_Running_Time,
-                                                                                       str_LastLine[:int_Width-10], colours.RESET))
+                                                                                       str_LastLine[:log_slice], colours.RESET))
                     else:
                         if re.search(job_filter, str_File):
-                            print(ansi_colour + "%s%3d%s%s%*s|%+*s|%+*s|%+*s|%s%s" % (chr_Owner, int_Count,
+                            print(ansi_colour + "%s%3d%s%s%*s|%*s|%*s|%*s|%s%s" % (chr_Owner, int_Count,
                                                                                       chr_PauseFlag, chr_RuleFlag,
                                                                                       int_JobIDWidth, str_JobID,
                                                                                       int_ActionWidth, str_Action,
@@ -258,7 +290,7 @@ def GetRunningTime(filename):
 def main(argv):
     outputfile = os.devnull
     maxnum = 999
-    global jobfilter
+    global jobfilter, int_Columns
     jobfilter = ""
     args = sys.argv[1:]
 
@@ -270,6 +302,12 @@ def main(argv):
             args = args[1:]
         elif args[0] == '-n':
             maxnum = int(args[1])
+            args = args[2:]
+        elif args[0] in ('-w', '--cols'):
+            try:
+                int_Columns = int(args[1])
+            except (IndexError, ValueError):
+                pass
             args = args[2:]
         elif args[0] == '-f':
             jobfilter = args[1]
@@ -292,7 +330,9 @@ def main(argv):
         sys.exit(1)
 
     if maxnum == 999:
-        rows, columns = os.popen('stty size', 'r').read().split()
+        ts = shutil.get_terminal_size(fallback=(int_Columns, int_Rows))
+        rows = ts.lines
+        columns = ts.columns
         maxnum = int(rows) - 10
 
     for eachDir in list_Dir:
