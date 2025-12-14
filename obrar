@@ -66,10 +66,11 @@
 # 1.10 200613   marc        #146 Directory fixes for install
 # 1.11 221007   marc        shellcheck improvements and colour warn/error
 # 1.12 240108   marc        #187 Fixed -e option
+# 1.13 251214   marc        Improved fn_GetJobID to ensure numeric job ids
 # shellcheck disable=SC2174
 
 # Program settings
-str_ProgramVersion="1.12"
+str_ProgramVersion="1.13"
 str_ProgramName="$(basename "$0")"
 str_FunctionName="${str_ProgramName}"
 dir_Run="$(dirname "$0")"
@@ -162,13 +163,27 @@ fn_GetJobID()
 
   declare file_JobIDLock="${file_JobID}".lock
   if ( set -o noclobber; true > "${file_JobIDLock}") 2> /dev/null ; then
-    if [ -r "${file_JobID}" ] ; then
-      int_JobID=$(cat "${file_JobID}")
-    else
-      int_JobID=0
-    fi
-    (( int_JobID++ ))
-    echo "${int_JobID}" > "${file_JobID}"
+      if [ -r "${file_JobID}" ] ; then
+        # If file exists but is empty, initialize to 0 to ensure numeric content
+        if [ ! -s "${file_JobID}" ] ; then
+          printf "%d\n" 0 > "${file_JobID}"
+          chmod 644 "${file_JobID}" 2>/dev/null || :
+        fi
+        # Read the current JobID, trim whitespace and ensure it's numeric
+        if read -r int_JobID < "${file_JobID}" ; then
+          int_JobID="$(printf "%s" "${int_JobID}" | tr -d '[:space:]')"
+        else
+          int_JobID=0
+        fi
+        if ! [[ "${int_JobID}" =~ ^[0-9]+$ ]] ; then
+          int_JobID=0
+        fi
+      else
+        int_JobID=0
+      fi
+      # Increment and write back atomically
+      (( int_JobID = int_JobID + 1 ))
+      printf "%d\n" "${int_JobID}" > "${file_JobID}"
     rm -f "${file_JobIDLock}"
   else
     Error "Could not get exclusive lock. Try again.\n If the issue persists remove the lock file '${file_JobIDLock}'\n"
