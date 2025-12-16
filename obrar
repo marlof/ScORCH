@@ -724,6 +724,23 @@ fn_LoadFunctions()
   for file_Function in ${lst_Functions} ; do
     if [ -r "${file_Function}" ] ; then
       Verbose "Sourcing ${file_Function}"
+      # Sanitize path: reject traversal and ensure file is inside expected directory
+      if [[ "${file_Function}" == *".."* ]]; then
+        Error "Rejected ${file_Function}: directory traversal detected" && continue
+      fi
+      if command -v readlink >/dev/null 2>&1 ; then
+        realpath_file=$(readlink -f -- "${file_Function}" 2>/dev/null || true)
+        realpath_dir=$(readlink -f -- "${dir_Common}/${str_Functions}" 2>/dev/null || true)
+        if [[ -n "${realpath_file}" && -n "${realpath_dir}" ]]; then
+          case "${realpath_file}" in
+            "${realpath_dir}"/*) : ;;
+            *) Error "Rejected ${file_Function}: outside ${dir_Common}/${str_Functions}" && continue ;;
+          esac
+        fi
+      fi
+      if echo "${file_Function}" | grep -qE '[^[:alnum:]/_. -]'; then
+        Error "Rejected ${file_Function}: invalid characters in path" && continue
+      fi
       source "${file_Function}" || Error "There in common function <${file_Function}>"
     fi
   done
@@ -743,7 +760,24 @@ Verbose "Sourcing common project etc files and functions"
 if [[ -r "${dir_Functions}" ]] ; then
   for file_CommonFunction in "${dir_Functions}/${str_FunctionIdentifier}"* ; do
     Verbose "  ${file_CommonFunction}"
-    ( bash "${dir_Functions}"/"${file_CommonFunction}" >/dev/null 2>&1 ) && source "${dir_Functions}"/"${file_CommonFunction}" || :
+      # Sanitize candidate before sourcing
+      if [[ "${file_CommonFunction}" == *".."* ]]; then
+        Verbose "Rejected ${file_CommonFunction}: contains .." && continue
+      fi
+      if command -v readlink >/dev/null 2>&1 ; then
+        realpath_file=$(readlink -f -- "${file_CommonFunction}" 2>/dev/null || true)
+        realpath_dir=$(readlink -f -- "${dir_Functions}" 2>/dev/null || true)
+        if [[ -n "${realpath_file}" && -n "${realpath_dir}" ]]; then
+          case "${realpath_file}" in
+            "${realpath_dir}"/*) : ;;
+            *) Verbose "Rejected ${file_CommonFunction}: outside ${dir_Functions}" && continue ;;
+          esac
+        fi
+      fi
+      if echo "${file_CommonFunction}" | grep -qE '[^[:alnum:]/_. -]'; then
+        Verbose "Rejected ${file_CommonFunction}: invalid characters" && continue
+      fi
+      ( bash "${file_CommonFunction}" >/dev/null 2>&1 ) && source "${file_CommonFunction}" || :
   done
 else
   Warning "Cannot access common functions directory: ${dir_Functions}"

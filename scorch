@@ -504,8 +504,25 @@ fn_LoadFunctions()
         #[[ ${b_NonInteractive} ]] || printf "%15s" "${str_EachFile#${dir_Directory}/*${str_Search}}"
         [[ ${b_NonInteractive} ]] || printf "%15s: %15s" "$(basename "$(dirname "${str_EachFile##${dir_Directory}}")")" "${str_EachFile#${dir_Directory}/*${str_Search}}"
 
+        # Sanitize the file path to avoid traversal and injection
+        if [[ "${str_EachFile}" == *".."* ]]; then
+          printf "%10s\n" "ERROR" && echo "Rejected ${str_EachFile}: directory traversal detected" && b_Errors=1 && continue
+        fi
+        if command -v readlink >/dev/null 2>&1 ; then
+          realpath_file=$(readlink -f -- "${str_EachFile}" 2>/dev/null || true)
+          realpath_dir=$(readlink -f -- "${dir_Directory}" 2>/dev/null || true)
+          if [[ -n "${realpath_file}" && -n "${realpath_dir}" ]]; then
+            case "${realpath_file}" in
+              "${realpath_dir}"/*) : ;;
+              *) printf "%10s\n" "ERROR" && echo "Rejected ${str_EachFile}: outside ${dir_Directory}" && b_Errors=1 && continue ;;
+            esac
+          fi
+        fi
+        if echo "${str_EachFile}" | grep -qE '[^[:alnum:]/_. -]'; then
+          printf "%10s\n" "ERROR" && echo "Rejected ${str_EachFile}: invalid characters in path" && b_Errors=1 && continue
+        fi
+
         # Bash the function file for errors before loading it
-        #bash -n "${str_EachFile}" && source "${str_EachFile}"
         if bash -n "${str_EachFile}" ; then
           source "${str_EachFile}"
           [[ ${b_NonInteractive} ]] || printf "%10s\n" "OK"
