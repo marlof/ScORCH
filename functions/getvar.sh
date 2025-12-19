@@ -1,3 +1,5 @@
+#!/bin/bash
+
 file_Request=/tmp/getvar.tmp
 echo "x : 1" > "${file_Request}"
 echo "y : 1 2 3" >> "${file_Request}"
@@ -22,14 +24,14 @@ GetVar()
   # Examples
   #
   # GetVar -pattern "data label" -name DATA_LABEL -d "None"
-  typeset local str_Pattern=
-  typeset local str_Name=
-  typeset local str_Value=
-  typeset local str_Default=
-  typeset local b_IgnoreCase=1
-  typeset local b_List=
-  typeset local b_Upper=
-  typeset local b_Lower=
+  local str_Pattern=
+  local str_Name=
+  local str_Value=
+  local str_Default=
+  local b_IgnoreCase=1
+  local b_List=
+  local b_Upper=
+  local b_Lower=
  
   if [ $# -ne 0 ] ; then
     while [ $# -gt 0 ] ; do
