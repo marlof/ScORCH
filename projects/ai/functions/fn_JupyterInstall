@@ -1,0 +1,32 @@
+fn_JupyterInstall()
+{
+    # Check is Jupyter is already installed
+    if [ -d ~/jupyter/venv ] ; then
+        Message "Jupyter is already installed."
+        set -x
+    else
+        Message "Jupyter is not installed. Proceeding with installation..."
+
+        # Install required packages
+        Message "Installing required packages..."
+        sudo apt update
+        sudo apt install -y python3-venv python3-pip
+        if [ $? -ne 0 ]; then
+            Message "Failed to install required packages."
+            return 1
+        fi
+
+        # Create Jupyter directory and virtual environment
+        Message "Setting up Jupyter environment..."
+        mkdir -p ~/jupyter
+        cd ~/jupyter
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install jupyterlab
+        if [ $? -ne 0 ] ; then
+            Error "Failed to set up Jupyter environment."
+        fi
+        Message "Jupyter installation completed successfully."
+    fi
+}

@@ -67,10 +67,11 @@
 # 1.11 221007   marc        shellcheck improvements and colour warn/error
 # 1.12 240108   marc        #187 Fixed -e option
 # 1.13 251214   marc        Improved fn_GetJobID to ensure numeric job ids
+# 1.14 251219   marc        Improved int_EndTime calculations to avoid unset variable issues
 # shellcheck disable=SC2174
 
 # Program settings
-str_ProgramVersion="1.13"
+str_ProgramVersion="1.14"
 str_ProgramName="$(basename "$0")"
 str_FunctionName="${str_ProgramName}"
 dir_Run="$(dirname "$0")"
@@ -83,6 +84,8 @@ int_WarningCount=0
 # Statistics
 int_StartTime=$(date +%s)
 int_EndTime=0
+# Preserve an immutable global start time to avoid accidental overwrites by sourced functions
+int_GlobalStartTime=${int_StartTime}
 
 # Protect from undeclared variables
 set -euo pipefail
@@ -149,7 +152,15 @@ Error()
 {
   (( int_WarningCount=int_WarningCount + 1 ))
   printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m ${SEPERATOR}\n" "[${str_FunctionName}:${int_WarningCount}]"
-  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*"| tee -a ${file_Log};Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log};   int_EndTime=$(date +%s) ; (( int_EndTime = int_EndTime - int_StartTime )) ; printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log} ; exit 111
+  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log}
+  Verbose "Function chain: $(echo "${FUNCNAME[@]}"|tr -s " " "<")" | tee -a ${file_Log}
+  int_EndTime=$(date +%s)
+  if ! [[ "${int_GlobalStartTime:-}" =~ ^[0-9]+$ ]]; then
+    int_GlobalStartTime=0
+  fi
+  int_EndTime=$(( int_EndTime - (${int_GlobalStartTime:-0}) ))
+  printf "$($cmd_LogDate) %15s \e[31mERROR\e[0m After %s seconds.\n" "[${str_FunctionName}:${int_WarningCount}]" "${int_EndTime}" | tee -a ${file_Log}
+  exit 111
 }
 Warning() { (( int_WarningCount=int_WarningCount + 1 )); printf "$($cmd_LogDate) %15s \e[33mWARN\e[0m  %s\n" "[${str_FunctionName}:${int_WarningCount}]" "$*" | tee -a ${file_Log};}
 
@@ -628,8 +639,8 @@ fn_ProcessFunctions()
         fi
       fi
     fi
-    declare int_StartTime
-    int_StartTime=$(date +%s)
+    declare int_FunctionStartTime
+    int_FunctionStartTime=$(date +%s)
     declare   int_EndTime=
 
     # Process Function
@@ -648,7 +659,8 @@ fn_ProcessFunctions()
       exit 1 # Shouldnt actually get here but just in case
     fi
     int_EndTime=$(date +%s)
-    (( int_EndTime = int_EndTime - int_StartTime ))
+    # Use a safe default in case the start time is unset under -u
+    int_EndTime=$(( int_EndTime - (${int_FunctionStartTime:-0}) ))
     str_Logging="file"
 
 
@@ -708,7 +720,8 @@ fn_Footer()
   Verbose "Entering ${FUNCNAME[0]}"
   Verbose "  Project space : <${str_Project}> : <${str_LProject}>"
   int_EndTime=$(date +%s)
-  (( int_EndTime = int_EndTime - int_StartTime ))
+  # Subtract using a default if global start time is ever unset (robust under set -u)
+  int_EndTime=$(( int_EndTime - (${int_GlobalStartTime:-0}) ))
   Message ${SEPERATOR}
   [[ ${b_Test} ]] && Message "TESTMODE: Completed" || Message "SUCCESS: ${str_Tag} completed taking ${int_EndTime} seconds"
   Message ${SEPERATOR}  

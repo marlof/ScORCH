@@ -1,0 +1,57 @@
+fn_JupyterRun()
+{
+  # Check if a Jupyter server is already running
+
+  if pgrep -f jupyter >/dev/null; then
+    Message "A Jupyter server is already running."
+  else
+
+    # Check if Jupyter is installed
+    if [ ! -d ~/jupyter/venv ]; then
+      Error "Jupyter is not installed. Please run the obrar JUPYTER-SERVER-INSTALL command first."
+    fi
+
+    # Ensure the notebooks directory exists
+    if [ ! -d ~/jupyter/notebooks ]; then
+      Message "Creating notebooks directory at ~/jupyter/notebooks"
+      mkdir -p ~/jupyter/notebooks
+    fi
+    
+    # Ensure the log directory exists
+    if [ ! -d ~/jupyter/logs ]; then
+      Message "Creating jupyter directory at ~/jupyter/logs"
+      mkdir -p ~/jupyter/logs
+    fi
+
+    # Start in the notebooks directory
+    cd ~/jupyter/notebooks
+
+    # Activate the virtual environment
+    source ~/jupyter/venv/bin/activate
+
+    # Start Jupyter Lab in the background and log output to a file
+    jLOG=~/jupyter/logs/jupyter_server-$(date +%y%m%d%H%M).log
+    Message "Starting Jupyter server... Logs will be written to $jLOG"
+    nohup jupyter lab \
+          --ip=127.0.0.1 \
+          --port=8888 \
+          --no-browser \
+          > "$jLOG" 2>&1 &
+    sleep 5 && grep -m1 -o http://127.0.0.1:[0-9]*/lab\?token=[a-z0-9]* $jLOG
+
+    # Check if the server started successfully
+    if [ $? -ne 0 ]; then
+      Error "Failed to start Jupyter server. Check the log file at $jLOG for details."
+    fi
+
+    # Check is a ssh tunnel is already established
+    if netstat -tnlp 2>/dev/null | grep ':8888 ' >/dev/null; then
+      Message "An SSH tunnel to port 8888 already exists."
+    else
+      Message "Server started. On your local machine, run the following command to create an SSH tunnel:"
+      Message "  ssh -L 8888:127.0.0.1:8888 $(whoami)@$(hostname)"
+    fi
+  fi
+  # Provide instructions to the user
+  Message "To kill the Jupyter server, use the command: pkill -f jupyter"
+}
