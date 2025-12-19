@@ -1,0 +1,88 @@
+ScORCH Plugins
+==============
+
+Overview
+--------
+Plugins are small shell script files placed under `plugins/<group>/` and sourced by `scorch` to create actions that generate tasks/jobs. Plugins should define exactly one primary function which the framework will call. For more complicated work, use obrar and project functions
+
+Filename & Function Naming
+--------------------------
+- Plugin filenames should start with `SP_` (e.g., `SP_AWS-LIST-AZONES`).
+- The plugin must declare a function matching the filename, either exactly or with `-` replaced by `_`.
+  - Example: `SP_AWS-LIST-AZONES` should define `SP_AWS-LIST-AZONES()`.
+- The loader will accept a sanitized function name (dashes → underscores) and will create a wrapper if necessary:
+  - If the function is declared as `SP_AWS_LIST_AZONES`, the loader will create a safe wrapper named `SP_AWS-LIST-AZONES()` so other parts of the system can call the plugin by filename.
+- If the declared function name differs from both the filename and the sanitized filename, loading will fail and print an error.
+
+Structure & Allowed Content
+---------------------------
+- Plugin files must NOT execute commands at source-time. Only define functions, variables intended as constants, comments, and a shebang (optional).
+- Inside the plugin function body you may use the following framework helpers/wrappers: `Task`, `Message`, `Manual`, `StartGroup`, `EndGroup`, `Try`, `Error`, `Warning`, `Documentation`, `GetVar`, `Sleep`, etc.
+- Potentially dangerous constructs (e.g., `eval`, `sudo`, `rm -rf`, direct `curl | sh`, raw `mkfs.`, `/dev/tcp`) are rejected unless they appear in an allowed wrapper like `Task`, `Message`, `Warning`, or `Error`.
+- Comments and documentation blocks are allowed outside functions, but no executable statements (commands) are permitted at top level.
+
+Function Header Styles
+----------------------
+- Both of these are accepted:
+  - `SP_NAME() {` on a single line
+  - `SP_NAME()` followed on a later line by `{` (the loader tolerates this style)
+
+Validation Rules (what `scorch` checks when loading plugins)
+-----------------------------------------------------------
+1. Path sanitization: no `..` traversal, file must be inside the plugins directory, and path characters must be safe (alphanumeric, `/_-. `).
+2. Reject files that contain executable top-level code (only run for plugin directory files).
+3. Reject files that contain disallowed constructs outside allowed wrappers.
+4. Validate that the primary function exists and matches filename or sanitized filename.
+5. Run `bash -n` (syntax check) before sourcing; if it fails, the plugin will not be loaded.
+
+Creating a Plugin (example)
+---------------------------
+Place file `plugins/AWS/SP_AWS-LIST-AZONES`:
+
+```bash
+SP_AWS-LIST-AZONES()
+{
+  [[ $ENVIRONMENT == "NA" ]] && ENVIRONMENT=""
+  arr_PROFILE=$(scorchdb -f ${dir_Etc}/regions.txt -profile ${ENVIRONMENT})
+  for str_PROFILE in ${arr_PROFILE}; do
+    Message "Availability Zones for ${str_PROFILE}"
+    Task "aws ec2 describe-availability-zones --profile ${str_PROFILE} --query \"AvailabilityZones[].{Name:ZoneName}\" --output text"
+  done
+}
+```
+
+Testing & Troubleshooting
+-------------------------
+- Load plugins interactively in the manager: run `scorch -new` and inspect accept/reject output.
+- If a plugin is rejected, `scorch` will print a short reason (e.g., "no function declaration found", "contains disallowed constructs outside Task()", or "syntax error").
+- Use `bash -n plugins/<group>/<file>` to syntax-check the plugin.
+
+Policy & Trust
+--------------
+- By default, `scorch` treats plugins as untrusted and performs static checks. If you operate in a trusted environment, consider documenting a trust process (e.g., signing plugins or an allowlist mechanism). The loader supports a `--trust` or privileged mode (future enhancement) to permit otherwise-strict constructs.
+
+Developer Notes
+---------------
+- Avoid running commands at top-level in plugins; keep side-effects inside functions.
+- Prefer `Task "<cmd>"` for external commands — the framework captures, logs and controls execution.
+- Keep plugins idempotent where possible; use `GetVar` and `Task` wrappers to accept runtime parameters.
+
+Files and locations referenced
+-----------------------------
+- Core loader: `scorch` (top-level file)
+- Plugin folder: `plugins/<group>/` (e.g., `plugins/AWS/`)
+- Functions helpers: `functions/ScorchE_PluginManager` and other `functions/Scorch_*` files
+
+Contributing
+------------
+- Add a plugin file under an appropriate group and open a pull request.
+- Ensure `bash -n` passes, and `scorch -new` in a local run accepts the plugin.
+- Document any new helper functions in `functions/` if plugins will consume them.
+
+Contact / Support
+-----------------
+- For loader policy changes or to whitelist patterns, edit `scorch`'s `fn_LoadFunctions`.
+- For issues with timing stats or `obrar`, see `obrar` and `var/obrar/stats` repair helpers.
+
+---
+Generated by the ScORCH developer assistant. If you'd like, I can also add a CI check that runs `bash -n` for all plugins and fails the build on rejections.
