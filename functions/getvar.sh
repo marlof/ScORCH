@@ -1,5 +1,10 @@
 #!/bin/bash
-
+# shellcheck disable=SC2086
+# shellcheck disable=SC2016
+# shellcheck disable=SC2140
+# shellcheck disable=SC2154
+# shellcheck disable=SC2162
+# shellcheck disable=SC2155
 file_Request=/tmp/getvar.tmp
 echo "x : 1" > "${file_Request}"
 echo "y : 1 2 3" >> "${file_Request}"

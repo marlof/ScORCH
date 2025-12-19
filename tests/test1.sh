@@ -1,5 +1,10 @@
 #!/bin/bash
-
+# shellcheck disable=SC2086
+# shellcheck disable=SC2016
+# shellcheck disable=SC2140
+# shellcheck disable=SC2154
+# shellcheck disable=SC2162
+# shellcheck disable=SC2155
 PROGNAME=${1:-}
 if [[ -f ../${PROGNAME} ]] ; then
   # Check that $PROGNAME has a help function
