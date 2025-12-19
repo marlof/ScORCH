@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PROGNAME=${1:-}
 if [[ -f ../${PROGNAME} ]] ; then
   # Check that $PROGNAME has a help function
