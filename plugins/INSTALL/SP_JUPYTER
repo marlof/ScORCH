@@ -1,26 +1,6 @@
 SP_JUPYTER()
 {
     SP_UPGRADE-LINUX
-
-    Task "sudo apt install -y python3-venv python3-pip"
-
-    [ -d ~/jupyter/venv ] || Task "mkdir -p ~/jupyter &&
-        cd ~/jupyter &&
-        python3 -m venv venv &&
-        source venv/bin/activate &&
-        pip install --upgrade pip &&
-        pip install jupyterlab
-    "
-
-    Manual "Start Jupyter with:
-  cd ~/jupyter
-  source ~/jupyter/venv/bin/activate
-  jupyter lab --ip=127.0.0.1 --port=8888 --no-browser
-
-On your local machine:
-  ssh -L 8888:127.0.0.1:8888 ${whoami}@$(hostname)
-
-Then open:
-  http://localhost:8888
-"
+    Task "obrar JUPYTER-INSTALL"
+    Task "obrar JUPYTER-RUN"
 }
