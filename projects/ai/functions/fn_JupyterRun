@@ -1,36 +1,48 @@
 fn_JupyterRun()
 {
   # Check if a Jupyter server is already running
+  local dir_JUPYTER="${HOME}/jupyter"
+  local dir_JUPYTER_VENV="${dir_JUPYTER}/venv"
+  local dir_JUPYTER_NOTEBOOKS="${dir_JUPYTER}/notebooks"
+  local dir_JUPYTER_LOGS="${dir_JUPYTER}/logs"
 
   if pgrep -f jupyter >/dev/null; then
+  
     Message "A Jupyter server is already running."
+    # grep the server URL from the log files
+    jLOG=$(ls -t ${dir_JUPYTER_LOGS}/jupyter_server-*.log 2>/dev/null | head -n1)
+    if [ -n "$jLOG" ]; then
+      Message "You can access it using the following URL (from your local machine with an SSH tunnel):"
+      grep  http://127.0.0.1:[0-9]*/lab\?token=[a-z0-9]* "$jLOG"
+    fi
+
   else
 
     # Check if Jupyter is installed
-    if [ ! -d ~/jupyter/venv ]; then
+    if [ ! -d "${dir_JUPYTER_VENV}" ]; then
       Error "Jupyter is not installed. Please run the obrar JUPYTER-SERVER-INSTALL command first."
     fi
 
     # Ensure the notebooks directory exists
-    if [ ! -d ~/jupyter/notebooks ]; then
-      Message "Creating notebooks directory at ~/jupyter/notebooks"
-      mkdir -p ~/jupyter/notebooks
+    if [ ! -d "${dir_JUPYTER_NOTEBOOKS}" ]; then
+      Message "Creating notebooks directory at ${dir_JUPYTER_NOTEBOOKS}"
+      mkdir -p "${dir_JUPYTER_NOTEBOOKS}"
     fi
     
     # Ensure the log directory exists
-    if [ ! -d ~/jupyter/logs ]; then
-      Message "Creating jupyter directory at ~/jupyter/logs"
-      mkdir -p ~/jupyter/logs
+    if [ ! -d "${dir_JUPYTER_LOGS}" ]; then
+      Message "Creating jupyter directory at ${dir_JUPYTER_LOGS}"
+      mkdir -p "${dir_JUPYTER_LOGS}"
     fi
 
     # Start in the notebooks directory
-    cd ~/jupyter/notebooks
+    cd "${dir_JUPYTER_NOTEBOOKS}"
 
     # Activate the virtual environment
-    source ~/jupyter/venv/bin/activate
+    source "${dir_JUPYTER_VENV}/bin/activate"
 
     # Start Jupyter Lab in the background and log output to a file
-    jLOG=~/jupyter/logs/jupyter_server-$(date +%y%m%d%H%M).log
+    jLOG="${dir_JUPYTER_LOGS}/jupyter_server-$(date +%y%m%d%H%M).log"
     Message "Starting Jupyter server... Logs will be written to $jLOG"
     nohup jupyter lab \
           --ip=127.0.0.1 \
