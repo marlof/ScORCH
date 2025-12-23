@@ -1,0 +1,74 @@
+fn_InstallOpenWebUI()
+{
+  DEBUG=""
+
+  Message "Starting OpenWebUI installation process..."
+
+  # Ensure Docker is installed
+  if ! command -v docker >/dev/null 2>&1; then
+    Error "Docker is not installed. Please install Docker before continuing."
+  fi
+
+  # Ensure Ollama is installed (OpenWebUI will need it)
+  if ! command -v ollama >/dev/null 2>&1; then
+    Error "Ollama is not installed. OpenWebUI requires a running Ollama instance. Run obrar INSTALL-OLLAMA to install Ollama first."
+  fi
+
+  # Ensure ~/.ollama exists (single source of truth)
+  if [ ! -d "$HOME/.ollama" ]; then
+    Message "Creating $HOME/.ollama directory..."
+    $DEBUG mkdir -p "$HOME/.ollama"
+  fi
+
+  # Ensure OpenWebUI data directory exists
+  if [ ! -d "$HOME/.open-webui" ]; then
+    Message "Creating $HOME/.open-webui directory..."
+    $DEBUG mkdir -p "$HOME/.open-webui"
+  fi
+
+  # Stop and remove existing OpenWebUI container if present
+  if docker ps -a --format '{{.Names}}' | grep -q '^open-webui$'; then
+    Message "Existing OpenWebUI container found. Removing..."
+    $DEBUG docker stop open-webui >/dev/null 2>&1
+    $DEBUG docker rm open-webui >/dev/null 2>&1
+  else
+    Message "No existing OpenWebUI container found."
+  fi
+
+  # Pull latest OpenWebUI image
+  Message "Pulling latest OpenWebUI Docker image..."
+  $DEBUG docker pull ghcr.io/open-webui/open-webui:latest
+
+  # Ensure Environment="OLLAMA_HOST=xx" is set in WSL2
+  Message "Configuring OpenWebUI environment for Ollama backend..."
+
+
+
+  # Run container
+  Message "Starting OpenWebUI container..."
+  # $DEBUG docker run -d \
+  #   --name open-webui \
+  #   -p 3000:8080 \
+  #   -e ENVIRONMENT=ollama \
+  #   -v "$HOME/.open-webui":/app/backend/data \
+  #   -v "$HOME/.ollama":/root/.ollama \
+  #   --restart unless-stopped \
+  #   ghcr.io/open-webui/open-webui:latest
+
+    docker run -d \
+      --name open-webui \
+      -p 3000:8080 \
+      -v open-webui:/app/backend/data \
+      -e OLLAMA_HOST=http://172.17.0.1:11434 \
+      -v "$HOME/.open-webui":/app/backend/data \
+      -v "$HOME/.ollama":/root/.ollama \      
+      --restart always \
+      ghcr.io/open-webui/open-webui:latest
+
+  if [ $? -eq 0 ]; then
+    Message "OpenWebUI installation completed successfully."
+    Message "OpenWebUI is now available at: http://localhost:3000"
+  else
+    Error "OpenWebUI installation failed."
+  fi
+}

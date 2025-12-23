@@ -1,0 +1,64 @@
+fn_GetOllamaLLMs()
+{
+  # Ollama LLM Fetcher
+  # Example usage:  obrar GETLLM -m "model-name1 [model-name2]"
+  #
+  # Possible model names can be found at https://ollama.com/models
+  # e.g "llama2", "gpt-4o", "gpt-3.5-turbo", etc.
+
+  # Get an ollama LLM model by name
+  if [ -z "${MODELS}" ]; then
+
+    # Use curl to fetch and process the list of available models from ollama website
+    Message "Fetching list of available ollama models..."
+    # Search the https://ollama.com/search page for model names and show the name and description
+    # example html looks like:
+    #      <a href="/library/mistral" class="group w-full">
+    #    <div class="flex flex-col mb-1" title="mistral">
+    #      <h2 class="truncate text-xl font-medium underline-offset-2 group-hover:underline md:text-2xl">
+    #        <span x-test-search-response-title>mistral</span>
+    #      </h2>
+    #      <p class="max-w-lg break-words text-neutral-800 text-md">The 7B model released by Mistral AI, updated to version 0.3.</p>
+    #    </div>
+    AVAILABLE_MODELS=$(curl -s https://ollama.com/search | grep -oP '(?<=<a href="/library/)[^"]+' | sort -u)
+
+    if [ -z "$AVAILABLE_MODELS" ]; then
+        Message "No available ollama models found."
+    else
+        Message "Available ollama models from https://ollama.com/search:"
+        for MODEL in $AVAILABLE_MODELS; do
+            Message " - $MODEL"
+        done
+    fi
+    Error "No models specified. Please set the -m \"<MODEL1> [MODEL2]\" variable with desired ollama model names."
+  fi
+  if command -v ollama >/dev/null 2>&1; then
+    Message "Ollama command found. Pulling models..."
+    for each_Model in $MODELS; do
+      # If the model name does not include a version tag, append :latest
+      if [[ "$each_Model" != *:* ]]; then
+        each_Model="${each_Model}:latest"
+      fi
+      Message "Fetching ollama model: $each_Model"
+      ollama pull "$each_Model"
+      if [ $? -eq 0 ]; then
+        Message "Successfully pulled model: $each_Model"
+      else
+        Error "Failed to pull model: $each_Model"
+      fi
+    done
+  else
+    Error "Ollama command not found. Please ensure ollama is installed and running an instance."
+  fi
+
+  # Now list the installed models
+  MODELS=$(ollama list | awk 'NR>1 {print $1}')
+  if [ -z "$MODELS" ]; then
+    Message "No ollama models found."
+  else
+    Message "Ollama models found:"
+    for MODEL in $MODELS; do
+      Message " - $MODEL"
+    done
+  fi
+}

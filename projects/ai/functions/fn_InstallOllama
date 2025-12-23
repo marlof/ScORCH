@@ -1,0 +1,16 @@
+fn_InstallOllama()
+{
+  # Install ollama using the official install script
+
+  # Check for sudo access
+  sudo -n true || Error "Need access to sudo. Run sudo true"
+
+  # Check for previous installation
+  if command -v ollama >/dev/null 2>&1; then
+    Message "ollama is already installed. Skipping installation."
+    return
+  fi
+
+  Message "Installing ollama..."
+  curl -fsSL https://ollama.com/install.sh | sh
+}
