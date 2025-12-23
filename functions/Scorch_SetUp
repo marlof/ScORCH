@@ -262,7 +262,7 @@ readonly -f fn_GetAnswer
 
 fn_Confirm()
 {
-  # Linrary function to get a Yes No answer
+  # Library function to get a Yes No answer
   # =======================================
   local chr_YN
 
@@ -285,7 +285,7 @@ fn_Range()
 
   for int_EachItem in ${str_Input} ; do
     if [ "$(echo ${int_EachItem} | grep "-" )" ] ; then
-      # Bash 3 varient
+      # Bash 3 variant
       # typeset local int_First=$(echo ${int_EachItem} | cut -d "-" -f1)
       # typeset local  int_Last=$(echo ${int_EachItem} | cut -d "-" -f2)
       local  int_First=${int_EachItem%%-*}
@@ -511,13 +511,13 @@ fn_PullRelease()
     printf " ===============\n"
     printf " Retrieving MD5      (%s.md5.txt): " "${file_Latest}"
     fn_CreateFile "${file_MD5}"
-    str_Ouput=$(curl -s -o "${file_MD5}" "${file_Latest}.md5.txt")
+    str_Output=$(curl -s -o "${file_MD5}" "${file_Latest}.md5.txt")
     if [[ $? == 0 ]]  ; then
       echo "OK"
       echo "$(cat "${file_MD5}" | cut -d" " -f1 ) scorch.tar" > "${file_MD5}"
     else
       echo "Error"
-      echo "${str_Ouput}"
+      echo "${str_Output}"
       fn_PressEnter
       return 1
     fi
@@ -528,12 +528,12 @@ fn_PullRelease()
 
   printf " Retrieving tar file (%s): " "${file_Latest}"
   cd "${dir_Base}"
-  str_Ouput=$(curl -s -o "${file_Tar}" "${file_Latest}")
+  str_Output=$(curl -s -o "${file_Tar}" "${file_Latest}")
   if [[ $? == 0 ]] ; then
     echo "OK"
   else
     echo "Error"
-    echo "${str_Ouput}"
+    echo "${str_Output}"
     fn_PressEnter
     return 1
   fi
@@ -607,7 +607,7 @@ fn_InstallLatest()
     find -L "${dir_Functions}" "${dir_Python}" "${dir_Plugins}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
     find -L "${dir_Base}" -name "${str_ProgramName}" -type f -newer "${file_Install}" -okdir cp {} "${dir_Backup}/." \;
   else
-    printf "\n\n No modifed files found\n"
+    printf "\n\n No modified files found\n"
   fi
 
   printf "\n\n"
@@ -626,8 +626,8 @@ fn_InstallLatest()
  #   echo " Check network connection, disk space."
  # fi
   printf "\n"
-  printf " Lastest installs\n"
-  printf " ================\n"
+  printf " Latest installs\n"
+  printf " ===============\n"
   tail -5 "${file_Install}"
   fn_PressEnter
 }
