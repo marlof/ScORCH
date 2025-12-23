@@ -417,7 +417,7 @@ cat "${file_Job}" | ${cmd_AWK} -v int_Task=${int_Task:-""} '
               if fn_IsNumber "$int_NewRefreshRate" ; then
                 int_RefreshRate=${int_NewRefreshRate}
               else
-                printf "\n An integar is expected for the refresh rate. Defaulting to 10 seconds."
+                printf "\n An integer is expected for the refresh rate. Defaulting to 10 seconds."
                 int_RefreshRate=10
                 sleep 2
               fi
