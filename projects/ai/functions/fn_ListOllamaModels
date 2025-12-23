@@ -1,0 +1,41 @@
+fn_ListOllamaModels()
+{
+  Message "Listing ollama models..."
+  local OLLAMA_PID=""
+  if pgrep -x "ollama" > /dev/null; then
+      Message "Ollama instance is currently running."
+  else
+      Message "No ollama instance is running."
+
+      if command -v ollama >/dev/null 2>&1; then
+          Message "Starting temporary ollama instance to list models..."
+          ollama serve &
+          OLLAMA_PID=$!
+
+          SLEEP_TIME=5
+          Message "Waiting $SLEEP_TIME seconds for ollama to start..."
+          sleep $SLEEP_TIME
+      else
+          Message "Ollama command not found. Please ensure ollama is installed."
+          return
+      fi
+  fi
+
+  # List models
+  MODELS=$(ollama list | awk 'NR>1 {print $1}')
+  if [ -z "$MODELS" ]; then
+      Message "No ollama models found."
+  else
+      Message "Ollama models found:"
+      for MODEL in $MODELS; do
+          Message " - $MODEL"
+      done
+  fi
+
+  # Stop temporary instance if we started it
+  if [ -n "$OLLAMA_PID" ]; then
+      Message "Stopping temporary ollama instance (PID $OLLAMA_PID)..."
+      kill "$OLLAMA_PID"
+      wait "$OLLAMA_PID" 2>/dev/null
+  fi
+}

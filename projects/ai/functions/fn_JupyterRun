@@ -13,6 +13,7 @@ fn_JupyterRun()
     jLOG=$(ls -t ${dir_JUPYTER_LOGS}/jupyter_server-*.log 2>/dev/null | head -n1)
     if [ -n "$jLOG" ]; then
       Message "You can access it using the following URL (from your local machine with an SSH tunnel):"
+      Message "  ssh -L 8888:127.0.0.1:8888 $(whoami)@$(hostname)"
       grep  http://127.0.0.1:[0-9]*/lab\?token=[a-z0-9]* "$jLOG"
     fi
 

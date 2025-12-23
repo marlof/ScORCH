@@ -1,0 +1,10 @@
+JUPYTER-INSTALL    | AI | O:ENV:e: O:DAYS:d:         | fn_JupyterInstall
+JUPYTER-RUN        | AI | O:ENV:e:                   | fn_JupyterRun
+
+REMOVE-OPENWEBUI   | AI | O:FORCE:f                  | fn_RemoveOpenWebUI
+REMOVE-OLLAMA      | AI | O:FORCE:f                  | fn_RemoveOllama
+LIST-OLLAMAMODELS  | AI |                            | fn_ListOllamaModels
+GET-LLM            | AI | O:MODELS:m:                | fn_GetOllamaLLMs
+
+INSTALL-OLLAMA     | AI |                            | fn_InstallOllama
+INSTALL-OPENWEBUI  | AI |                            | fn_InstallOpenWebUI

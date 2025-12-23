@@ -1,0 +1,81 @@
+fn_RemoveOpenWebUI()
+{
+  # If FORCE is set, make DEBUG empty to skip prompts
+  if [ "${FORCE^}" = "TRUE" ]; then
+    DEBUG=""
+  else
+    DEBUG=echo
+  fi
+
+  Message "Starting open-webui removal process..."
+
+  # In WSL2, We need to stop and disable the open-webui service
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Detected WSL2 environment."
+  else
+    Message "Detected $(uname -r) environment."
+  fi
+
+  if systemctl is-active --quiet open-webui; then
+    Message "Stopping open-webui service..."
+    $DEBUG sudo systemctl stop open-webui
+  else
+    Message "open-webui service is not running."
+  fi
+  if systemctl is-enabled --quiet open-webui; then
+    Message "Disabling open-webui service..."
+    $DEBUG sudo systemctl disable open-webui
+  else
+    Message "open-webui service is not enabled."
+  fi
+  if [ -f /etc/systemd/system/open-webui.service ]; then
+    Message "Removing open-webui service file..."
+    $DEBUG sudo rm /etc/systemd/system/open-webui.service
+    $DEBUG sudo systemctl daemon-reload
+  fi
+
+  # Remove open-webui installation directory
+  if [ -d /opt/open-webui ]; then
+    Message "Removing /opt/open-webui directory..."
+    $DEBUG sudo rm -rf /opt/open-webui
+  fi
+
+  # Remove open-webui binary
+  if [ -f /usr/local/bin/open-webui ]; then
+    Message "Removing open-webui binary..."
+    $DEBUG sudo rm /usr/local/bin/open-webui
+  fi
+
+  # Remove open-webui data
+  if [ -d "$HOME/.open-webui" ]; then
+    Message "Removing $HOME/.open-webui directory..."
+    $DEBUG rm -rf "$HOME/.open-webui" || Message "Failed to remove $HOME/.open-webui; check permissions."
+  fi
+
+  # Remove any docker containers or images related to open-webui
+  if command -v docker >/dev/null 2>&1; then
+    local CONTAINER_IDS
+    CONTAINER_IDS=$(docker ps -a --filter "name=open-webui" --format "{{.ID}}")
+    if [ -n "$CONTAINER_IDS" ]; then
+      Message "Removing open-webui Docker containers..."
+      for CONTAINER_ID in $CONTAINER_IDS; do
+        $DEBUG docker rm -f "$CONTAINER_ID"
+      done
+    else
+      Message "No open-webui Docker containers found."
+    fi
+    local IMAGE_IDS
+    IMAGE_IDS=$(docker images --filter "reference=open-webui*" --format "{{.ID}}")
+    if [ -n "$IMAGE_IDS" ]; then
+      Message "Removing open-webui Docker images..."
+      for IMAGE_ID in $IMAGE_IDS; do
+        $DEBUG docker rmi -f "$IMAGE_ID"
+      done
+    else
+      Message "No open-webui Docker images found."
+    fi
+  else
+    Message "Docker is not installed. Skipping Docker cleanup."
+  fi
+  Message "open-webui removal process completed."
+}

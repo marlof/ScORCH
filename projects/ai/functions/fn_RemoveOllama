@@ -1,0 +1,123 @@
+fn_RemoveOllama()
+{
+  # If FORCE is set, make DEBUG empty to skip prompts
+  if [ "${FORCE^}" = "TRUE" ]; then
+    DEBUG=""
+  else
+    DEBUG=echo
+  fi
+
+  # if temparyy ollama instance is started, store its PID here
+  local OLLAMA_PID=""
+  local MODELS=""
+
+  # List models if ollama is installed and an instance is running
+  if ! command -v ollama >/dev/null 2>&1; then
+    Message "ollama command not found. Skipping model removal."
+    MODELS=""
+  else
+    if pgrep -x "ollama" > /dev/null; then
+      Message "ollama instance is currently running."
+        MODELS=$(ollama list | awk 'NR>1 {print $1}')
+        if [ -z "$MODELS" ]; then
+          Message "No ollama models found."
+        else
+          Message "ollama models found:"
+          for MODEL in $MODELS; do
+            Message " - $MODEL"
+          done
+        fi
+    else
+      Message "No ollama instance is running. Starting temporary instance to list models..."
+      ollama serve &
+      OLLAMA_PID=$!
+
+      SLEEP_TIME=5
+      Message "Waiting $SLEEP_TIME seconds for ollama to start..."
+      sleep $SLEEP_TIME
+    fi
+  fi
+
+  # If MODELS is not empty, remove each model
+  if [ -z "$MODELS" ]; then
+    Message "No ollama models to remove."
+  else
+    Message "Removing ollama models..."
+    for each_Model in $MODELS; do
+      $DEBUG ollama rm "$each_Model"
+      if [ $? -eq 0 ]; then
+        Message "Successfully removed Ollama model: $each_Model"
+      else
+        Error "Failed to remove ollama model: $each_Model"
+      fi
+    done
+  fi
+
+  # Stop temporary instance if we started it
+  if [ -n "$OLLAMA_PID" ]; then
+      Message "Stopping temporary ollama instance (PID $OLLAMA_PID)..."
+      kill "$OLLAMA_PID"
+      wait "$OLLAMA_PID" 2>/dev/null
+  fi
+
+
+  # If thee is another ollama instance running
+
+  Message "Starting ollama removal process..."
+
+  # Stop, disable and remove the ollama service if it exists
+  if systemctl is-active --quiet ollama; then
+    Message "Stopping ollama service..."
+    $DEBUG sudo systemctl stop ollama
+  else
+    Message "ollama service is not running."
+  fi
+  if systemctl is-enabled --quiet ollama; then
+    Message "Disabling ollama service..."
+    $DEBUG sudo systemctl disable ollama
+  else
+    Message "ollama service is not enabled."
+  fi
+  if [ -f /etc/systemd/system/ollama.service ]; then
+    Message "Removing ollama service file..."
+    $DEBUG sudo rm /etc/systemd/system/ollama.service
+    $DEBUG sudo systemctl daemon-reload
+  fi
+  if [ -d /opt/ollama ]; then
+    Message "Removing /opt/ollama directory..."
+    $DEBUG sudo rm -rf /opt/ollama
+  fi
+  if [ -f /usr/local/bin/ollama ]; then
+    Message "Removing ollama binary..."
+    $DEBUG sudo rm /usr/local/bin/ollama
+  fi
+
+  # Remove ollama user and group if they exist
+  if id -u ollama >/dev/null 2>&1; then
+    Message "Removing ollama user..."
+    $DEBUG sudo userdel -r ollama
+  else
+    Message "ollama user does not exist."
+  fi
+
+  if getent group ollama >/dev/null 2>&1; then
+    Message "Removing ollama group..."
+    $DEBUG sudo groupdel ollama 2>/dev/null || Message "Cannot remove ollama group; it may still be in use by other users."
+  else
+    Message "ollama group does not exist."
+  fi
+
+  # Remove ollama data
+  if [ -d /var/lib/ollama ]; then
+    Message "Removing /var/lib/ollama directory..."
+    $DEBUG sudo rm -rf /var/lib/ollama || Message "Failed to remove /var/lib/ollama; check permissions."
+  fi
+
+  # Clearing and other models
+  if [ -d "$HOME/.ollama" ]; then
+    Message "Removing $HOME/.ollama directory..."
+    $DEBUG rm -rf "$HOME/.ollama" || Message "Failed to remove $HOME/.ollama; check permissions."
+  fi
+
+  Message "ollama removal process completed."
+}
