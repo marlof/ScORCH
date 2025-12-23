@@ -1,3 +1,4 @@
+#!/bin/bash
 fn_RemoveOllama()
 {
   # If FORCE is set, make DEBUG empty to skip prompts

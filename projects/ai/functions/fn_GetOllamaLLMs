@@ -34,6 +34,11 @@ fn_GetOllamaLLMs()
   fi
   if command -v ollama >/dev/null 2>&1; then
     Message "Ollama command found. Pulling models..."
+
+    # Check there is an Ollama instance running
+    if ! pgrep -x "ollama" > /dev/null; then
+      Error "No running Ollama instance found. Please start an Ollama instance with ollama serve before pulling models."
+    fi
     for each_Model in $MODELS; do
       # If the model name does not include a version tag, append :latest
       if [[ "$each_Model" != *:* ]]; then

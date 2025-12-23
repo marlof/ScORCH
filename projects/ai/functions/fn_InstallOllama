@@ -8,9 +8,35 @@ fn_InstallOllama()
   # Check for previous installation
   if command -v ollama >/dev/null 2>&1; then
     Message "ollama is already installed. Skipping installation."
+    # Still ensure it's configured properly for WSL2
+    if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+      Message "Configuring Ollama for WSL2 environment..."
+      sudo mkdir -p /etc/systemd/system/ollama.service.d
+      echo -e "[Service]\nEnvironment=\"OLLAMA_HOST=0.0.0.0:11434\"" | sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null
+      sudo systemctl daemon-reload
+      sudo systemctl restart ollama
+      Message "Ollama configured to listen on 0.0.0.0:11434"
+    fi
     return
   fi
 
   Message "Installing ollama..."
   curl -fsSL https://ollama.com/install.sh | sh
+
+  # Configure Ollama to listen on all interfaces in WSL2
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Detected WSL2. Configuring Ollama to listen on 0.0.0.0:11434..."
+    sudo mkdir -p /etc/systemd/system/ollama.service.d
+    echo -e "[Service]\nEnvironment=\"OLLAMA_HOST=0.0.0.0:11434\"" | sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null
+    sudo systemctl daemon-reload
+    sudo systemctl restart ollama
+    sleep 2
+    
+    # Verify it's listening (ss shows * for 0.0.0.0)
+    if ss -tulpen | grep 11434 | grep -qE '(\*:11434|0\.0\.0\.0:11434)'; then
+      Message "Ollama is now listening on all interfaces (port 11434)"
+    else
+      Warning "Ollama may not be listening on all interfaces. Check with: ss -tulpen | grep 11434"
+    fi
+  fi
 }

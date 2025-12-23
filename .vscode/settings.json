@@ -1,10 +1,13 @@
 {
     "cSpell.words": [
+        "GETLLM",
         "jupyterlab",
         "nohup",
         "nonprod",
         "obrar",
+        "Ollama",
         "pkill",
-        "tnlp"
+        "tnlp",
+        "webui"
     ]
 }

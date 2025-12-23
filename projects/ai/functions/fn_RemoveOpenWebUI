@@ -1,3 +1,4 @@
+#!/bin/bash
 fn_RemoveOpenWebUI()
 {
   # If FORCE is set, make DEBUG empty to skip prompts
