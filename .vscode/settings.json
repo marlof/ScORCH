@@ -65,5 +65,11 @@
         "tnlp",
         "unqueue",
         "webui"
+        "jupyterlab",
+        "nohup",
+        "nonprod",
+        "obrar",
+        "pkill",
+        "tnlp"
     ]
 }
