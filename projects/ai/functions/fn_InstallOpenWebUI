@@ -2,6 +2,9 @@ fn_InstallOpenWebUI()
 {
   DEBUG=""
 
+  # Check for sudo access
+  sudo -n true || Error "Need access to sudo. Run sudo true"
+
   Message "Starting OpenWebUI installation process..."
 
   # Ensure Docker is installed
@@ -14,10 +17,26 @@ fn_InstallOpenWebUI()
     Error "Ollama is not installed. OpenWebUI requires a running Ollama instance. Run obrar INSTALL-OLLAMA to install Ollama first."
   fi
 
-  # Ensure ~/.ollama exists (single source of truth)
-  if [ ! -d "$HOME/.ollama" ]; then
-    Message "Creating $HOME/.ollama directory..."
-    $DEBUG mkdir -p "$HOME/.ollama"
+  # Ensure Ollama is configured to listen on 0.0.0.0 in WSL2
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Detected WSL2 environment. Verifying Ollama configuration..."
+    
+    # Check if listening on all interfaces (ss shows * for 0.0.0.0)
+    if ! ss -tulpen | grep 11434 | grep -qE '(\*:11434|0\.0\.0\.0:11434)'; then
+      Warning "Ollama is not listening on 0.0.0.0:11434. Reconfiguring..."
+      sudo mkdir -p /etc/systemd/system/ollama.service.d
+      echo -e "[Service]\nEnvironment=\"OLLAMA_HOST=0.0.0.0:11434\"" | sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null
+      sudo systemctl daemon-reload
+      sudo systemctl restart ollama
+      sleep 3
+    fi
+    
+    # Verify Ollama is accessible
+    if ss -tulpen | grep 11434 | grep -qE '(\*:11434|0\.0\.0\.0:11434)'; then
+      Message "Ollama is properly configured and listening on all interfaces (port 11434)"
+    else
+      Error "Failed to configure Ollama to listen on 0.0.0.0. OpenWebUI will not be able to connect."
+    fi
   fi
 
   # Ensure OpenWebUI data directory exists
@@ -39,35 +58,57 @@ fn_InstallOpenWebUI()
   Message "Pulling latest OpenWebUI Docker image..."
   $DEBUG docker pull ghcr.io/open-webui/open-webui:latest
 
-  # Ensure Environment="OLLAMA_HOST=xx" is set in WSL2
-  Message "Configuring OpenWebUI environment for Ollama backend..."
+  # Determine the correct OLLAMA_HOST for Docker
+  # In WSL2, Docker containers use the host's IP on the Docker bridge network
+  # The host is accessible at host.docker.internal or via the bridge gateway IP
+  OLLAMA_HOST="http://host.docker.internal:11434"
+  
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Using host.docker.internal for Ollama connection in WSL2"
+  else
+    Message "Using host.docker.internal for Ollama connection"
+  fi
 
-
-
-  # Run container
+  # Run container with --add-host to ensure host.docker.internal works
   Message "Starting OpenWebUI container..."
-  # $DEBUG docker run -d \
-  #   --name open-webui \
-  #   -p 3000:8080 \
-  #   -e ENVIRONMENT=ollama \
-  #   -v "$HOME/.open-webui":/app/backend/data \
-  #   -v "$HOME/.ollama":/root/.ollama \
-  #   --restart unless-stopped \
-  #   ghcr.io/open-webui/open-webui:latest
 
-    docker run -d \
-      --name open-webui \
-      -p 3000:8080 \
-      -v open-webui:/app/backend/data \
-      -e OLLAMA_HOST=http://172.17.0.1:11434 \
-      -v "$HOME/.open-webui":/app/backend/data \
-      -v "$HOME/.ollama":/root/.ollama \      
-      --restart always \
-      ghcr.io/open-webui/open-webui:latest
+  docker run -d \
+        --name open-webui \
+        -p 3000:8080 \
+        --add-host=host.docker.internal:host-gateway \
+        -v open-webui:/app/backend/data \
+        -e OLLAMA_BASE_URL=${OLLAMA_HOST} \
+        --restart always \
+        ghcr.io/open-webui/open-webui:latest
 
   if [ $? -eq 0 ]; then
+    sleep 3
+    
+    # Test connectivity from container to Ollama
+    Message "Testing OpenWebUI -> Ollama connectivity..."
+    if docker exec open-webui curl -s http://host.docker.internal:11434/api/tags >/dev/null 2>&1; then
+      Message "✓ OpenWebUI can successfully connect to Ollama"
+      
+      # Show available models
+      MODELS=$(docker exec open-webui curl -s http://host.docker.internal:11434/api/tags 2>/dev/null | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+      if [ -n "$MODELS" ]; then
+        Message "Available models:"
+        echo "$MODELS" | while read model; do
+          Message "  - $model"
+        done
+      else
+        Message "No models currently installed. Use 'ollama pull <model>' to download models."
+      fi
+    else
+      Warning "OpenWebUI cannot reach Ollama. Check that Ollama is running with: systemctl status ollama"
+    fi
+    
+    Message ""
     Message "OpenWebUI installation completed successfully."
     Message "OpenWebUI is now available at: http://localhost:3000"
+    Message ""
+    Message "To add models, run: ollama pull <model-name>"
+    Message "Example: ollama pull phi3"
   else
     Error "OpenWebUI installation failed."
   fi

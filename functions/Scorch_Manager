@@ -222,7 +222,7 @@ fn_Admin()
     printf "   .) Build Tar\n"
     printf "   .) Locks\n"
     printf "   .) Install\n"
-    printf "   .) Maintenace\n"
+    printf "   .) Maintenance\n"
     printf "   .) Function Plugins Manager\n"
     printf "   .) Download Plugins\n\n"
   fi
@@ -254,7 +254,7 @@ fn_Admin()
                         printf "%sP%sreferences | "   "${dis_ULOn}" "${dis_ULOff}"
                         printf "%sM%sessage | "       "${dis_ULOn}" "${dis_ULOff}"
   (( b_Power == 1 )) && printf "%sL%socks | "         "${dis_ULOn}" "${dis_ULOff}"
-  (( b_Power == 1 )) && printf "%sS%supend | "        "${dis_ULOn}" "${dis_ULOff}"
+  (( b_Power == 1 )) && printf "%sS%suspend | "        "${dis_ULOn}" "${dis_ULOff}"
   (( b_Power == 1 )) && printf "%sF%sunctions | "     "${dis_ULOn}" "${dis_ULOff}"
   (( b_Power == 1 )) && printf "%sD%sownload | "      "${dis_ULOn}" "${dis_ULOff}"
                         printf "%sV%siew CSV | "     "${dis_ULOn}" "${dis_ULOff}" 

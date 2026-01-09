@@ -1,3 +1,4 @@
+#!/bin/bash
 fn_JupyterRun()
 {
   # Check if a Jupyter server is already running

@@ -50,7 +50,7 @@ fn_GetRequest() {
     printf "\n help <plugin>    at any time for additional parameters\n"
     printf " info <plugin>    for statistics information\n"
     printf " view <plugin>    View the base plugin\n\n"
-    printf " Please enter the request below.\n To complete the request use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
+    printf " Please enter the request below.\n To complete the request use a period (.) on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]]; do
       read -e -r str_Line
       str_ULine="${str_Line^^}"

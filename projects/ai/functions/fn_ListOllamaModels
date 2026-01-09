@@ -1,3 +1,4 @@
+#!/bin/bash
 fn_ListOllamaModels()
 {
   Message "Listing ollama models..."

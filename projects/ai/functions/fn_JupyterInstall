@@ -1,3 +1,4 @@
+#!/bin/bash
 fn_JupyterInstall()
 {
     # Check is Jupyter is already installed
