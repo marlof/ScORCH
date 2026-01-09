@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load .env from current dir if present
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
+
+: "${NETBOX_URL:?NETBOX_URL not set}"
+: "${NETBOX_TOKEN:?NETBOX_TOKEN not set}"
+
+api() {
+  local path="$1"
+  shift || true
+  curl -fsS \
+    -H "Authorization: Token ${NETBOX_TOKEN}" \
+    -H "Accept: application/json" \
+    "${NETBOX_URL%/}/api/${path}" "$@"
+}
+
+urlencode() {
+  python3 - "" <<'PY'
+import urllib.parse, sys
+print(urllib.parse.quote(sys.argv[1] if len(sys.argv) > 1 else ""))
+PY
+}
+
+
+# Fetch a full URL (NetBox often returns absolute URLs in "url" fields)
+fetch_url() {
+  local full_url="$1"
+  curl -fsS \
+    -H "Authorization: Token ${NETBOX_TOKEN}" \
+    -H "Accept: application/json" \
+    "$full_url"
+}
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  netboxq ip [--fields <csv>] [--hosts] <term> [term2 term3...]
+  netboxq devices <term>
+  netboxq interfaces <term>
+  netboxq mac <mac>
+
+IP --fields options:
+  ip,device,interface,mac,status
+
+Examples:
+  netboxq ip 192
+  netboxq ip 192 wifi
+  netboxq ip --fields mac 192 wifi
+  netboxq ip --fields ip,device pc
+  netboxq ip --hosts pc
+USAGE
+}
+
+cmd="${1:-}"; shift || true
+
+case "$cmd" in
+  ip)
+    fields="ip,status,device,interface"
+    hosts_mode=0
+
+    # parse options
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --fields)
+          fields="${2:-}"; shift 2;;
+        --hosts)
+          hosts_mode=1; shift;;
+        -h|--help)
+          usage; exit 0;;
+        *)
+          break;;
+      esac
+    done
+
+    [[ $# -ge 1 ]] || { usage; exit 2; }
+
+    # First arg = NetBox API search term; remaining args = local filters
+    api_term="$1"; shift
+    mapfile -t filters < <(printf "%s\n" "$@")
+
+    # Pull IP results
+    json="$(api "ipam/ip-addresses/?q=$(urlencode "$api_term")")"
+
+    # Base rows with assigned interface URL (needed for mac lookup)
+    # Columns: address status device iface iface_url
+    mapfile -t rows < <(
+      echo "$json" | jq -r '
+        .results[]
+        | [
+            .address,
+            (.status.value // "-"),
+            (
+              if .assigned_object and .assigned_object.device
+              then (.assigned_object.device.name // "-")
+              else "-"
+              end
+            ),
+            (
+              if .assigned_object
+              then (.assigned_object.name // "-")
+              else "-"
+              end
+            ),
+            (
+              if .assigned_object and .assigned_object.url
+              then .assigned_object.url
+              else "-"
+              end
+            )
+          ] | @tsv'
+    )
+
+    # apply local filters across the whole row (case-insensitive)
+    filtered_rows=()
+    for r in "${rows[@]}"; do
+      keep=1
+      for f in "${filters[@]}"; do
+        [[ -z "$f" ]] && continue
+        if ! echo "$r" | grep -qi -- "$f"; then
+          keep=0
+          break
+        fi
+      done
+      [[ $keep -eq 1 ]] && filtered_rows+=("$r")
+    done
+
+    # emit hosts-file format
+    if [[ $hosts_mode -eq 1 ]]; then
+      for r in "${filtered_rows[@]}"; do
+        IFS=$'\t' read -r addr status dev iface iface_url <<<"$r"
+        ip_no_mask="${addr%%/*}"
+        [[ "$dev" == "-" ]] && continue
+        printf "%s\t%s\n" "$ip_no_mask" "$dev"
+      done
+      exit 0
+    fi
+
+    # emit selected fields
+    IFS=',' read -r -a field_list <<<"$fields"
+
+    # headerless TSV output; if you want headers, say so and I'll add a flag
+    for r in "${filtered_rows[@]}"; do
+      IFS=$'\t' read -r addr status dev iface iface_url <<<"$r"
+
+      # mac lookup only if requested and iface_url present
+      mac="-"
+      if printf "%s\n" "${field_list[@]}" | grep -qx "mac"; then
+        if [[ "$iface_url" != "-" ]]; then
+          mac="$(fetch_url "$iface_url" | jq -r '.mac_address // "-"')"
+        fi
+      fi
+
+      out=()
+      for f in "${field_list[@]}"; do
+        case "$f" in
+          ip) out+=("$addr");;
+          status) out+=("$status");;
+          device) out+=("$dev");;
+          interface) out+=("$iface");;
+          mac) out+=("$mac");;
+          *)
+            out+=("?");
+            ;;
+        esac
+      done
+      (IFS=$'\t'; echo "${out[*]}")
+    done | column -ts $'\t'
+    ;;
+
+  devices)
+    term="${1:-}"; [[ -n "$term" ]] || { usage; exit 2; }
+    api "dcim/devices/?q=$(urlencode "$term")" \
+      | jq -r '.results[] | [.name, (.device_role.name // "-"), (.device_type.model // "-"), (.site.name // "-"), (.status.value // "-")] | @tsv' \
+      | column -ts $'\t'
+    ;;
+
+  interfaces)
+    term="${1:-}"; [[ -n "$term" ]] || { usage; exit 2; }
+    api "dcim/interfaces/?q=$(urlencode "$term")" \
+      | jq -r '.results[] | [.device.name, .name, (.mac_address // "-"), (.enabled|tostring)] | @tsv' \
+      | column -ts $'\t'
+    ;;
+
+  mac)
+    mac="${1:-}"; [[ -n "$mac" ]] || { usage; exit 2; }
+    api "dcim/interfaces/?mac_address=$(urlencode "$mac")" \
+      | jq -r '.results[] | [.device.name, .name, (.mac_address // "-")] | @tsv' \
+      | column -ts $'\t'
+    ;;
+
+  ""|-h|--help|help)
+    usage
+    ;;
+
+  *)
+    echo "Unknown command: $cmd" >&2
+    usage
+    exit 2
+    ;;
+esac
