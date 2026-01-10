@@ -44,7 +44,9 @@ fn_GetRequest() {
     [[ $b_NonInteractive ]] || echo "$($(fn_LogDate)): Processing file: ${file_Template}"
     while read -r str_Line; do
       [[ "${str_Line^^}" =~ ACTION ]] && ((int_GetCount = int_GetCount + 1)) && file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
-      echo "${str_Line}" | grep ":" >> "${file_Request}"
+      if [[ "${str_Line}" == *:* ]] ; then
+        echo "${str_Line}" >> "${file_Request}"
+      fi
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n"
@@ -59,31 +61,39 @@ fn_GetRequest() {
           local str_Help=${str_Line##* }
           if [ -n "${str_Line}" ]; then
             echo "==SYSTEM============="
-            declare -f fn_ExtractPairs | grep -w "GetVar"
+            declare -f fn_ExtractPairs | grep -w "GetVar" || true
             echo "==CUSTOM============="
-            declare -f "SP_${str_Help}" | grep -w "GetVar"
+            if declare -f "SP_${str_Help}" >/dev/null 2>&1 ; then
+              declare -f "SP_${str_Help}" | grep -w "GetVar" || true
+            else
+              echo "Plugin SP_${str_Help} not found"
+            fi
             echo "==============="
-            declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}'
+            declare -f "SP_${str_Help}" | sed -n '/:.*DOCUMENTATION/,/^DOCUMENTATION/{//! s/^//p}' || true
             echo "==============="
           fi
           ;;
         VIEW*)
           local str_View=${str_Line##* }
           echo "$str_View is: SP_${str_View}"
-          declare -f "SP_${str_View}"
+          if declare -f "SP_${str_View}" >/dev/null 2>&1 ; then
+            declare -f "SP_${str_View}"
+          else
+            echo "Plugin SP_${str_View} not found"
+          fi
           ;;
         INFO*)
           local str_Info=${str_Line##* }
-          local int_JobCount=$(grep "\_${str_Info}\_" "$file_CSV" | wc -l)
-          local int_NonFailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep -v "\-1$" | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }')
-          local int_FailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep "\-1$" | wc -l)
+          local int_JobCount=$(grep "\_${str_Info}\_" "$file_CSV" | wc -l || echo 0)
+          local int_NonFailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep -v "\-1$" | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }' || echo 0)
+          local int_FailCount=$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f8 | grep "\-1$" | wc -l || echo 0)
           printf "\n"
           printf "Total number of jobs logged    : %s\n" "$int_JobCount"
           if [[ $int_JobCount -ge 1 ]]; then
             printf "Number of deleted jobs         : %s\n" "$int_FailCount"
             printf "Average number of failures     : %s\n" "$int_NonFailCount"
-            printf "Max run time                   : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | grep -v "\-1,.*$" | cut -d"," -f6 | awk 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}')")"
-            printf "Average run time               : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f6 | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }' 2>/dev/null)")"
+            printf "Max run time                   : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | grep -v "\-1,.*$" | cut -d"," -f6 | awk 'BEGIN { max=$1 } { if ($1 > max) max=$1} END {print max}' || echo 0)")"
+            printf "Average run time               : %s %s %s\n" "$(fn_NiceTime "$(grep "\_${str_Info}\_" "$file_CSV" | cut -d"," -f6 | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }' 2>/dev/null || echo 0)")"
             printf "\n\n"
           fi
           ;;
@@ -94,10 +104,14 @@ fn_GetRequest() {
         ACTION*)
           ((int_GetCount = int_GetCount + 1))
           file_Request="${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}"
-          echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          if [[ "${str_Line}" == *:* ]] ; then
+            echo "${str_Line}" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          fi
           ;;
         *)
-          echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          if [[ "${str_Line}" == *:* ]] ; then
+            echo "${str_Line}" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+          fi
           cat ${file_Request}
           ;;
       esac
