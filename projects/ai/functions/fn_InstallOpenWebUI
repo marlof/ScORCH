@@ -86,6 +86,7 @@ fn_InstallOpenWebUI()
         -e OLLAMA_BASE_URL=${OLLAMA_HOST} \
         -e ENABLE_API_KEY=true \
         -e ENABLE_API_KEYS=true \
+        -e USER_PERMISSIONS_FEATURES_API_KEYS=true \
         -e WEBUI_SECRET_KEY="${WEBUI_SECRET_KEY}" \
         --restart always \
         ghcr.io/open-webui/open-webui:latest
