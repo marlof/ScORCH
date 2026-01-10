@@ -93,6 +93,8 @@ fn_InstallOpenWebUI()
 
   if [ $? -eq 0 ]; then
     sleep 3
+
+    Message "API key creation is enabled via USER_PERMISSIONS_FEATURES_API_KEYS=true"
     
     # Test connectivity from container to Ollama
     Message "Testing OpenWebUI -> Ollama connectivity..."
