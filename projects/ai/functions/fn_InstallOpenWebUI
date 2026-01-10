@@ -75,6 +75,7 @@ fn_InstallOpenWebUI()
     Warning "WEBUI_SECRET_KEY is not set. JWTs will be invalidated on restart."
   else
     Message "Using WEBUI_SECRET_KEY from environment"
+    Message "Note: Keep WEBUI_SECRET_KEY stable across restarts to preserve login sessions."
   fi
 
   docker run -d \
