@@ -87,6 +87,7 @@ fn_InstallOpenWebUI()
         -e ENABLE_API_KEY=true \
         -e ENABLE_API_KEYS=true \
         -e USER_PERMISSIONS_FEATURES_API_KEYS=true \
+        -e ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false \
         -e WEBUI_SECRET_KEY="${WEBUI_SECRET_KEY}" \
         --restart always \
         ghcr.io/open-webui/open-webui:latest
