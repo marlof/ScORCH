@@ -21,7 +21,7 @@ fn_InstallOllama()
   fi
 
   Message "Installing ollama..."
-  curl -fsSL https://ollama.com/install.sh | sh
+  curl -fsSL https://ollama.com/install.sh | sh || Error "Failed to download and run ollama install script."
 
   # Configure Ollama to listen on all interfaces in WSL2
   if [ "$(uname -r | grep -i microsoft)" != "" ]; then

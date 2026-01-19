@@ -1,0 +1,19 @@
+SP_INSTALL-OPENWEBUI()
+{
+: << DOCUMENTATION
+
+This plugin installs an OPENWEBUI instance.
+
+Action: INSTALL-OPENWEBUI
+Release: latest
+
+
+DOCUMENTATION
+
+  GetVar -pattern "release" -name "RELEASE" -default "latest" # Task will pause for (x) seconds
+  Task "sudo -n true"  || Manual "Root privileges are required to install OPENWEBUI. Please run 'sudo true' to cache your credentials, then re-run this task."
+  Task "obrar INSTALL-OLLAMA"
+  Task "obrar INSTALL-OPENWEBUI"
+  Task "obrar GET-LLM -m \"llama3.1:8b qwen2.5-coder:14b deepseek-coder-v2:16b phi3:mini phi3:medium\""
+
+}
