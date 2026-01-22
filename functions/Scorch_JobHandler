@@ -330,7 +330,9 @@ fn_GetRequest()
     while read -r str_Line ; do
       str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-      echo "${str_Line}" | grep ":" >> "${file_Request}"
+      if [[ "${str_Line}" == *:* ]] ; then
+        echo "${str_Line}" >> "${file_Request}"
+      fi
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
@@ -352,7 +354,9 @@ fn_GetRequest()
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}."$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-        echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+        if [[ "${str_Line}" == *:* ]] ; then
+          echo "${str_Line}" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+        fi
       fi
     done
   fi

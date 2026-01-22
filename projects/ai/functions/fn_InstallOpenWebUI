@@ -1,5 +1,6 @@
 fn_InstallOpenWebUI()
 {
+  PORT=${PORT:-3000}
   DEBUG=""
 
   # Check for sudo access
@@ -71,18 +72,37 @@ fn_InstallOpenWebUI()
 
   # Run container with --add-host to ensure host.docker.internal works
   Message "Starting OpenWebUI container..."
+  if [[ -z "${WEBUI_SECRET_KEY}" ]] ; then
+    Warning "WEBUI_SECRET_KEY is not set. JWTs will be invalidated on restart."
+  else
+    Message "Using WEBUI_SECRET_KEY from environment"
+    Message "Note: Keep WEBUI_SECRET_KEY stable across restarts to preserve login sessions."
+  fi
 
   docker run -d \
         --name open-webui \
-        -p 3000:8080 \
+        -p ${PORT}:8080 \
         --add-host=host.docker.internal:host-gateway \
         -v open-webui:/app/backend/data \
         -e OLLAMA_BASE_URL=${OLLAMA_HOST} \
+        -e ENABLE_API_KEY=true \
+        -e ENABLE_API_KEYS=true \
+        -e USER_PERMISSIONS_FEATURES_API_KEYS=true \
+        -e ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false \
+        -e WEBUI_SECRET_KEY="${WEBUI_SECRET_KEY}" \
         --restart always \
-        ghcr.io/open-webui/open-webui:latest
+        ghcr.io/open-webui/open-webui:latest || Error "Failed to start OpenWebUI container. Check things like
+
+              - port ${PORT} availability
+                  sudo ss -tulpen | grep 3000
+
+              - Docker logs
+                  docker logs open-webui"
 
   if [ $? -eq 0 ]; then
     sleep 3
+
+    Message "API key creation is enabled via USER_PERMISSIONS_FEATURES_API_KEYS=true"
     
     # Test connectivity from container to Ollama
     Message "Testing OpenWebUI -> Ollama connectivity..."
@@ -103,12 +123,10 @@ fn_InstallOpenWebUI()
       Warning "OpenWebUI cannot reach Ollama. Check that Ollama is running with: systemctl status ollama"
     fi
     
-    Message ""
-    Message "OpenWebUI installation completed successfully."
-    Message "OpenWebUI is now available at: http://localhost:3000"
-    Message ""
-    Message "To add models, run: ollama pull <model-name>"
-    Message "Example: ollama pull phi3"
+    Message "OpenWebUI installation completed successfully.
+    OpenWebUI is now available at: http://localhost:3000
+    To add models, run: ollama pull <model-name>
+    Example: ollama pull phi3"
   else
     Error "OpenWebUI installation failed."
   fi

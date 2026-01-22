@@ -7,4 +7,4 @@ LIST-OLLAMAMODELS  | AI |                            | fn_ListOllamaModels
 GET-LLM            | AI | O:MODELS:m:                | fn_GetOllamaLLMs
 
 INSTALL-OLLAMA     | AI |                            | fn_InstallOllama
-INSTALL-OPENWEBUI  | AI |                            | fn_InstallOpenWebUI
+INSTALL-OPENWEBUI  | AI | O:PORT:p:                  | fn_InstallOpenWebUI

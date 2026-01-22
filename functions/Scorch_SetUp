@@ -102,7 +102,11 @@ fn_CheckSetUp()
   cmd_TPUT=$(command -v tput 2>/dev/null) || cmd_TPUT="echo"
   cmd_CLEAR=$(command -v clear 2>/dev/null) || cmd_CLEAR="echo \"\""
 
-  ( tput rmam ) || cmd_TPUT="echo"
+  if [[ -n "${TERM:-}" ]]; then
+    ( tput rmam ) 2>/dev/null || cmd_TPUT="echo"
+  else
+    cmd_TPUT="echo"
+  fi
   (( b_NonInteractive == 1 )) && cmd_CLEAR="echo \"\""
 
   #cmd_CLEAR="echo -e \"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\""

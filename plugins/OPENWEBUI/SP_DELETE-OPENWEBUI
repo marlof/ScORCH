@@ -10,6 +10,8 @@ Confirm: Y
 DOCUMENTATION
 
   GetVar -pattern "confirm" -name "CONFIRM" -default "N" # Task will pause for (x) seconds
-  Message "Delete Ollama $RELEASE"
-  Manual "Run the following WIP"
-}
+
+  Task "obrar REMOVE-OPENWEBUI -f"
+  Task "obrar REMOVE-OLLAMA -f"
+
+ }
