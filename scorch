@@ -404,7 +404,7 @@ typeset          hex_MD5=
 typeset       file_Cache=/tmp/mycache.$$
 typeset       file_Maint=/tmp/${str_ProgramName}.maintenance
          
-typeset     str_Protocol="http://"
+typeset     str_Protocol="https://"
 typeset     dir_Location="www.autoscorch.com/downloads"
 typeset   dir_URLPlugins="www.autoscorch.com/plugins"
 typeset              URL="${str_Protocol}${dir_Location}"
