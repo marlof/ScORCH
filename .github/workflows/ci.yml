@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          python3 -m pip install --upgrade pip
+          python3 -m pip install flake8 pytest || true
+
+      - name: ShellCheck on bash files
+        run: |
+          echo "Pending Running shellcheck..."
+          # find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck || (echo "ShellCheck failed" && exit 1)
+
+      - name: Bash syntax check
+        run: |
+          echo "Running bash -n on shell files..."
+          set -e
+          files=$(find . -type f -name '*.sh' -not -path './.git/*' -print)
+          for f in $files; do
+            echo "Checking $f"
+            bash -n "$f"
+          done
+
+      - name: Python lint (flake8)
+        run: |
+          if [ -d python ]; then
+            echo "Pending Running flake8 on python/"
+            # flake8 python || (echo "flake8 failed" && exit 1)
+          else
+            echo "No python/ directory found — skipping flake8"
+          fi
+
+      - name: Run tests (pytest)
+        run: |
+          if [ -d tests ]; then
+            pytest -q
+          else
+            echo "No tests directory; skipping pytest"
+          fi

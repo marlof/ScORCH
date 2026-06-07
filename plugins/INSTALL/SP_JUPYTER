@@ -1,0 +1,6 @@
+SP_JUPYTER()
+{
+    SP_UPGRADE-LINUX
+    Task "obrar JUPYTER-INSTALL"
+    Task "obrar JUPYTER-RUN"
+}

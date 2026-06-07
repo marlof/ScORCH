@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------
+# Diagnostic Script: WSL2 ↔ Docker ↔ Ollama ↔ OpenWebUI
+# ------------------------------------------------------------
+
+fn_Print() { printf "%b\n" "$1"; }
+fn_Pass()  { fn_Print "✔ PASS: $1"; }
+fn_Fail()  { fn_Print "✘ FAIL: $1"; }
+fn_Info()  { fn_Print "➜ $1"; }
+
+fn_Diagnose() {
+    fn_Info "Starting diagnostic..."
+
+    # ------------------------------------------------------------
+    # 1. Detect WSL2 IP
+    # ------------------------------------------------------------
+    fn_Info "Detecting WSL2 IP..."
+    str_WSL2_IP=$(ip addr show eth0 | awk '/inet / {print $2}' | cut -d/ -f1)
+
+    if [ -z "$str_WSL2_IP" ]; then
+        fn_Fail "Could not detect WSL2 IP on eth0."
+        return 1
+    else
+        fn_Pass "WSL2 IP detected: $str_WSL2_IP"
+    fi
+
+    # ------------------------------------------------------------
+    # 2. Check if Ollama is listening on 0.0.0.0
+    # ------------------------------------------------------------
+    fn_Info "Checking Ollama binding..."
+    if ss -tulpen | grep -q "0.0.0.0:11434"; then
+        fn_Pass "Ollama is listening on 0.0.0.0:11434"
+    else
+        fn_Fail "Ollama is NOT listening on 0.0.0.0:11434"
+        fn_Info "Expected fix: Add 'OLLAMA_HOST=0.0.0.0:11434' to /etc/ollama/config and restart Ollama."
+    fi
+
+    # ------------------------------------------------------------
+    # 3. Test Ollama API from WSL2
+    # ------------------------------------------------------------
+    fn_Info "Testing Ollama API from WSL2..."
+    curl -fsSL "http://$str_WSL2_IP:11434/api/tags" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        fn_Pass "WSL2 can reach Ollama API."
+    else
+        fn_Fail "WSL2 cannot reach Ollama API at http://$str_WSL2_IP:11434/api/tags"
+        return 1
+    fi
+
+    # ------------------------------------------------------------
+    # 4. Check Docker container existence
+    # ------------------------------------------------------------
+    fn_Info "Checking for OpenWebUI container..."
+    if docker ps --format '{{.Names}}' | grep -q '^open-webui$'; then
+        fn_Pass "OpenWebUI container is running."
+    else
+        fn_Fail "OpenWebUI container not found."
+        return 1
+    fi
+
+    # ------------------------------------------------------------
+    # 5. Test connectivity from Docker container to WSL2 Ollama
+    # ------------------------------------------------------------
+    fn_Info "Testing connectivity from inside Docker container..."
+    docker exec open-webui curl -fsSL "http://$str_WSL2_IP:11434/api/tags" >/dev/null 2>&1
+
+    if [ $? -eq 0 ]; then
+        fn_Pass "Docker container can reach Ollama API."
+    else
+        fn_Fail "Docker container CANNOT reach Ollama at http://$str_WSL2_IP:11434/api/tags"
+        fn_Info "This is the root cause. The curl hang you saw is this exact failure."
+    fi
+
+    # ------------------------------------------------------------
+    # 6. Print summary
+    # ------------------------------------------------------------
+    fn_Info "Diagnostic complete."
+}
+
+fn_Diagnose

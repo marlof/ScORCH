@@ -330,11 +330,13 @@ fn_GetRequest()
     while read -r str_Line ; do
       str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
       [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-      echo "${str_Line}" | grep ":" >> "${file_Request}"
+      if [[ "${str_Line}" == *:* ]] ; then
+        echo "${str_Line}" >> "${file_Request}"
+      fi
     done < "${file_Template}"
   else
     printf "\n help <plugin>    at any time for additional parameters\n\n"
-    printf " Please enter the request below.\n To complete the request is use a fullstop on a newline:\n (To quit type CANCEL)\n\n"
+    printf " Please enter the request below.\n To complete the request is use a period (.) on a newline:\n (To quit type CANCEL)\n\n"
     while [[ "${str_Line}" != "." ]] ; do
       read -e -r str_Line
       str_ULine=$(echo "${str_Line}" | tr '[:lower:]' '[:upper:]')
@@ -352,7 +354,9 @@ fn_GetRequest()
       else
         [[ ${str_ULine} =~ CANCEL ]] && rm "${dir_Tmp}/${str_ProgramName}."$$.[0-9]* && break
         [[ ${str_ULine} =~ ACTION ]] &&  (( int_GetCount+=1 )) && file_Request=${dir_Tmp}/${str_ProgramName}.$$.${int_GetCount}
-        echo "${str_Line}" | grep ":" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+        if [[ "${str_Line}" == *:* ]] ; then
+          echo "${str_Line}" | sed 's/[^[:print:]]//g' >> "${file_Request}"
+        fi
       fi
     done
   fi
@@ -569,7 +573,7 @@ fn_PIDWait()
         int_Result=${str_TaskResult#*:}
         if [[ "$int_Result" -ne 0 ]] ; then
           if [[ "$int_Result" == 99 ]] ; then
-            echo "Task $int_Task is a manual tast"
+            echo "Task $int_Task is a manual task"
           else
            echo "Task $int_Task failed"
           fi
@@ -676,7 +680,7 @@ PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; 
 #{
 #   ## To make things simple if there was just one parameter passed, use Task "command" OR true
 #   Task "Try \"$*\""
-#   echo "Depricated: Use Try"
+#   echo "Deprecated: Use Try"
 #}
 
 #pauseTask()
@@ -684,7 +688,7 @@ PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; 
 #  ## Exception to the naming convention is pauseTask. This is used in plugins by users
 #  int_Sleep=${1:-10}
 #  Task "Sleep ${int_Sleep}" 
-#  echo "Depricated: Use Sleep"
+#  echo "Deprecated: Use Sleep"
 #
 #}
 
@@ -692,7 +696,7 @@ PluginError(){ echo ${1} >> "${dir_Log}"/"$(basename "${file_Job}").log" 2>&1 ; 
 #{
 #  ## Exception to the naming convention is breakTask. This is used in plugins by users to force an exit
 #  Task "Manual \"$*\""
-#  echo "Depricated: Use Manual"
+#  echo "Deprecated: Use Manual"
 #}
 
 Trim()
@@ -723,7 +727,7 @@ GetVar()
   # -list                      Expect a list of values into an array by space or comma
   # -m                         Set a mandatory flag
   #
-  # awk 20070501 does not allow ignorecase so dont worry if it doesnt work
+  # awk 20070501 does not allow ignorecase so do not worry if it does not work
   # Examples
   #
   # GetVar -pattern "data label" -name DATA_LABEL -d "None"
@@ -773,8 +777,8 @@ GetVar()
          print $2}'       "${file_Request}" | tail -1 )"
   fi
 
-  ## If a value hasnt been found or is empty, use the default if one is set
-  ## ======================================================================
+  ## If a value has not been found or is empty, use the default if one is set
+  ## ========================================================================
   [[ "${str_Value}" ]] || str_Value=${str_Default}
   [[ "${b_Upper}"   ]] && str_Value=${str_Value^^}
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}

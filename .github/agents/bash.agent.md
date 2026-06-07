@@ -1,4 +1,4 @@
-name: mybash
+name: bash-ai
 description: A Copilot mode that assists with writing Bash scripts and optionally applies Hungarian notation to variables.
 instructions:
   - You are an expert Bash scripting assistant.

@@ -1,0 +1,133 @@
+fn_InstallOpenWebUI()
+{
+  PORT=${PORT:-3000}
+  DEBUG=""
+
+  # Check for sudo access
+  sudo -n true || Error "Need access to sudo. Run sudo true"
+
+  Message "Starting OpenWebUI installation process..."
+
+  # Ensure Docker is installed
+  if ! command -v docker >/dev/null 2>&1; then
+    Error "Docker is not installed. Please install Docker before continuing."
+  fi
+
+  # Ensure Ollama is installed (OpenWebUI will need it)
+  if ! command -v ollama >/dev/null 2>&1; then
+    Error "Ollama is not installed. OpenWebUI requires a running Ollama instance. Run obrar INSTALL-OLLAMA to install Ollama first."
+  fi
+
+  # Ensure Ollama is configured to listen on 0.0.0.0 in WSL2
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Detected WSL2 environment. Verifying Ollama configuration..."
+    
+    # Check if listening on all interfaces (ss shows * for 0.0.0.0)
+    if ! ss -tulpen | grep 11434 | grep -qE '(\*:11434|0\.0\.0\.0:11434)'; then
+      Warning "Ollama is not listening on 0.0.0.0:11434. Reconfiguring..."
+      sudo mkdir -p /etc/systemd/system/ollama.service.d
+      echo -e "[Service]\nEnvironment=\"OLLAMA_HOST=0.0.0.0:11434\"" | sudo tee /etc/systemd/system/ollama.service.d/override.conf >/dev/null
+      sudo systemctl daemon-reload
+      sudo systemctl restart ollama
+      sleep 3
+    fi
+    
+    # Verify Ollama is accessible
+    if ss -tulpen | grep 11434 | grep -qE '(\*:11434|0\.0\.0\.0:11434)'; then
+      Message "Ollama is properly configured and listening on all interfaces (port 11434)"
+    else
+      Error "Failed to configure Ollama to listen on 0.0.0.0. OpenWebUI will not be able to connect."
+    fi
+  fi
+
+  # Ensure OpenWebUI data directory exists
+  if [ ! -d "$HOME/.open-webui" ]; then
+    Message "Creating $HOME/.open-webui directory..."
+    $DEBUG mkdir -p "$HOME/.open-webui"
+  fi
+
+  # Stop and remove existing OpenWebUI container if present
+  if docker ps -a --format '{{.Names}}' | grep -q '^open-webui$'; then
+    Message "Existing OpenWebUI container found. Removing..."
+    $DEBUG docker stop open-webui >/dev/null 2>&1
+    $DEBUG docker rm open-webui >/dev/null 2>&1
+  else
+    Message "No existing OpenWebUI container found."
+  fi
+
+  # Pull latest OpenWebUI image
+  Message "Pulling latest OpenWebUI Docker image..."
+  $DEBUG docker pull ghcr.io/open-webui/open-webui:latest
+
+  # Determine the correct OLLAMA_HOST for Docker
+  # In WSL2, Docker containers use the host's IP on the Docker bridge network
+  # The host is accessible at host.docker.internal or via the bridge gateway IP
+  OLLAMA_HOST="http://host.docker.internal:11434"
+  
+  if [ "$(uname -r | grep -i microsoft)" != "" ]; then
+    Message "Using host.docker.internal for Ollama connection in WSL2"
+  else
+    Message "Using host.docker.internal for Ollama connection"
+  fi
+
+  # Run container with --add-host to ensure host.docker.internal works
+  Message "Starting OpenWebUI container..."
+  if [[ -z "${WEBUI_SECRET_KEY}" ]] ; then
+    Warning "WEBUI_SECRET_KEY is not set. JWTs will be invalidated on restart."
+  else
+    Message "Using WEBUI_SECRET_KEY from environment"
+    Message "Note: Keep WEBUI_SECRET_KEY stable across restarts to preserve login sessions."
+  fi
+
+  docker run -d \
+        --name open-webui \
+        -p ${PORT}:8080 \
+        --add-host=host.docker.internal:host-gateway \
+        -v open-webui:/app/backend/data \
+        -e OLLAMA_BASE_URL=${OLLAMA_HOST} \
+        -e ENABLE_API_KEY=true \
+        -e ENABLE_API_KEYS=true \
+        -e USER_PERMISSIONS_FEATURES_API_KEYS=true \
+        -e ENABLE_API_KEY_ENDPOINT_RESTRICTIONS=false \
+        -e WEBUI_SECRET_KEY="${WEBUI_SECRET_KEY}" \
+        --restart always \
+        ghcr.io/open-webui/open-webui:latest || Error "Failed to start OpenWebUI container. Check things like
+
+              - port ${PORT} availability
+                  sudo ss -tulpen | grep 3000
+
+              - Docker logs
+                  docker logs open-webui"
+
+  if [ $? -eq 0 ]; then
+    sleep 3
+
+    Message "API key creation is enabled via USER_PERMISSIONS_FEATURES_API_KEYS=true"
+    
+    # Test connectivity from container to Ollama
+    Message "Testing OpenWebUI -> Ollama connectivity..."
+    if docker exec open-webui curl -s http://host.docker.internal:11434/api/tags >/dev/null 2>&1; then
+      Message "✓ OpenWebUI can successfully connect to Ollama"
+      
+      # Show available models
+      MODELS=$(docker exec open-webui curl -s http://host.docker.internal:11434/api/tags 2>/dev/null | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+      if [ -n "$MODELS" ]; then
+        Message "Available models:"
+        echo "$MODELS" | while read model; do
+          Message "  - $model"
+        done
+      else
+        Message "No models currently installed. Use 'ollama pull <model>' to download models."
+      fi
+    else
+      Warning "OpenWebUI cannot reach Ollama. Check that Ollama is running with: systemctl status ollama"
+    fi
+    
+    Message "OpenWebUI installation completed successfully.
+    OpenWebUI is now available at: http://localhost:3000
+    To add models, run: ollama pull <model-name>
+    Example: ollama pull phi3"
+  else
+    Error "OpenWebUI installation failed."
+  fi
+}

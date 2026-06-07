@@ -1,8 +1,15 @@
+#!/bin/bash
+# shellcheck disable=SC2086
+# shellcheck disable=SC2016
+# shellcheck disable=SC2140
+# shellcheck disable=SC2154
+# shellcheck disable=SC2162
+# shellcheck disable=SC2155
 PROGNAME=${1:-}
 if [[ -f ../${PROGNAME} ]] ; then
   # Check that $PROGNAME has a help function
   TEST="NAME"
-  RESULT=$(../$PROGNAME -h && echo NOTNULL || echo "ERROR")
+  RESULT=$(../"$PROGNAME" -h && echo NOTNULL || echo "ERROR")
   printf "1:"
   [[ "${TEST}" =~ ${RESULT:1:4} ]] && echo "PASS" || echo "FAIL:${TEST:1:4}!=${RESULT:1:4}"
 
