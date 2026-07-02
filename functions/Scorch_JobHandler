@@ -784,7 +784,14 @@ GetVar()
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
   str_Value=$(Trim $str_Value)
 #echo $(Trim $str_Value))
-  eval "${str_Name}=\"${str_Value}\""
+  ## Assign via printf -v (no code execution surface). Validate the target
+  ## variable name first so a malformed template fails cleanly, not silently.
+  if [[ "${str_Name}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] ; then
+    printf -v "${str_Name}" '%s' "${str_Value}"
+  else
+    echo "Invalid variable name '${str_Name}' in request template." | tee -a "${dir_Log}"/$(basename "${file_Job}").log
+    b_CreateFailed=1
+  fi
   #[[ "${b_Mandatory}" ]] && echo "mandatory value requested <${str_Name}>" && sleep 10
   if [[ "${b_Mandatory}" ]] && [[ -z "${str_Value}" ]] ; then
     #echo "Mandatory value '${str_Name}' required a value but was not provided."
@@ -831,7 +838,7 @@ OGetVar()
   [[ "${b_Lower}"   ]] && str_Value=${str_Value,,}
   str_Name="$(echo -e "${str_Name}" | tr -d '[:space:]')"
 
-  eval "${str_Name}=\"${str_Value}\""
+  [[ "${str_Name}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && printf -v "${str_Name}" '%s' "${str_Value}"
 }
 
 fn_Transition()

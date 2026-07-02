@@ -10,7 +10,9 @@ Release: latest
 DOCUMENTATION
 
   RELEASE=${RELEASE:-latest}
-  Message "Upgrade OPENWEBUI from x to $RELEASE"
-  Task "docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once open-webui"
-
+  # Task "docker exec open-webui cat /app/package.json | grep -oP '"version": "\\\K[^"]+'"
+  Task "docker pull ghcr.io/open-webui/open-webui:$RELEASE"
+  Task "docker stop open-webui"
+  Task "docker rm open-webui"
+  Task "docker run -d   --name open-webui   --network host   --restart unless-stopped   -v open-webui:/app/backend/data   -e PORT=3030   -e OLLAMA_BASE_URL=http://localhost:11434   -e SCARF_NO_ANALYTICS=true   -e DO_NOT_TRACK=true   -e ANONYMIZED_TELEMETRY=false   ghcr.io/open-webui/open-webui:latest"
 }

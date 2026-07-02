@@ -516,12 +516,12 @@ fn_ProcessTag()
          str_Required=$(echo "${str_EachConfigArg}" | cut -d: -f1)
      str_VariableName=$(echo "${str_EachConfigArg}" | cut -d: -f2)
     str_ArgumentLabel=$(echo "${str_EachConfigArg}" | cut -d: -f3)
-    if $(typeset -p ${str_VariableName} >/dev/null 2>&1 ) ; then
+    if typeset -p "${str_VariableName}" >/dev/null 2>&1 ; then
       Warning "${str_VariableName} is either a reserved ${str_ProgramName} variable or system variable."
       Message "Remove it or change it in the definition file."
     else
       Verbose "Initialising ${str_VariableName}"
-      eval "${str_VariableName}="
+      printf -v "${str_VariableName}" '%s' ""
     fi
     # If there are 4 colons, then its not a flag and requires a value
     # If there are only 3 colons its a flag
@@ -546,13 +546,13 @@ fn_ProcessTag()
     for str_EachArg in "${arr_TagArgs[@]}" ; do
       if [ ${b_Flag} -eq 1 ] ; then
         if [ "${str_EachArg}" = "-${str_ArgumentLabel}" ] ; then
-          eval "${str_VariableName}=TRUE"
+          printf -v "${str_VariableName}" '%s' "TRUE"
           Message "  ${str_VariableName}:${!str_VariableName}"
           b_Found=1
         fi
       else
         if [[ ! -z "${str_SetNextArg}" ]] ; then
-          eval "  ${str_SetNextArg}=\"${str_EachArg}\""
+          printf -v "${str_SetNextArg}" '%s' "${str_EachArg}"
           Message "  ${str_SetNextArg}:${!str_SetNextArg}"
           b_Found=1
           str_SetNextArg=
