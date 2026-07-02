@@ -10,9 +10,11 @@ Release: latest
 DOCUMENTATION
 
   RELEASE=${RELEASE:-latest}
-  # Task "docker exec open-webui cat /app/package.json | grep -oP '"version": "\\\K[^"]+'"
   Task "docker pull ghcr.io/open-webui/open-webui:$RELEASE"
+  # Rollback anchor: tag the currently-running image before removal
+  Task "docker tag \$(docker inspect --format='{{.Image}}' open-webui) open-webui:rollback"
   Task "docker stop open-webui"
   Task "docker rm open-webui"
-  Task "docker run -d   --name open-webui   --network host   --restart unless-stopped   -v open-webui:/app/backend/data   -e PORT=3030   -e OLLAMA_BASE_URL=http://localhost:11434   -e SCARF_NO_ANALYTICS=true   -e DO_NOT_TRACK=true   -e ANONYMIZED_TELEMETRY=false   ghcr.io/open-webui/open-webui:latest"
+  Task "docker run -d   --name open-webui   --network host   --restart unless-stopped   -v open-webui:/app/backend/data   -e PORT=3030   -e OLLAMA_BASE_URL=http://localhost:11434   -e SCARF_NO_ANALYTICS=true   -e DO_NOT_TRACK=true   -e ANONYMIZED_TELEMETRY=false   ghcr.io/open-webui/open-webui:$RELEASE"
+  Message "Rollback: docker stop open-webui && docker rm open-webui, then re-run with image open-webui:rollback"
 }

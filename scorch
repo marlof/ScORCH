@@ -302,8 +302,12 @@ fn_LoadFunctions()
         if [[ "${dir_Directory}" == "${dir_Plugins}" || "${str_Search}" == SP_* ]] ; then
           # Reject obvious dangerous constructs except when they appear inside Task "..." or Task '...'
           offending=$(grep -nE '(^|[^a-zA-Z0-9_])(eval|exec|sudo|rm[[:space:]]+-rf|mkfs\.|\bdd\b|:>\s*/dev|/dev/tcp|curl[[:space:]]+.*\|[[:space:]]*sh|wget[[:space:]]+.*\|[[:space:]]*sh)' "${str_EachFile}" | grep -v -E "(Task|Try|Message|Manual|Warning|Error)[[:space:]]*[\"']" || true)
-          if [[ -n "${offending}" ]] && (( !b_Power)) ; then
-            printf "%10s\n" "REJECTED" && echo " - contains disallowed constructs outside Task functions" && b_Errors=1 && continue
+          if [[ -n "${offending}" ]] ; then
+            if (( !b_Power )) ; then
+              printf "%10s\n" "REJECTED" && echo " - contains disallowed constructs outside Task functions" && b_Errors=1 && continue
+            else
+              printf "%10s\n" "WARNING" && echo " - disallowed constructs outside Task functions (loaded: power mode override)"
+            fi
           fi
           # Ensure the primary function defined in the plugin matches the filename (for SP_ plugins)
           if [[ "$(basename "${str_EachFile}")" == SP_* ]] ; then
